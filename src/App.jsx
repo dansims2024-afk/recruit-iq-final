@@ -61,7 +61,7 @@ export default function App() {
         marketIntel: { avgPay: "$172,500", demand: "High", rangeMatch: "92%" },
         optimizedJD: "Based on Jordan's profile, consider adding 'High-Frequency Trading Experience' to attract similar top-tier talent."
       });
-      setOutreachDraft(`Hi Jordan, I noticed your 65% deployment optimization at your previous role...`);
+      setOutreachDraft(`Hi Jordan, I noticed your 65% deployment optimization at your previous role. We're looking for that impact at Recruit-IQ. Open to a chat?`);
       setLoading(false);
     }, 1500);
   };
@@ -78,31 +78,30 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans relative">
       
-      {/* Support Modal (Keep existing logic) */}
+      {/* Support Modal */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
           <div className="bg-slate-900 border border-slate-700 rounded-[2.5rem] max-w-lg w-full p-10 relative text-center">
             <button onClick={() => setShowSupportModal(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X /></button>
-            <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Support</h2>
+            <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter">Support Center</h2>
             <a href="mailto:hello@corecreaqtivityai.com" className="block w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all">Email Support</a>
           </div>
         </div>
       )}
 
-      {/* Upgrade Modal (Keep existing tiers) */}
+      {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-700 rounded-[2.5rem] max-w-4xl w-full p-8 relative shadow-2xl">
             <button onClick={() => setShowUpgradeModal(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X /></button>
-            <h2 className="text-3xl font-black text-center mb-8 uppercase tracking-tighter">Upgrade Plan</h2>
+            <h2 className="text-3xl font-black text-center mb-8 uppercase tracking-tighter">Choose Your Tier</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Standard, Pro, Executive Tiers */}
-                {['standard', 'professional', 'executive'].map((tier) => (
-                    <div key={tier} className="p-6 rounded-3xl bg-slate-950 border border-slate-800 flex flex-col">
-                        <span className="text-[10px] font-black uppercase mb-2">{tier}</span>
-                        <button onClick={() => handleUpgrade(tier)} className="w-full py-2 rounded-xl bg-blue-600 text-[10px] font-black uppercase text-white">Select</button>
-                    </div>
-                ))}
+              {['standard', 'professional', 'executive'].map((tier) => (
+                <div key={tier} className="p-6 rounded-3xl bg-slate-950 border border-slate-800 flex flex-col">
+                  <span className="text-[10px] font-black uppercase text-slate-500 mb-2">{tier}</span>
+                  <button onClick={() => handleUpgrade(tier)} className="w-full py-2 rounded-xl text-[10px] font-black uppercase text-white shadow-lg" style={{ backgroundColor: brand.primary }}>Select Plan</button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -123,30 +122,39 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto w-full p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 print:block">
-        {/* Left Side: Inputs (Hidden on print) */}
+        {/* Input Card */}
         <section className="bg-slate-900 rounded-[2.5rem] border border-slate-800 flex flex-col h-[700px] overflow-hidden shadow-2xl print:hidden">
-            <div className="flex bg-slate-950/50 border-b border-slate-800">
-                <button onClick={() => setActiveTab('jd')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'jd' ? brand.glow : brand.neutral, borderBottom: activeTab === 'jd' ? `3px solid ${brand.primary}` : 'none' }}>Job Description</button>
-                <button onClick={() => setActiveTab('resume')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'resume' ? brand.glow : brand.neutral, borderBottom: activeTab === 'resume' ? `3px solid ${brand.primary}` : 'none' }}>Resume</button>
+          <div className="flex bg-slate-950/50 border-b border-slate-800">
+            <button onClick={() => setActiveTab('jd')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'jd' ? brand.glow : brand.neutral, borderBottom: activeTab === 'jd' ? `3px solid ${brand.primary}` : 'none' }}>Job Description</button>
+            <button onClick={() => setActiveTab('resume')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'resume' ? brand.glow : brand.neutral, borderBottom: activeTab === 'resume' ? `3px solid ${brand.primary}` : 'none' }}>Resume</button>
+          </div>
+          <div className="flex justify-between p-3 bg-slate-950/20">
+            <button onClick={loadSampleData} className="text-[10px] font-black flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"><RefreshCw size={12} /> LOAD IT SAMPLE</button>
+            <div className="flex gap-2">
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf" />
+              <button onClick={() => fileInputRef.current.click()} className="text-[10px] font-black flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-700 text-slate-500 hover:text-white"><Upload size={12} /> UPLOAD PDF</button>
             </div>
-            <textarea className="flex-1 p-8 bg-transparent text-slate-300 outline-none resize-none text-sm leading-relaxed" value={activeTab === 'jd' ? jobDescription : resume} onChange={(e) => activeTab === 'jd' ? setJobDescription(e.target.value) : setResume(e.target.value)} placeholder="Paste data here..." />
-            <div className="p-8 bg-slate-950/50 border-t border-slate-800">
-                <button onClick={handleAnalyze} className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-widest shadow-2xl transition-all" style={{ background: `linear-gradient(to right, ${brand.primary}, ${brand.secondary})` }}>
-                    <Sparkles size={20} className="inline mr-2" /> Execute Synergy Scan
-                </button>
-            </div>
+          </div>
+          <textarea className="flex-1 p-8 bg-transparent text-slate-300 outline-none resize-none text-sm leading-relaxed" value={activeTab === 'jd' ? jobDescription : resume} onChange={(e) => activeTab === 'jd' ? setJobDescription(e.target.value) : setResume(e.target.value)} placeholder="Paste data here..." />
+          <div className="p-8 bg-slate-950/50 border-t border-slate-800">
+            <button onClick={handleAnalyze} disabled={loading || !jobDescription || !resume} className="w-full py-5 rounded-3xl text-white font-black uppercase tracking-widest shadow-2xl transition-all hover:brightness-110 disabled:opacity-50" style={{ background: `linear-gradient(to right, ${brand.primary}, ${brand.secondary})` }}>
+              {loading ? <Loader2 className="animate-spin" /> : <Sparkles />} Execute Synergy Scan
+            </button>
+          </div>
         </section>
 
-        {/* Right Side: Enhanced Results */}
+        {/* Results Card */}
         <section className="space-y-6 overflow-y-auto pr-2 custom-scrollbar print:space-y-10">
           {!analysis ? (
-             <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center opacity-20"><BarChart3 size={60} /><p className="text-[10px] font-black uppercase tracking-widest mt-4">Awaiting Scan</p></div>
+            <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center opacity-20">
+              <BarChart3 size={60} />
+              <p className="text-[10px] font-black uppercase tracking-widest mt-4">Awaiting Data Input</p>
+            </div>
           ) : (
-            <div className="space-y-6">
-              {/* Score & Fit */}
+            <div className="space-y-6 animate-in fade-in duration-700">
               <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-xl overflow-hidden print:border-none">
-                <div className="p-10 text-center bg-slate-950/30">
-                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-2">Neural Match Score</div>
+                <div className="p-10 text-center border-b border-slate-800/50 bg-slate-950/30">
+                  <div className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-2">Match Score</div>
                   <div className="text-8xl font-black tracking-tighter" style={{ color: brand.glow }}>{analysis.matchScore}%</div>
                 </div>
                 <div className="p-10">
@@ -154,7 +162,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* NEW: Culture Fit (Pro+) */}
               {simTier !== 'standard' && (
                 <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-xl" style={{ borderLeft: `6px solid ${brand.accent}` }}>
                     <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 text-purple-400"><Heart size={14} /> Culture Synergy</h3>
@@ -165,7 +172,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* NEW: Resume Rewriter (Pro+) */}
               {simTier !== 'standard' && (
                   <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-4"><Edit3 size={14} /> AI Resume Optimization</h3>
@@ -175,7 +181,6 @@ export default function App() {
                   </div>
               )}
 
-              {/* NEW: Benchmarking & Cheat Sheet (Executive) */}
               {simTier === 'executive' && (
                 <>
                   <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800">
@@ -202,9 +207,11 @@ export default function App() {
         </section>
       </main>
 
-      {/* Footer (Same as before) */}
+      {/* Footer Navigation */}
       <footer className="bg-slate-900 border-t border-slate-800 h-20 flex items-center justify-center gap-12 print:hidden">
-          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white">Support</button>
+        <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><Shield size={12} /> Privacy Policy</a>
+        <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><Info size={12} /> Terms</a>
+        <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><LifeBuoy size={12} /> Support</button>
       </footer>
     </div>
   );
