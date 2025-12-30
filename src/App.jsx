@@ -11,10 +11,8 @@ import {
   Orbit, 
   CreditCard 
 } from 'lucide-react';
-import pdfToText from 'react-pdftotext';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Replace with your Stripe Publishable Key from Dashboard
 const stripePromise = loadStripe('pk_test_your_key_here');
 
 export default function App() {
@@ -26,20 +24,14 @@ export default function App() {
   const [simTier, setSimTier] = useState('standard');
   const fileInputRef = useRef(null);
 
-  // PDF Text Extraction
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    pdfToText(file)
-      .then(text => {
-        if (activeTab === 'jd') setJobDescription(text);
-        else setResume(text);
-      })
-      .catch(() => alert("Error reading PDF. Please try pasting text directly."));
+    if (file) {
+      console.log("File selected:", file.name);
+      // PDF Parsing will be re-added after dependency fix
+    }
   };
 
-  // Stripe Checkout logic
   const handleUpgrade = async (tier) => {
     try {
       const response = await fetch('/api/checkout', {
@@ -58,7 +50,6 @@ export default function App() {
   const handleAnalyze = () => {
     if (!jobDescription || !resume) return;
     setLoading(true);
-    // Simulation for now - will connect Gemini next
     setTimeout(() => {
       setAnalysis({
         matchScore: 85,
@@ -164,12 +155,6 @@ export default function App() {
               <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl">
                 <div className="text-4xl font-black text-blue-500 mb-4">{analysis.matchScore}% Match</div>
                 <p className="text-white text-lg mb-6">{analysis.fitSummary}</p>
-                <div className="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20">
-                  <span className="text-emerald-500 text-[10px] font-bold uppercase block mb-2">Strengths</span>
-                  <ul className="text-xs text-slate-400 space-y-1">
-                    {analysis.strengths.map((s, i) => <li key={i}>• {s}</li>)}
-                  </ul>
-                </div>
               </div>
             </div>
           )}
