@@ -13,16 +13,14 @@ import {
 import pdfToText from 'react-pdftotext';
 import { loadStripe } from '@stripe/stripe-js';
 
-// Replace with your Stripe Publishable Key
 const stripePromise = loadStripe('pk_test_your_key_here');
 
-// BRAND KIT PALETTE
 const brand = {
-  primary: '#2B81B9',    // Blue
-  secondary: '#52438E',  // Deep Purple
-  accent: '#8C50A1',     // Plum
-  neutral: '#b2acce',    // Lavender
-  glow: '#00c9ff'        // Cyan
+  primary: '#2B81B9',
+  secondary: '#52438E',
+  accent: '#8C50A1',
+  neutral: '#b2acce',
+  glow: '#00c9ff'
 };
 
 export default function App() {
@@ -32,7 +30,6 @@ export default function App() {
   const [analysis, setAnalysis] = useState(null);
   const fileInputRef = useRef(null);
 
-  // PRE-LOADED SAMPLE DATA
   const [jobDescription, setJobDescription] = useState(
     "JOB TITLE: Senior Cloud Solutions Architect\nCOMPANY: InnoTech Solutions\n\nRequirements:\n- 8+ years of experience in Cloud Infrastructure (AWS preferred).\n- Expert proficiency in React and Node.js microservices.\n- Experience with Docker, Kubernetes, and Terraform.\n- Strong focus on 99.99% uptime and high scalability.\n- Preferred: Knowledge of Golang for high-performance backend systems."
   );
@@ -52,7 +49,6 @@ export default function App() {
   const handleAnalyze = () => {
     if (!jobDescription || !resume) return;
     setLoading(true);
-    // Simulation: Connect Gemini API here in the next step
     setTimeout(() => {
       setAnalysis({
         matchScore: 82,
@@ -85,29 +81,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
-      {/* Header with Swirl Logo */}
       <header className="bg-slate-900 border-b border-slate-800 h-20 flex items-center justify-between px-8">
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10">
-            {/* Custom SVG Swirl inspired by your logo */}
-            <svg viewBox="0 0 100 100" className="animate-[spin_10s_linear_infinite]">
-              <defs>
-                <linearGradient id="swirlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={brand.glow} />
-                  <stop offset="50%" stopColor={brand.primary} />
-                  <stop offset="100%" stopColor={brand.accent} />
-                </linearGradient>
-              </defs>
-              <path 
-                d="M50 5 C 20 5, 5 30, 5 50 C 5 70, 30 95, 50 95 C 70 95, 95 70, 95 50 C 95 30, 70 5, 50 5 Z" 
-                fill="none" 
-                stroke="url(#swirlGrad)" 
-                strokeWidth="8" 
-                strokeDasharray="20 10"
-              />
-              <circle cx="50" cy="50" r="12" fill={brand.glow} className="animate-pulse" />
-            </svg>
-          </div>
+        <div className="flex items-center gap-4">
+          {/* STATIC LOGO IMAGE */}
+          <img 
+            src="/CCAI.png" 
+            alt="Recruit-IQ Logo" 
+            className="w-12 h-12 object-contain"
+          />
           <span className="text-2xl font-black text-white uppercase tracking-tighter">Recruit-IQ</span>
         </div>
         
@@ -138,10 +119,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Container */}
       <main className="max-w-7xl mx-auto w-full p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Input Card */}
         <section className="bg-slate-900 rounded-[2rem] border border-slate-800 flex flex-col h-[650px] overflow-hidden shadow-2xl">
           <div className="flex bg-slate-950/50 border-b border-slate-800">
             <button 
@@ -189,7 +167,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Results Card */}
         <section className="space-y-6 overflow-y-auto">
           {!analysis ? (
             <div className="h-full border-2 border-dashed border-slate-800 rounded-[2rem] flex flex-col items-center justify-center text-slate-700 uppercase text-[10px] tracking-[0.3em] space-y-4">
@@ -206,7 +183,6 @@ export default function App() {
                   <Zap size={14} /> Match Result
                 </h3>
                 <p className="text-xl text-white font-medium mb-6">{analysis.fitSummary}</p>
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/20">
                     <span className="text-emerald-400 text-[10px] font-black uppercase block mb-2">Strengths</span>
@@ -220,19 +196,6 @@ export default function App() {
                       {analysis.gaps.map((g, i) => <li key={i}>! {g}</li>)}
                     </ul>
                   </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
-                <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2" style={{ color: brand.accent }}>
-                  <Mail size={14} /> Interview Guide
-                </h3>
-                <div className="space-y-3">
-                  {analysis.interviewQuestions.map((q, i) => (
-                    <div key={i} className="p-4 bg-slate-950 rounded-xl border border-slate-800 text-sm italic text-slate-300">
-                      "{q}"
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
