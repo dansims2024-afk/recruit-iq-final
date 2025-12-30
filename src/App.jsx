@@ -69,7 +69,6 @@ export default function App() {
     setShowUpgradeModal(false);
   };
 
-  // Helper component to lock features
   const LockedFeature = ({ tierRequired, title, description, children }) => {
     const isLocked = (tierRequired === 'professional' && simTier === 'standard') || 
                      (tierRequired === 'executive' && (simTier === 'standard' || simTier === 'professional'));
@@ -101,7 +100,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans relative">
       
-      {/* Support & Upgrade Modals (Logic remains same) */}
+      {/* Support & Upgrade Modals */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
           <div className="bg-slate-900 border border-slate-700 rounded-[2.5rem] max-w-lg w-full p-10 relative text-center">
@@ -129,7 +128,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Header - LOGO TOP LEFT */}
+      {/* Header - Branding Layout Updated */}
       <header className="bg-slate-900 border-b border-slate-800 h-24 flex items-center justify-between px-10 print:hidden">
         <div className="flex items-center gap-4">
           <img src="/CCAI.png" alt="Recruit-IQ" className="h-14 w-auto object-contain" />
@@ -138,22 +137,22 @@ export default function App() {
             <span className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">{simTier} intelligence</span>
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setShowUpgradeModal(true)} className="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl flex items-center gap-2 transition-transform hover:scale-105" style={{ background: `linear-gradient(to right, ${brand.primary}, ${brand.secondary})` }}>
-            <Zap size={14} fill="currentColor" /> Upgrade
-          </button>
+        
+        {/* NEW TOP RIGHT WORDING */}
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-sm font-black text-white uppercase tracking-widest leading-none">Recruit-IQ</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter italic">by Core Creativity AI</span>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto w-full p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
-        {/* Left Side: Inputs */}
         <section className="bg-slate-900 rounded-[2.5rem] border border-slate-800 flex flex-col h-[700px] overflow-hidden shadow-2xl print:hidden">
           <div className="flex bg-slate-950/50 border-b border-slate-800">
             <button onClick={() => setActiveTab('jd')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'jd' ? brand.glow : brand.neutral, borderBottom: activeTab === 'jd' ? `3px solid ${brand.primary}` : 'none' }}>Job Description</button>
             <button onClick={() => setActiveTab('resume')} className="flex-1 py-5 text-xs font-black uppercase tracking-widest" style={{ color: activeTab === 'resume' ? brand.glow : brand.neutral, borderBottom: activeTab === 'resume' ? `3px solid ${brand.primary}` : 'none' }}>Resume</button>
           </div>
           <div className="flex justify-between p-3 bg-slate-950/20">
-            <button onClick={loadSampleData} className="text-[10px] font-black flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white"><RefreshCw size={12} /> LOAD SAMPLE CASE</button>
+            <button onClick={loadSampleData} className="text-[10px] font-black flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"><RefreshCw size={12} /> LOAD SAMPLE CASE</button>
             <div className="flex gap-2">
               <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".pdf" />
               <button onClick={() => fileInputRef.current.click()} className="text-[10px] font-black flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-700 text-slate-500 hover:text-white"><Upload size={12} /> UPLOAD PDF</button>
@@ -167,7 +166,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Right Side: Results */}
         <section className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
           {!analysis ? (
             <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center opacity-20">
@@ -175,8 +173,7 @@ export default function App() {
               <p className="text-[10px] font-black uppercase tracking-widest mt-4">Awaiting Data Input</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Score Header */}
+            <div className="space-y-6 animate-in fade-in duration-700">
               <div className="bg-slate-900 rounded-[2.5rem] border border-slate-800 shadow-xl overflow-hidden">
                 <div className="p-10 text-center border-b border-slate-800/50 bg-slate-950/30">
                   <div className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-2">Neural Match Score</div>
@@ -187,7 +184,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* PROS & CONS EVALUATION */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-emerald-500/5 p-6 rounded-[2rem] border border-emerald-500/20">
                   <span className="text-emerald-400 text-[10px] font-black uppercase block mb-4 tracking-widest flex items-center gap-2"><Zap size={12} fill="currentColor" /> Pro's</span>
@@ -203,23 +199,14 @@ export default function App() {
                 </div>
               </div>
 
-              {/* GATED FEATURES */}
-              <LockedFeature 
-                tierRequired="professional" 
-                title="Behavioral Predictor" 
-                description="Predict candidate cultural alignment based on linguistic tone analysis."
-              >
+              <LockedFeature tierRequired="professional" title="Behavioral Predictor" description="Predict candidate cultural alignment based on linguistic tone analysis.">
                 <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
                   <h3 className="text-[10px] font-black uppercase text-purple-400 mb-4 flex items-center gap-2"><Heart size={14} /> Culture Fit: {analysis.cultureScore}%</h3>
                   <p className="text-xs text-slate-400 italic">"{analysis.cultureFit}"</p>
                 </div>
               </LockedFeature>
 
-              <LockedFeature 
-                tierRequired="professional" 
-                title="Personalized Outreach" 
-                description="Generate AI-drafted emails tailored to candidate's specific career highlights."
-              >
+              <LockedFeature tierRequired="professional" title="Personalized Outreach" description="Generate AI-drafted emails tailored to candidate's specific career highlights.">
                 <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-[10px] font-black uppercase text-blue-400 flex items-center gap-2"><Mail size={14} /> AI Outreach Draft</h3>
@@ -229,11 +216,7 @@ export default function App() {
                 </div>
               </LockedFeature>
 
-              <LockedFeature 
-                tierRequired="executive" 
-                title="Executive Market Intel" 
-                description="Real-time salary benchmarking and JD competitiveness analysis."
-              >
+              <LockedFeature tierRequired="executive" title="Executive Market Intel" description="Real-time salary benchmarking and JD competitiveness analysis.">
                 <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800" style={{ borderLeft: `6px solid ${brand.accent}` }}>
                   <h3 className="text-[10px] font-black uppercase text-purple-400 mb-4 flex items-center gap-2"><TrendingUp size={14} /> Market Intel</h3>
                   <div className="flex justify-between items-end">
@@ -247,26 +230,21 @@ export default function App() {
                   </div>
                 </div>
               </LockedFeature>
-
-              <LockedFeature 
-                tierRequired="executive" 
-                title="AI JD Optimizer" 
-                description="Optimize your JD keywords to rank higher in LinkedIn and Indeed search results."
-              >
-                <div className="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
-                  <h3 className="text-[10px] font-black uppercase text-cyan-400 mb-4 flex items-center gap-2"><Wand2 size={14} /> Optimization Suggestions</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed font-mono">"{analysis.optimizedJD}"</p>
-                </div>
-              </LockedFeature>
             </div>
           )}
         </section>
       </main>
 
-      <footer className="bg-slate-900 border-t border-slate-800 h-20 flex items-center justify-center gap-12 print:hidden">
-        <a href="https://www.corecreativityai.com/blank" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><Shield size={12} /> Privacy</a>
-        <a href="https://www.corecreativityai.com/blank-2" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><Info size={12} /> Terms</a>
-        <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white flex items-center gap-2 transition-colors"><LifeBuoy size={12} /> Support</button>
+      {/* FOOTER UPDATED WITH COPYRIGHT SYMBOL */}
+      <footer className="bg-slate-900 border-t border-slate-800 h-24 flex flex-col items-center justify-center gap-4 print:hidden">
+        <div className="flex items-center gap-12">
+          <a href="https://www.corecreativityai.com/blank" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Privacy</a>
+          <a href="https://www.corecreativityai.com/blank-2" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Terms</a>
+          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">Support</button>
+        </div>
+        <div className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">
+          © 2025 Core Creativity AI
+        </div>
       </footer>
     </div>
   );
