@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Sparkles, Zap, Loader2, BarChart3, Briefcase, FileText, Upload, Mail, CheckCircle2, AlertCircle, Printer, DollarSign, Send, MousePointer2, PlayCircle, ClipboardCheck } from 'lucide-react';
+import { Sparkles, Zap, Loader2, BarChart3, Briefcase, FileText, Upload, Mail, CheckCircle2, AlertCircle, Printer, DollarSign, Send, ClipboardCheck } from 'lucide-react';
 
 export default function App() {
   const [jobDescription, setJobDescription] = useState('');
@@ -11,9 +11,49 @@ export default function App() {
   const [simTier, setSimTier] = useState('standard');
   const fileInputRef = useRef(null);
 
+  const isJDFilled = jobDescription.trim().length > 50;
+  const isResumeFilled = resume.trim().length > 50;
+
+  // Populates the FULL JD and Resume content
   const loadSampleData = () => {
-    setJobDescription(`📄 Job Title: Medical Assistant\nOverview: Seeking a skilled Medical Assistant to support providers in clinical and administrative tasks.\nKey Responsibilities: Record vitals, assist in exams, and manage EMR documentation.`);
-    setResume(`Jill McSample | Newark, NJ\nSummary: Compassionate Medical Assistant with experience in patient intake, EMR management, and vitals collection.\nCertifications: Certified Medical Assistant (CMA), BLS/CPR.`);
+    setJobDescription(`📄 Job Title: Medical Assistant
+Overview
+We are seeking a skilled and compassionate Medical Assistant to join our healthcare team. The ideal candidate will support physicians and nurses in delivering high-quality patient care by performing clinical and administrative tasks.
+
+Key Responsibilities
+- Welcome patients, record vital signs, and prepare them for examination
+- Assist providers during exams, procedures, and treatments
+- Collect and process laboratory specimens (blood, urine, etc.)
+- Record patient medical history and update EMR accurately
+- Schedule appointments and manage patient flow
+
+Qualifications
+- High school diploma or GED required
+- Completion of an accredited Medical Assistant program preferred
+- CMA, RMA, or equivalent certification is a plus
+- Proficient with EMR systems and office software`);
+
+    setResume(`Jill McSample | Newark, NJ
+📞 (555) 123-4567 | 📧 jill.mssample@email.com
+
+Professional Summary
+Detail-oriented and compassionate Medical Assistant with experience supporting physicians, performing clinical tasks, and maintaining efficient office workflow. Skilled in patient care, EMR management, and vitals collection.
+
+Core Skills
+- Patient Intake & Vital Signs
+- Electronic Medical Records (Epic, Cerner)
+- Injections & Specimen Collection
+- Medical Terminology & Infection Control
+
+Professional Experience
+Medical Assistant | ABC Family Clinic | Newark, NJ
+- Welcome and prepare patients for examinations, recording vitals
+- Perform specimen collection and basic lab work
+- Document patient information in EMR with accuracy
+
+Certifications
+- Certified Medical Assistant (CMA) – AAMA
+- BLS/CPR Certified (American Heart Association)`);
   };
 
   const handleFileUpload = (event) => {
@@ -21,15 +61,14 @@ export default function App() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result;
-      if (activeTab === 'jd') setJobDescription(text);
-      else setResume(text);
+      if (activeTab === 'jd') setJobDescription(e.target.result);
+      else setResume(e.target.result);
     };
     reader.readAsText(file);
   };
 
   const handleAnalyze = () => {
-    if (!jobDescription || !resume) return;
+    if (!isJDFilled || !isResumeFilled) return;
     setLoading(true);
     setTimeout(() => {
       setAnalysis({
@@ -58,13 +97,8 @@ export default function App() {
     }, 1500);
   };
 
-  const generateOutreachEmail = () => {
-    setGeneratedEmail(`Subject: Career Opportunity: Medical Assistant Role at [Company Name]\n\nHi Jill,\n\nI came across your background and was impressed by your experience at ABC Family Clinic and your CMA certification. \n\nWe are currently looking for a Medical Assistant who is proficient in EMR systems and clinical support. Given your strong match with our requirements, I’d love to schedule a brief call to discuss how your skills align with our team's mission in Newark.\n\nAre you available for a 15-minute chat later this week?\n\nBest regards,\n\n[Your Name]\nRecruiting Team | [Company Name]`);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans">
-      {/* HEADER */}
       <header className="bg-slate-900/80 backdrop-blur-md border-b border-white/5 h-20 flex items-center justify-between px-10 sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="relative w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(124,58,237,0.5)]"></div>
@@ -83,42 +117,45 @@ export default function App() {
       {/* QUICK START GUIDE */}
       <section className="max-w-7xl mx-auto w-full px-8 pt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-900/50 border border-blue-500/20 p-4 rounded-2xl flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white">1</div>
+          <div className={`transition-all duration-500 bg-slate-900/50 border p-4 rounded-2xl flex items-center gap-4 ${isJDFilled ? 'border-emerald-500/50' : 'border-blue-500/20'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors ${isJDFilled ? 'bg-emerald-600' : 'bg-blue-600'}`}>
+              {isJDFilled ? <CheckCircle2 size={18} /> : '1'}
+            </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">Input Data</p>
-              <p className="text-xs text-slate-400">Paste JD and Resume or click 'Sample'</p>
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${isJDFilled ? 'text-emerald-400' : 'text-blue-400'}`}>Step 1</p>
+              <p className="text-xs text-slate-400 font-medium">Add Job Description</p>
             </div>
           </div>
-          <div className="bg-slate-900/50 border border-purple-500/20 p-4 rounded-2xl flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">2</div>
+          <div className={`transition-all duration-500 bg-slate-900/50 border p-4 rounded-2xl flex items-center gap-4 ${isResumeFilled ? 'border-emerald-500/50' : 'border-purple-500/20'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors ${isResumeFilled ? 'bg-emerald-600' : 'bg-purple-600'}`}>
+              {isResumeFilled ? <CheckCircle2 size={18} /> : '2'}
+            </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-purple-400 font-bold">Run Scan</p>
-              <p className="text-xs text-slate-400">Execute the AI Synergy analysis</p>
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${isResumeFilled ? 'text-emerald-400' : 'text-purple-400'}`}>Step 2</p>
+              <p className="text-xs text-slate-400 font-medium">Add Candidate Resume</p>
             </div>
           </div>
-          <div className="bg-slate-900/50 border border-emerald-500/20 p-4 rounded-2xl flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white">3</div>
+          <div className={`transition-all duration-500 bg-slate-900/50 border p-4 rounded-2xl flex items-center gap-4 ${analysis ? 'border-emerald-500/50' : 'border-amber-500/20'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white transition-colors ${analysis ? 'bg-emerald-600' : 'bg-amber-600'}`}>
+              {analysis ? <CheckCircle2 size={18} /> : '3'}
+            </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold">Deploy Output</p>
-              <p className="text-xs text-slate-400">Generate outreach and print guides</p>
+              <p className={`text-[10px] uppercase tracking-widest font-bold ${analysis ? 'text-emerald-400' : 'text-amber-400'}`}>Step 3</p>
+              <p className="text-xs text-slate-400 font-medium">AI Synergy & Tools</p>
             </div>
           </div>
         </div>
       </section>
 
       <main className="max-w-7xl mx-auto w-full p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* INPUT PANEL */}
+        {/* INPUT BOX */}
         <section className="bg-slate-900 rounded-3xl border border-slate-800 flex flex-col h-[700px] overflow-hidden shadow-2xl">
           <div className="flex bg-slate-950/50 border-b border-slate-800 p-2 gap-2">
-            <div className="flex items-center gap-2 px-3 mr-2 border-r border-white/10">
-               <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">1</div>
-            </div>
-            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 text-xs uppercase font-bold rounded-xl transition-all ${activeTab === 'jd' ? 'bg-slate-800 text-purple-400' : 'text-slate-500'}`}>
-              <Briefcase size={14} className="inline mr-2" /> Job Description
+            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 text-xs uppercase font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-slate-800 text-purple-400' : 'text-slate-500'}`}>
+              <Briefcase size={14} /> Job Description {isJDFilled && <CheckCircle2 size={14} className="text-emerald-500" />}
             </button>
-            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 text-xs uppercase font-bold rounded-xl transition-all ${activeTab === 'resume' ? 'bg-slate-800 text-purple-400' : 'text-slate-500'}`}>
-              <FileText size={14} className="inline mr-2" /> Resume
+            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 text-xs uppercase font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-slate-800 text-purple-400' : 'text-slate-500'}`}>
+              <FileText size={14} /> Resume {isResumeFilled && <CheckCircle2 size={14} className="text-emerald-500" />}
             </button>
           </div>
           
@@ -128,31 +165,28 @@ export default function App() {
               className="w-full h-full p-6 bg-transparent text-slate-300 outline-none resize-none text-sm leading-relaxed" 
               value={activeTab === 'jd' ? jobDescription : resume} 
               onChange={(e) => activeTab === 'jd' ? setJobDescription(e.target.value) : setResume(e.target.value)}
-              placeholder="Start here..."
+              placeholder="Paste content here..."
             />
             <div className="absolute top-4 right-4 flex items-center gap-3">
-              <button onClick={loadSampleData} className="text-[10px] text-purple-400 hover:text-white border border-purple-500/30 px-3 py-1.5 rounded-lg font-bold">Sample</button>
+              <button onClick={loadSampleData} className="text-[10px] text-purple-400 hover:text-white border border-purple-500/30 px-3 py-1.5 rounded-lg font-bold transition-all">Sample</button>
               <button onClick={() => fileInputRef.current.click()} className="flex items-center gap-2 text-[10px] text-slate-400 border border-white/10 px-3 py-1.5 rounded-lg font-bold bg-slate-800"><Upload size={12} /> Upload</button>
             </div>
           </div>
 
-          <div className="p-6 bg-slate-950/30 border-t border-slate-800 flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white shrink-0">2</div>
-            <button onClick={handleAnalyze} className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold uppercase hover:opacity-90 transition-all flex items-center justify-center gap-2">
+          <div className="p-6 bg-slate-950/30 border-t border-slate-800">
+            <button onClick={handleAnalyze} disabled={!isJDFilled || !isResumeFilled} className={`w-full py-4 rounded-2xl font-bold uppercase transition-all flex items-center justify-center gap-2 shadow-xl ${(!isJDFilled || !isResumeFilled) ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:opacity-90'}`}>
               {loading ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />} Run Synergy Scan
             </button>
           </div>
         </section>
 
-        {/* RESULTS PANEL */}
+        {/* RESULTS BOX */}
         <section className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
           {!analysis ? (
              <div className="h-full border-2 border-dashed border-slate-800 rounded-3xl flex items-center justify-center text-slate-700 uppercase text-[10px] tracking-widest">Awaiting Scan</div>
           ) : (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-              {/* Score and Summary */}
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 flex items-center gap-8 relative overflow-hidden">
-                <div className="absolute -top-4 -right-4 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 flex items-center gap-8">
                 <div className="w-24 h-24 rounded-full border-4 border-purple-500 flex items-center justify-center bg-slate-950 shrink-0">
                   <span className="text-3xl font-black text-white">{analysis.matchScore}%</span>
                 </div>
@@ -162,7 +196,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Enhanced Market Intelligence */}
+              {/* Comp Intel */}
               <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl">
                 <h3 className="text-purple-400 font-bold uppercase text-[10px] tracking-widest mb-10 flex items-center gap-2"><DollarSign size={14}/> Comp Intelligence</h3>
                 <div className="px-4">
@@ -180,7 +214,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Elaborated Analysis */}
+              {/* Strengths & Gaps */}
               <div className="grid grid-cols-1 gap-4">
                 <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
                   <span className="text-emerald-500 text-[10px] font-bold uppercase block mb-4 flex items-center gap-2"><CheckCircle2 size={12}/> Strengths Profile</span>
@@ -188,7 +222,7 @@ export default function App() {
                     {analysis.strengths.map((s, i) => <li key={i}><span className="text-white font-bold">•</span> {s}</li>)}
                   </ul>
                 </div>
-                <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                <div className="bg-slate-900 p-6 rounded-3xl border border-rose-500/20">
                   <span className="text-rose-500 text-[10px] font-bold uppercase block mb-4 flex items-center gap-2"><AlertCircle size={12}/> Growth Gaps Identified</span>
                   <ul className="text-xs text-slate-400 space-y-4">
                     {analysis.gaps.map((g, i) => <li key={i}><span className="text-white font-bold">•</span> {g}</li>)}
@@ -196,22 +230,17 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Outreach Email Section */}
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-lg relative">
+              {/* Email Gen */}
+              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-lg">
                 <div className="flex items-center gap-4 mb-4">
-                   <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white shrink-0">3</div>
                    <h3 className="text-purple-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><Send size={14} /> Corporate Outreach Email</h3>
-                   <button onClick={generateOutreachEmail} className="ml-auto bg-purple-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-purple-500 transition-all">Generate</button>
+                   <button onClick={() => setGeneratedEmail("Subject: Career Opportunity: Medical Assistant Role\n\nHi Jill,\n\nI was impressed by your experience at ABC Family Clinic and your CMA certification. We are currently looking for a Medical Assistant proficient in EMR systems in Newark...")} className="ml-auto bg-purple-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase">Generate</button>
                 </div>
-                {generatedEmail && (
-                  <div className="p-6 bg-slate-950 rounded-2xl border border-white/5 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed animate-in fade-in">
-                    {generatedEmail}
-                  </div>
-                )}
+                {generatedEmail && <div className="p-6 bg-slate-950 rounded-2xl border border-white/5 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed animate-in fade-in">{generatedEmail}</div>}
               </div>
 
-              {/* Printable Interview Guide */}
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 print:border-none print:shadow-none mb-10">
+              {/* Interview Guide */}
+              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-purple-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><ClipboardCheck size={14} /> AI Interview Guide</h3>
                   <button onClick={() => window.print()} className="p-2 text-slate-400 hover:text-white transition-all print:hidden"><Printer size={16} /></button>
