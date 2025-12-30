@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sparkles, CheckCircle, Zap, FileText, Type, Loader2, BrainCircuit, Target, Lock, Search, BookOpen, AlertCircle, X, ChevronRight, ShieldCheck } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Sparkles, CheckCircle, Zap, FileText, Loader2, BrainCircuit, Target, Lock, Search, BookOpen, X, ChevronRight, ShieldCheck, Unlock } from 'lucide-react';
 
 const RecruitIQApp = () => {
   // --- STATE ---
@@ -18,13 +18,11 @@ const RecruitIQApp = () => {
     if (file) setFiles(prev => ({ ...prev, [activeTab === 1 ? 'jd' : 'resume']: file }));
   };
 
-  // One-click populates BOTH for instant testing
   const useSample = () => {
     setFiles({
       jd: { name: "Senior_React_Developer_JD.pdf", size: "1.2MB" },
       resume: { name: "Alex_Candidate_Resume_2025.pdf", size: "845KB" }
     });
-    // Auto-switch to "ready" state visually if user was looking at text
     setMode({ 1: 'file', 2: 'file' }); 
   };
 
@@ -38,8 +36,6 @@ const RecruitIQApp = () => {
   const handleScreenCandidate = () => {
     setIsProcessing(true);
     const stages = ["Parsing Documents...", "Extracting Keywords...", "Analyzing Skill Gaps...", "Calculating Synergy..."];
-    
-    // Simulate complex AI processing stages
     let step = 0;
     const interval = setInterval(() => {
       setProcessingStage(stages[step]);
@@ -53,35 +49,30 @@ const RecruitIQApp = () => {
     }, 3500);
   };
 
-  // --- COMPONENTS ---
-  
-  // The Locked Feature Card
-  const FeatureCard = ({ title, icon: Icon, color, delay }) => (
-    <div className={`relative bg-[#161b22] border border-white/5 rounded-2xl overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-700`} style={{animationDelay: delay}}>
-      {/* Visible Header */}
-      <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
-        <div className={`p-2 rounded-lg ${color} bg-opacity-10 text-opacity-100`}>
-          <Icon size={16} className={color.replace('bg-', 'text-')} />
+  // --- COMPONENT: UNLOCKED FEATURE CARD ---
+  const FeatureCard = ({ title, icon: Icon, color, delay, score, content }) => (
+    <div className={`bg-[#161b22] border border-white/5 rounded-2xl overflow-hidden group animate-in fade-in slide-in-from-bottom-4 duration-700 hover:border-blue-500/30 transition-all`} style={{animationDelay: delay}}>
+      {/* Header */}
+      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${color} bg-opacity-10 text-opacity-100`}>
+            <Icon size={16} className={color.replace('bg-', 'text-')} />
+          </div>
+          <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">{title}</h3>
         </div>
-        <h3 className="text-xs font-black uppercase tracking-widest text-slate-300">{title}</h3>
+        {score && <span className={`text-xs font-black px-2 py-1 rounded bg-black/40 ${parseInt(score) > 80 ? 'text-emerald-500' : 'text-orange-500'}`}>{score}</span>}
       </div>
       
-      {/* Blurred Content */}
-      <div className="p-6 relative">
-        <div className="space-y-3 filter blur-sm select-none opacity-50">
-          <div className="h-2 bg-slate-700 rounded w-3/4"></div>
-          <div className="h-2 bg-slate-700 rounded w-full"></div>
-          <div className="h-2 bg-slate-700 rounded w-5/6"></div>
-          <div className="h-2 bg-slate-700 rounded w-4/5"></div>
-        </div>
-        
-        {/* Lock Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] transition-all group-hover:bg-black/70">
-          <div className="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-[0_0_15px_#f97316] mb-3 transform group-hover:scale-110 transition-transform">
-            <Lock size={18} />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white">Upgrade to Unlock</span>
-        </div>
+      {/* UNLOCKED Content */}
+      <div className="p-5 relative">
+        <ul className="space-y-3">
+          {content.map((item, i) => (
+            <li key={i} className="text-[11px] text-slate-400 font-medium flex items-start gap-2 leading-relaxed">
+              <span className={`mt-1 w-1 h-1 rounded-full ${color}`}></span>
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -101,16 +92,16 @@ const RecruitIQApp = () => {
           </h1>
         </div>
         <div className="flex bg-[#0d1117] p-1 rounded-xl border border-white/10 shadow-lg">
-          <div className="px-4 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg shadow-sm">FREE TIER</div>
-          <div className="px-4 py-1.5 text-[10px] font-bold text-slate-500 flex items-center gap-1">
-            <Lock size={10} /> PRO
+          <div className="px-4 py-1.5 text-[10px] font-bold text-slate-500 hover:text-white transition-colors">FREE</div>
+          <div className="px-4 py-1.5 text-[10px] font-bold text-white bg-blue-600 rounded-lg shadow-sm flex items-center gap-1">
+             <Unlock size={10} /> PRO ACTIVE
           </div>
         </div>
       </header>
 
       <main className={`max-w-6xl mx-auto space-y-6 transition-all duration-700 ${showResultsModal ? 'blur-xl opacity-30 scale-95 pointer-events-none' : ''}`}>
         
-        {/* QUICK START (Horizontal & Top) */}
+        {/* QUICK START */}
         <div className="bg-[#0d1117] border border-white/5 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-blue-600/5 to-transparent pointer-events-none" />
           <div className="flex items-center gap-3 pr-8 md:border-r border-white/5 min-w-max">
@@ -132,10 +123,7 @@ const RecruitIQApp = () => {
 
         {/* MAIN INPUT AREA */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[500px]">
-          
-          {/* Left Column: Toggles & Inputs */}
           <div className="lg:col-span-12 bg-[#0d1117] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col">
-            {/* Tabs */}
             <div className="flex bg-black/40 p-2 gap-2 border-b border-white/5">
               {[1, 2].map((num) => (
                 <button key={num} onClick={() => setActiveTab(num)} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-3 text-xs font-black transition-all ${activeTab === num ? 'bg-[#1c2128] text-blue-400 shadow-inner ring-1 ring-white/5' : 'text-slate-600 hover:text-slate-400'}`}>
@@ -147,9 +135,7 @@ const RecruitIQApp = () => {
               ))}
             </div>
 
-            {/* Input Zone */}
             <div className="flex-1 p-8 flex flex-col items-center justify-center relative">
-               {/* Mode Switcher */}
                <div className="absolute top-6 right-6 flex bg-black/40 rounded-full p-1 border border-white/5">
                  <button onClick={() => setMode(p => ({...p, [activeTab]: 'file'}))} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${mode[activeTab] === 'file' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>File</button>
                  <button onClick={() => setMode(p => ({...p, [activeTab]: 'text'}))} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${mode[activeTab] === 'text' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Text</button>
@@ -207,12 +193,9 @@ const RecruitIQApp = () => {
             : 'bg-[#0d1117] text-slate-700 border border-white/5 cursor-not-allowed'
           }`}
         >
-          {/* Step 3 Badge */}
           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all ${
             isReady ? 'bg-orange-500 text-white shadow-[0_0_20px_#f97316] rotate-0' : 'bg-slate-800 rotate-180'
-          }`}>
-            3
-          </div>
+          }`}>3</div>
 
           <span className="flex items-center gap-4 uppercase text-lg">
             {isProcessing ? (
@@ -227,16 +210,14 @@ const RecruitIQApp = () => {
               </>
             )}
           </span>
-          
-          {/* Progress Bar Animation */}
           {isProcessing && <div className="absolute bottom-0 left-0 h-1.5 bg-gradient-to-r from-orange-500 via-white to-orange-500 w-full animate-shimmer" />}
         </button>
       </main>
 
-      {/* --- RESULTS MODAL (FREEMIUM) --- */}
+      {/* --- RESULTS MODAL (UNLOCKED / TESTING) --- */}
       {showResultsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-500">
-          <div className="bg-[#0b0e14] w-full max-w-5xl h-[85vh] rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
+          <div className="bg-[#0b0e14] w-full max-w-6xl h-[85vh] rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
             
             {/* Modal Header */}
             <div className="flex justify-between items-center px-8 py-6 border-b border-white/5 bg-[#161b22]">
@@ -246,24 +227,23 @@ const RecruitIQApp = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Analysis <span className="text-blue-500">Complete</span></h2>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Free Tier Report</p>
+                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><Unlock size={10}/> Pro Features Unlocked</p>
                 </div>
               </div>
-              <button onClick={() => setShowResultsModal(false)} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white hover:bg-red-500/20 hover:rotate-90 transition-all">
+              <button onClick={() => setShowResultsModal(false)} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white hover:bg-red-500/20 transition-all">
                 <X size={20} />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
               
-              {/* LEFT: THE SCORE (FREE) */}
-              <div className="lg:col-span-5 flex flex-col">
+              {/* LEFT: THE SCORE */}
+              <div className="lg:col-span-4 flex flex-col">
                 <div className="bg-[#161b22] border border-white/5 rounded-3xl p-10 flex flex-col items-center justify-center text-center shadow-2xl relative overflow-hidden h-full">
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-blue-500 via-emerald-400 to-blue-500" />
                   <span className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase mb-8">Overall Synergy Score</span>
                   
-                  {/* Custom Gauge */}
-                  <div className="relative flex items-center justify-center w-64 h-64 mb-6">
+                  <div className="relative flex items-center justify-center w-56 h-56 mb-6">
                     <svg className="w-full h-full transform -rotate-90">
                        <defs>
                          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -278,41 +258,69 @@ const RecruitIQApp = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-7xl font-black text-white italic tracking-tighter drop-shadow-2xl">88<span className="text-3xl text-emerald-500">%</span></span>
-                      <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">High Match</span>
+                      <span className="text-6xl font-black text-white italic tracking-tighter drop-shadow-2xl">88<span className="text-3xl text-emerald-500">%</span></span>
+                      <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mt-2 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">High Match</span>
                     </div>
                   </div>
-
-                  <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-xs">
-                    Candidate shows strong alignment with core technical requirements. <span className="text-white font-bold">Recommended for interview.</span>
+                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                    Strong alignment detected. <span className="text-white font-bold">Recommended for interview.</span>
                   </p>
                 </div>
               </div>
 
-              {/* RIGHT: LOCKED FEATURES (PRO) */}
-              <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-                 <div className="md:col-span-2 mb-2 flex items-center justify-between">
-                   <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                     <Lock size={12} className="text-orange-500" /> Premium Insights
-                   </h3>
-                   <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Locked</span>
-                 </div>
-
-                 {/* The 4 Features from your screenshot */}
-                 <FeatureCard title="ATS Optimization" icon={Search} color="bg-blue-500" delay="0s" />
-                 <FeatureCard title="Skill Gap Finder" icon={Target} color="bg-red-500" delay="0.1s" />
-                 <FeatureCard title="Keyword Suggestions" icon={BookOpen} color="bg-purple-500" delay="0.2s" />
-                 <FeatureCard title="Interview Prep" icon={BrainCircuit} color="bg-emerald-500" delay="0.3s" />
+              {/* RIGHT: UNLOCKED FEATURES */}
+              <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                  
-                 <div className="md:col-span-2 mt-4 p-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-between shadow-xl shadow-blue-900/20">
-                    <div>
-                      <h4 className="text-white font-black italic uppercase text-lg">Unlock Full Report</h4>
-                      <p className="text-blue-100 text-xs font-medium">Get deep insights, skill gaps, and interview questions.</p>
-                    </div>
-                    <button className="bg-white text-blue-600 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg">
-                      Upgrade $29.99
-                    </button>
-                 </div>
+                 <FeatureCard 
+                    title="ATS Optimization" 
+                    icon={Search} 
+                    color="bg-blue-500" 
+                    score="92/100"
+                    delay="0s" 
+                    content={[
+                        "Resume format is completely parseable.",
+                        "Standard section headings found.",
+                        "Suggestion: Add 'Typescript' to skills list for better indexing."
+                    ]}
+                 />
+                 
+                 <FeatureCard 
+                    title="Skill Gap Finder" 
+                    icon={Target} 
+                    color="bg-red-500" 
+                    delay="0.1s" 
+                    content={[
+                        "Missing: AWS Certified Solutions Architect (Preferred in JD).",
+                        "Missing: GraphQL experience explicitly stated.",
+                        "Gap: Leadership experience is 1 year below requirement."
+                    ]}
+                 />
+                 
+                 <FeatureCard 
+                    title="Keyword Match" 
+                    icon={BookOpen} 
+                    color="bg-purple-500" 
+                    score="High"
+                    delay="0.2s" 
+                    content={[
+                        "Matched: React, Node.js, Docker, CI/CD.",
+                        "Partial: 'Microservices' mentioned but context is weak.",
+                        "Missing: 'Agile Methodology' in recent roles."
+                    ]}
+                 />
+                 
+                 <FeatureCard 
+                    title="Interview Prep" 
+                    icon={BrainCircuit} 
+                    color="bg-emerald-500" 
+                    delay="0.3s" 
+                    content={[
+                        "Q1: Describe a time you optimized a slow React rendering cycle.",
+                        "Q2: How have you handled state management in large-scale apps?",
+                        "Q3: Explain your approach to containerizing a legacy Node application."
+                    ]}
+                 />
+
               </div>
 
             </div>
