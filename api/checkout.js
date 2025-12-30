@@ -4,17 +4,15 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { tier } = req.body;
-
-      // Replace these with your actual Stripe Price IDs
       const prices = {
-        professional: 'price_123_PRO',
-        executive: 'price_456_EXEC'
+        professional: 'price_YOUR_PRO_ID', 
+        executive: 'price_YOUR_EXEC_ID'
       };
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{ price: prices[tier], quantity: 1 }],
-        mode: 'subscription', // or 'payment' for one-time
+        mode: 'subscription',
         success_url: `${req.headers.origin}/?success=true`,
         cancel_url: `${req.headers.origin}/?canceled=true`,
       });
@@ -24,7 +22,6 @@ export default async function handler(req, res) {
       res.status(500).json({ error: err.message });
     }
   } else {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end('Method Not Allowed');
+    res.status(405).send('Method Not Allowed');
   }
 }
