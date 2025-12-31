@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, CheckCircle, Zap, FileText, Loader2, BrainCircuit, Target, Lock, Search, BookOpen, X, ChevronRight, ShieldCheck, Unlock, Layers, Mail, Copy, Wand2 } from 'lucide-react';
+import { Upload, Sparkles, CheckCircle, FileText, Loader2, BrainCircuit, Target, Lock, Search, BookOpen, X, ChevronRight, ShieldCheck, Unlock, Layers, Mail, Copy, Wand2 } from 'lucide-react';
 
 const RecruitIQApp = () => {
   // --- STATE ---
@@ -7,7 +7,7 @@ const RecruitIQApp = () => {
   const [textData, setTextData] = useState({ jd: "", resume: "" });
   const [activeTab, setActiveTab] = useState(1);
   const [mode, setMode] = useState({ 1: 'file', 2: 'file' });
-  const [inputCategory, setInputCategory] = useState('single'); // 'single' or 'batch'
+  const [inputCategory, setInputCategory] = useState('single');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState('Initializing...');
   const [showResultsModal, setShowResultsModal] = useState(false);
@@ -42,22 +42,39 @@ const RecruitIQApp = () => {
     <div className="min-h-screen bg-[#020408] text-slate-200 p-6 md:p-10 font-sans relative selection:bg-blue-500/30">
       <input type="file" ref={fileInputRef} className="hidden" />
 
-      {/* HEADER */}
+      {/* HEADER WITH NEW LOGO */}
       <header className="max-w-6xl mx-auto flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-900/50">
-            <Zap size={18} className="text-white fill-current" />
+          {/* NEW LOGO INTEGRATION */}
+          <div className="w-10 h-10 overflow-hidden rounded-full flex items-center justify-center bg-[#0d1117] border border-white/5 shadow-lg">
+            <img 
+              src="https://raw.githubusercontent.com/RecruitIQ/branding/main/logo.png" 
+              alt="Recruit IQ Logo" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src="https://via.placeholder.com/40?text=RIQ" 
+              }}
+            />
           </div>
-          <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">RECRUIT <span className="text-blue-500">IQ</span></h1>
+          <h1 className="text-xl font-black tracking-tighter text-white uppercase italic">
+            RECRUIT <span className="text-blue-500">IQ</span>
+          </h1>
         </div>
         <div className="flex bg-[#0d1117] p-1 rounded-xl border border-white/10">
-          <button className="px-4 py-1.5 text-[10px] font-bold bg-blue-600 text-white rounded-lg">FREE TIER</button>
+          <button className="px-4 py-1.5 text-[10px] font-bold bg-blue-600 text-white rounded-lg shadow-md">
+            STANDARD (FREE)
+          </button>
+          <button className="px-4 py-1.5 text-[10px] font-bold text-slate-500 hover:text-white transition-colors">
+            PRO ($29.99)
+          </button>
         </div>
       </header>
 
+      {/* REST OF APP LOGIC REMAINS THE SAME */}
       <main className={`max-w-6xl mx-auto space-y-6 transition-all duration-700 ${showResultsModal ? 'blur-2xl opacity-20' : ''}`}>
         
-        {/* QUICK START (Top) */}
+        {/* QUICK START */}
         <div className="bg-[#0d1117] border border-white/5 rounded-3xl p-6 shadow-2xl flex items-center gap-8">
           <div className="flex items-center gap-3 pr-8 border-r border-white/5">
             <h2 className="text-orange-500 text-[10px] font-black tracking-[0.2em] uppercase italic">Step Guide</h2>
@@ -74,7 +91,6 @@ const RecruitIQApp = () => {
 
         {/* INPUT AREA */}
         <div className="bg-[#0d1117] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden flex flex-col min-h-[480px]">
-          {/* Main Category Toggle (Single vs Batch) */}
           <div className="flex bg-black/60 p-2 gap-2 border-b border-white/5">
             <button 
               onClick={() => setInputCategory('single')}
@@ -92,7 +108,6 @@ const RecruitIQApp = () => {
 
           <div className="flex-1 p-8 flex flex-col items-center justify-center">
             {inputCategory === 'batch' ? (
-              /* PRO UPGRADE FOR BATCH */
               <div className="text-center space-y-6 max-w-sm animate-in fade-in zoom-in-95">
                 <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-3xl flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(249,115,22,0.1)]">
                   <Lock size={32} />
@@ -102,7 +117,6 @@ const RecruitIQApp = () => {
                 <button className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-orange-900/20 hover:scale-105 transition-all">Upgrade to Pro</button>
               </div>
             ) : (
-              /* SINGLE SCREEN INPUTS */
               <div className="w-full flex flex-col items-center">
                 <div className="flex bg-black/40 p-1.5 rounded-2xl mb-8 border border-white/5 w-full max-w-md">
                    {[1, 2].map(n => (
@@ -127,7 +141,7 @@ const RecruitIQApp = () => {
           onClick={handleScreenCandidate}
           className={`w-full py-8 rounded-[2.5rem] flex items-center justify-center gap-6 font-black tracking-[0.4em] transition-all relative overflow-hidden ${isReady && !isProcessing && inputCategory !== 'batch' ? 'bg-blue-600 text-white shadow-2xl' : 'bg-[#0d1117] text-slate-800'}`}
         >
-          <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs">3</div>
+          <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-black">3</div>
           <span className="uppercase">{isProcessing ? processingStage : 'Screen Candidate'}</span>
           {isProcessing && <div className="absolute bottom-0 left-0 h-1 bg-orange-500 w-full animate-shimmer" />}
         </button>
@@ -138,15 +152,14 @@ const RecruitIQApp = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300">
           <div className="bg-[#0b0e14] w-full max-w-5xl h-[90vh] rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col">
             <div className="px-10 py-8 border-b border-white/5 flex justify-between items-center bg-[#161b22]">
-              <h2 className="text-2xl font-black text-white italic uppercase italic tracking-tighter">Analysis <span className="text-blue-500">Report</span></h2>
+              <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Analysis <span className="text-blue-500">Report</span></h2>
               <button onClick={() => {setShowResultsModal(false); setOutreachEmail("");}} className="text-slate-500 hover:text-white"><X size={24} /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 lg:grid-cols-2 gap-10">
-              {/* Score & Insights */}
               <div className="space-y-8">
                 <div className="bg-[#161b22] p-10 rounded-3xl border border-white/5 flex flex-col items-center">
-                  <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] uppercase mb-6">Synergy Score</span>
+                  <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] uppercase mb-6 text-center">Synergy Score</span>
                   <div className="relative w-48 h-48 flex items-center justify-center">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="50%" cy="50%" r="45%" stroke="#1e293b" strokeWidth="10" fill="transparent" />
@@ -154,37 +167,26 @@ const RecruitIQApp = () => {
                     </svg>
                     <span className="absolute text-6xl font-black italic">88%</span>
                   </div>
-                  <div className="mt-6 flex gap-2">
-                    {['React', 'Node.js', 'AWS'].map(tag => <span key={tag} className="px-3 py-1 bg-blue-600/10 text-blue-500 rounded-full text-[9px] font-black border border-blue-500/20">{tag}</span>)}
-                  </div>
                 </div>
               </div>
 
-              {/* Outreach Section (Feature 3) */}
               <div className="bg-[#161b22] rounded-3xl border border-white/5 p-8 flex flex-col">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                    <Wand2 size={16} className="text-blue-500" /> Outreach Generator
-                  </h3>
-                  <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">AI Crafted</span>
-                </div>
-                
+                <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6 text-center">Outreach Generator</h3>
                 {outreachEmail ? (
-                  <div className="flex-1 flex flex-col animate-in fade-in duration-500">
+                  <div className="flex-1 flex flex-col">
                     <textarea 
                       readOnly 
                       value={outreachEmail} 
                       className="flex-1 w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-xs text-slate-400 font-medium leading-relaxed resize-none focus:outline-none"
                     />
                     <div className="mt-4 flex gap-3">
-                       <button className="flex-1 py-3 bg-white/5 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2 hover:bg-white/10 transition-all"><Copy size={14}/> Copy Draft</button>
-                       <button className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"><Mail size={14}/> Send via Outlook</button>
+                       <button className="flex-1 py-3 bg-white/5 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2"><Copy size={14}/> Copy Draft</button>
+                       <button className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-2"><Mail size={14}/> Send</button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-white/5 rounded-2xl">
-                    <p className="text-xs text-slate-500 font-medium mb-6">Convert this score into an interview. Generate a personalized reach-out based on their top skills.</p>
-                    <button onClick={generateOutreach} className="px-8 py-3 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:scale-105 transition-all">Generate Outreach</button>
+                    <button onClick={generateOutreach} className="px-8 py-3 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest">Generate Outreach</button>
                   </div>
                 )}
               </div>
