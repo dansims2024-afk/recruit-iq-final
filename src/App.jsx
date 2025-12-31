@@ -2,52 +2,42 @@ import React, { useState, useRef } from 'react';
 import { 
   Upload, CheckCircle, FileText, BrainCircuit, Target, Lock, 
   Search, BookOpen, X, ShieldCheck, Layers, Wand2, Printer, 
-  Download, Zap, BarChart3, AlertCircle 
+  Download, Zap, BarChart3, AlertCircle, TrendingUp, HelpCircle, ListChecks
 } from 'lucide-react';
 
 const RecruitIQApp = () => {
-  // --- TOKEN-SAFE CONFIGURATION ---
-  const BATCH_LIMIT = 25; // Lowered from 100 to protect margins
-  const [credits, setCredits] = useState(480); // Monthly credit limit (e.g., 500 total)
-  
-  // --- STATE ---
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState({ jd: null, resume: null });
+  const [textData, setTextData] = useState({ jd: "", resume: "" });
   const [activeTab, setActiveTab] = useState(1);
+  const [mode, setMode] = useState({ 1: 'text', 2: 'text' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
-  const [inputCategory, setInputCategory] = useState('single');
   const fileInputRef = useRef(null);
 
-  // --- BUSINESS LOGIC ---
-  const handleBatchUpload = (e) => {
-    const uploadedFiles = Array.from(e.target.files);
-    if (uploadedFiles.length > BATCH_LIMIT) {
-      alert(`Batch limit exceeded. Pro accounts are limited to ${BATCH_LIMIT} resumes per scan to ensure high-fidelity analysis.`);
-      setFiles(uploadedFiles.slice(0, BATCH_LIMIT));
-    } else {
-      setFiles(uploadedFiles);
-    }
+  // --- RESTORED FULL SAMPLES ---
+  const useSample = () => {
+    setMode({ 1: 'text', 2: 'text' });
+    setTextData({
+      jd: `SENIOR PRODUCT MANAGER - AI PLATFORM\n\nRole Overview:\nWe are looking for a Senior PM to lead our AI Infrastructure team. \n\nKey Requirements:\n- 8+ years of experience in technical product management.\n- Proven track record with LLM integrations and MLOps.\n- Deep experience in SQL, Python, and Data Visualization.\n- Experience managing Series B+ growth stages.`,
+      resume: `ALEX R. CANDIDATE\n\nSummary:\nTechnical Product Leader with 6.5 years of experience specializing in AI/ML scaling.\n\nExperience:\nProduct Lead @ TechFlow (3 years): Led the transition to OpenAI-based customer support bots, reducing latency by 40%.\nProduct Manager @ DataSync (3.5 years): Managed SQL-based analytics dashboard for 500+ enterprise clients.\n\nSkills:\nPython, SQL, React, AWS, LLM Fine-tuning.`
+    });
   };
 
   const handleScreenCandidate = () => {
-    if (credits < (inputCategory === 'batch' ? files.length : 1)) {
-      alert("Insufficient credits. Please upgrade your plan.");
-      return;
-    }
-    
     setIsProcessing(true);
-    // Simulate cost-safe processing
     setTimeout(() => {
       setIsProcessing(false);
       setShowResultsModal(true);
-      // Deduct credits based on usage
-      setCredits(prev => prev - (inputCategory === 'batch' ? files.length : 1));
     }, 2500);
   };
 
-  const handlePrint = () => window.print();
+  const isStepDone = (num) => {
+    const type = num === 1 ? 'jd' : 'resume';
+    return files[type] || textData[type].length > 50;
+  };
 
-  // --- LOGO ---
+  const isReady = isStepDone(1) && isStepDone(2);
+
   const SwirlLogo = ({ size = 40 }) => (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" className="flex-shrink-0">
       <defs>
@@ -68,163 +58,147 @@ const RecruitIQApp = () => {
           <SwirlLogo />
           <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">RECRUIT <span className="text-blue-500">IQ</span></h1>
         </div>
-
-        {/* TOKEN-SAFE CREDIT DASHBOARD */}
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex flex-col items-end px-4 border-r border-white/10">
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Available Credits</span>
-            <span className="text-sm font-mono font-bold text-blue-400">{credits} / 500</span>
-          </div>
-          <div className="bg-[#0d1117] p-1 rounded-xl border border-white/10 flex">
-            <button className="px-6 py-2 text-[10px] font-black bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-900/20 flex items-center gap-2">
-              <Zap size={12} fill="currentColor" /> PRO PLAN
-            </button>
-          </div>
+        <div className="bg-[#0d1117] p-1 rounded-xl border border-white/10 flex">
+          <button className="px-6 py-2 text-[10px] font-black bg-blue-600 text-white rounded-lg">PRO PLAN</button>
         </div>
       </header>
 
-      <main className={`max-w-5xl mx-auto space-y-6 no-print ${showResultsModal ? 'opacity-10 blur-2xl pointer-events-none' : ''}`}>
+      {/* Main UI */}
+      <main className={`max-w-4xl mx-auto space-y-6 no-print ${showResultsModal ? 'opacity-10 blur-2xl' : ''}`}>
         
-        {/* INPUT MODE TOGGLES */}
-        <div className="grid grid-cols-2 gap-4 bg-[#0d1117] p-2 rounded-3xl border border-white/5">
-           <button onClick={() => setInputCategory('single')} className={`py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${inputCategory === 'single' ? 'bg-[#1c2128] text-blue-400 shadow-xl' : 'text-slate-600'}`}>
-             <FileText size={16} /> Single Screen
-           </button>
-           <button onClick={() => setInputCategory('batch')} className={`py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${inputCategory === 'batch' ? 'bg-[#1c2128] text-orange-500 shadow-xl' : 'text-slate-600'}`}>
-             <Layers size={16} /> Batch Mode (Max {BATCH_LIMIT})
-           </button>
+        {/* Guide & Sample Toggle */}
+        <div className="flex justify-between items-center px-6">
+          <h2 className="text-[10px] font-black text-slate-500 tracking-[0.3em] uppercase italic">System Input</h2>
+          <button onClick={useSample} className="text-[10px] font-black text-blue-500 border border-blue-500/20 px-4 py-2 rounded-full hover:bg-blue-500 hover:text-white transition-all uppercase">Try Full Sample (JD + Resume)</button>
         </div>
 
-        {/* MAIN INTERACTION AREA */}
-        <div className="bg-[#0d1117] rounded-[2.5rem] border border-white/5 p-16 text-center shadow-2xl relative overflow-hidden">
-            {/* Limit Warning for Batch */}
-            {inputCategory === 'batch' && (
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full">
-                <AlertCircle size={14} className="text-orange-500" />
-                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Token-Safe Limit: {BATCH_LIMIT} Files</span>
-              </div>
-            )}
-
-            <div className="mb-8 inline-flex p-8 rounded-[2rem] bg-blue-600/5 text-blue-500 border border-blue-500/10">
-                <Upload size={48} />
-            </div>
-            <h2 className="text-4xl font-black text-white italic mb-4 uppercase tracking-tighter">Ready to Screen</h2>
-            <p className="text-slate-500 mb-10 max-w-md mx-auto">Generate high-fidelity Synergy Reports. Your usage is protected by our automated credit-monitoring system.</p>
-            
-            <div className="flex flex-col items-center gap-4">
-              <input type="file" ref={fileInputRef} className="hidden" multiple={inputCategory === 'batch'} onChange={handleBatchUpload} />
-              <button 
-                onClick={() => isProcessing ? null : (files.length > 0 ? handleScreenCandidate() : fileInputRef.current.click())} 
-                className={`px-16 py-6 rounded-2xl font-black tracking-[0.3em] uppercase text-xs transition-all ${isProcessing ? 'bg-slate-800 text-slate-500' : 'bg-blue-600 text-white hover:scale-105 shadow-2xl shadow-blue-600/20'}`}
-              >
-                  {isProcessing ? "Analyzing Token Usage..." : (files.length > 0 ? `Screen ${files.length} Candidates` : "Select Files")}
+        <div className="bg-[#0d1117] rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col shadow-2xl">
+          <div className="flex bg-black/40 p-2 gap-2 border-b border-white/5">
+            {[1, 2].map((num) => (
+              <button key={num} onClick={() => setActiveTab(num)} className={`flex-1 py-4 rounded-2xl flex items-center justify-center gap-3 text-xs font-black transition-all ${activeTab === num ? 'bg-[#1c2128] text-blue-400' : 'text-slate-600'}`}>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${isStepDone(num) ? 'bg-emerald-500 text-white' : 'bg-slate-800'}`}>
+                  {isStepDone(num) ? <CheckCircle size={12} /> : num}
+                </div>
+                {num === 1 ? 'JOB DESCRIPTION' : 'CANDIDATE RESUME'}
               </button>
-              {files.length > 0 && <button onClick={() => setFiles([])} className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-white">Clear Queue</button>}
-            </div>
+            ))}
+          </div>
+
+          <div className="p-10">
+            <textarea 
+              value={activeTab === 1 ? textData.jd : textData.resume}
+              onChange={(e) => setTextData(prev => ({ ...prev, [activeTab === 1 ? 'jd' : 'resume']: e.target.value }))}
+              placeholder={`Paste the ${activeTab === 1 ? 'Job Description' : 'Resume'} text here...`}
+              className="w-full h-64 bg-black/20 border border-white/5 rounded-[2rem] p-8 text-sm text-slate-400 focus:outline-none focus:border-blue-500/50 resize-none font-mono transition-all"
+            />
+          </div>
         </div>
+
+        <button 
+          disabled={!isReady || isProcessing}
+          onClick={handleScreenCandidate}
+          className={`w-full py-8 rounded-[2rem] flex items-center justify-center gap-4 font-black tracking-[0.4em] transition-all ${isReady ? 'bg-blue-600 text-white shadow-2xl' : 'bg-[#0d1117] text-slate-800 border border-white/5 opacity-50'}`}
+        >
+          {isProcessing ? <Loader2 className="animate-spin" /> : <Sparkles size={20} className="text-orange-400" />}
+          {isProcessing ? "PROCESSING ANALYSIS..." : "SCREEN CANDIDATE"}
+        </button>
       </main>
 
-      {/* THE PRINTABLE SYNERGY REPORT */}
+      {/* THE DEEP-DIVE PRINTABLE REPORT */}
       {showResultsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-10 bg-black/95 backdrop-blur-3xl overflow-y-auto animate-in fade-in zoom-in-95 duration-300">
-          <div className="bg-white text-slate-900 w-full max-w-4xl min-h-screen md:min-h-0 md:rounded-[3rem] shadow-2xl overflow-hidden print:shadow-none print:m-0 flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-10 bg-black/95 backdrop-blur-3xl overflow-y-auto">
+          <div className="bg-white text-slate-900 w-full max-w-4xl rounded-none md:rounded-[2rem] shadow-2xl flex flex-col print:shadow-none print:m-0">
             
-            {/* UI Bar (Hidden on Print) */}
             <div className="bg-slate-100 px-10 py-6 flex justify-between items-center no-print border-b border-slate-200">
-               <div className="flex items-center gap-3">
-                  <BarChart3 size={18} className="text-blue-600" />
-                  <span className="text-[11px] font-black text-slate-600 uppercase tracking-[0.2em]">Hiring Manager Assessment</span>
-               </div>
+               <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Recruit IQ Synergy Audit</span>
                <div className="flex gap-3">
-                 <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
-                    <Printer size={14} /> Print / Save as PDF
+                 <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+                    <Printer size={14} /> Download PDF
                  </button>
-                 <button onClick={() => setShowResultsModal(false)} className="p-3 hover:bg-slate-200 rounded-full text-slate-400 transition-colors"><X size={24} /></button>
+                 <button onClick={() => setShowResultsModal(false)} className="p-3 hover:bg-slate-200 rounded-full text-slate-400"><X size={24} /></button>
                </div>
             </div>
 
-            {/* PRINTABLE PAGE CONTENT */}
             <div className="p-16 print:p-10 flex-1">
+              {/* Header */}
               <div className="flex justify-between items-start border-b-[6px] border-slate-900 pb-10 mb-10">
-                <div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <SwirlLogo size={40} />
-                    <h1 className="text-2xl font-black tracking-tighter italic uppercase">RECRUIT <span className="text-blue-600">IQ</span></h1>
-                  </div>
-                  <div className="bg-slate-900 text-white text-[9px] font-black px-3 py-1 rounded inline-block uppercase tracking-widest">Candidate Synergy Assessment</div>
+                <div className="flex items-center gap-4">
+                  <SwirlLogo size={40} />
+                  <h1 className="text-2xl font-black tracking-tighter italic uppercase italic tracking-tighter">RECRUIT <span className="text-blue-600">IQ</span></h1>
                 </div>
                 <div className="text-right">
                   <div className="text-6xl font-black italic text-blue-600 leading-none">88%</div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Synergy Match Score</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Synergy Score</p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-16 mb-12">
-                <div>
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b-2 border-slate-100 pb-2">Target Position</h3>
-                  <p className="font-bold text-xl text-slate-900 uppercase italic tracking-tight">Senior Software Architect</p>
-                </div>
-                <div>
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b-2 border-slate-100 pb-2">Analysis Context</h3>
-                  <p className="font-bold text-xl text-slate-900 uppercase italic tracking-tight">Hiring Pipeline #402</p>
+              {/* Analysis Grid */}
+              <div className="mb-12">
+                <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <ShieldCheck size={16} /> Executive Deep-Dive
+                </h3>
+                <div className="space-y-6">
+                  <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2rem]">
+                    <h4 className="text-[10px] font-black text-slate-800 uppercase mb-3">Strength Analysis</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium">Candidate demonstrates exceptional technical alignment in AI infrastructure. Their direct experience with LLM orchestration and MLOps at TechFlow mirrors the core requirements of this role. Their trajectory suggests they are ready for the Series B scaling challenges we face.</p>
+                  </div>
+
+                  <div className="p-8 bg-orange-50/30 border border-orange-100 rounded-[2rem]">
+                    <h4 className="text-[10px] font-black text-orange-600 uppercase mb-3">Gap Mitigation Strategy</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed font-medium italic">"The management tenure (6.5 years vs 8 preferred) is the primary gap. However, the complexity of the teams they managed suggests the depth of experience is sufficient. Calibrate during the interview on their ability to handle large-scale cross-functional politics."</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-blue-50/50 p-10 rounded-[2rem] mb-12 border border-blue-100 relative">
-                <div className="absolute -top-4 left-10 bg-blue-600 text-white px-4 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">Executive Summary</div>
-                <p className="text-sm leading-relaxed text-slate-700 font-medium italic">
-                  "This candidate demonstrates world-class alignment with our scaling architecture. Their experience 
-                  transitioning legacy systems to serverless environments is a 100% match for our Q3 goals. While 
-                  their management experience is slightly under the 8-year preference, their technical leadership 
-                  at previous unicorns compensates for the gap."
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-12">
-                <div>
-                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <CheckCircle size={14} /> Critical Assets
-                  </h4>
-                  <ul className="space-y-4">
-                    {[
-                      "Distributed Systems expertise (Node/Go)",
-                      "Expert-level AWS/Terraform automation",
-                      "High cultural synergy with lean teams",
-                      "Data-driven architecture decisions"
-                    ].map((item, i) => (
-                      <li key={i} className="text-[11px] font-bold text-slate-800 flex gap-3 items-start">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span> {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <AlertCircle size={14} /> Calibration Notes
-                  </h4>
-                  <ul className="space-y-4">
-                    {[
-                      "Lacks experience with APAC timezones",
-                      "Formal Kubernetes cert is expired",
-                      "Salary expectations: Top Quartile"
-                    ].map((item, i) => (
-                      <li key={i} className="text-[11px] font-bold text-slate-800 flex gap-3 items-start">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 flex-shrink-0"></span> {item}
-                      </li>
-                    ))}
-                  </ul>
+              {/* THE BOTTOM DETAIL SECTION: Requirement vs Evidence Table */}
+              <div className="mb-12">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <ListChecks size={16} /> Technical Evidence Matrix
+                </h3>
+                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-900 text-white">
+                      <tr>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Requirement</th>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest">Candidate Evidence</th>
+                        <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-center">Match</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {[
+                        { req: "Technical PM (8+ Years)", ev: "6.5 years total; Lead role at TechFlow", match: "80%" },
+                        { req: "AI / LLM Integration", ev: "Implemented OpenAI bots; MLOps pipeline lead", match: "100%" },
+                        { req: "SQL / Python Proficiency", ev: "Managed enterprise analytics dashboards", match: "100%" },
+                        { req: "AWS / Cloud Infrastructure", ev: "AWS CloudFormation & S3 architecture", match: "90%" }
+                      ].map((item, i) => (
+                        <tr key={i}>
+                          <td className="px-6 py-4 text-[11px] font-bold text-slate-800">{item.req}</td>
+                          <td className="px-6 py-4 text-[11px] text-slate-500 leading-relaxed">{item.ev}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md">{item.match}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
-              <div className="mt-24 pt-10 border-t-2 border-slate-100 flex justify-between items-center opacity-50">
-                <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Confidential Recruitment Document • {new Date().toLocaleDateString()}</p>
-                <div className="flex items-center gap-2">
-                   <SwirlLogo size={16} />
-                   <span className="text-[9px] font-black tracking-tighter uppercase italic text-slate-900">RECRUIT <span className="text-blue-600">IQ</span></span>
+              {/* Interview Strategy Footer */}
+              <div className="grid grid-cols-2 gap-8 border-t border-slate-100 pt-10">
+                <div className="space-y-2">
+                  <h5 className="text-[9px] font-black text-slate-400 uppercase">Verification Question</h5>
+                  <p className="text-[11px] text-slate-700 font-bold italic">"How did you handle model latency issues during the OpenAI transition at TechFlow?"</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-2 italic">Official Recruitment Audit</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <SwirlLogo size={20} />
+                    <span className="text-xs font-black tracking-tighter uppercase italic tracking-tighter">RECRUIT <span className="text-blue-600">IQ</span></span>
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -232,10 +206,9 @@ const RecruitIQApp = () => {
       <style jsx>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; padding: 0 !important; }
-          .fixed { position: relative !important; }
-          .bg-black\/95 { background: white !important; }
-          .backdrop-blur-3xl { backdrop-filter: none !important; }
+          body { background: white !important; }
+          .fixed { position: static !important; }
+          .bg-black\/95 { background: transparent !important; }
         }
       `}</style>
     </div>
