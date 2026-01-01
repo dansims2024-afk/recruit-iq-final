@@ -1,124 +1,108 @@
 import React, { useState } from 'react';
-// Make sure to npm install lucide-react first!
-import { Download, Upload, Mail, TrendingUp, AlertTriangle, CheckCircle, MessageSquare } from 'lucide-react';
 
 const IntelligenceApp = () => {
-  const [fileName, setFileName] = useState(null);
+  const [fileName, setFileName] = useState("");
 
-  // Feature: Quantifiable Strengths & Gaps
-  const reportData = {
-    strengths: [
-      { area: "Revenue Growth", metric: "32% increase in YoY ARR ($1.2M)", impact: "High" },
-      { area: "Retention", metric: "98% client retention rate over 24 months", impact: "High" }
-    ],
-    gaps: [
-      { area: "Market Share", metric: "Currently holds <2% of APAC region", impact: "Medium" },
-      { area: "Tech Debt", metric: "Legacy system causes 4.5s latency in checkout", impact: "High" }
+  const data = {
+    intel: {
+      salary: "$160,000 - $195,000",
+      demand: "Aggressive",
+      competitors: ["Salesforce", "HubSpot", "Zendesk"]
+    },
+    analysis: [
+      { type: "Strength", area: "Efficiency", metric: "Automated 40% of manual reporting, saving 15 hrs/week.", score: "94%" },
+      { type: "Strength", area: "Revenue", metric: "Attributed to $3.1M in expansion revenue in FY25.", score: "88%" },
+      { type: "Gap", area: "Global Ops", metric: "Limited to US/EMEA; lacks experience in APAC scaling.", score: "42%" },
+      { type: "Gap", area: "Security", metric: "No direct experience with HIPAA compliance protocols.", score: "30%" }
     ]
   };
 
-  // Feature: Download to Word (Mock functionality)
-  const handleDownload = () => {
-    const header = "MARKET INTELLIGENCE & GAP ANALYSIS\n" + "=".repeat(30) + "\n\n";
-    const body = reportData.strengths.map(s => `[STRENGTH] ${s.area}: ${s.metric}`).join("\n");
-    const blob = new Blob([header + body], { type: 'application/msword' });
+  const downloadDoc = () => {
+    const text = `INTELLIGENCE REPORT\n\nMARKET INTEL:\nSalary: ${data.intel.salary}\n\nSTRENGTHS/GAPS:\n` + 
+                 data.analysis.map(a => `${a.type}: ${a.area} - ${a.metric}`).join("\n");
+    const blob = new Blob([text], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "Market_Intelligence_Report.doc";
+    link.href = url;
+    link.download = "Intelligence_Report.doc";
     link.click();
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header & Upload/Download Controls */}
-      <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-gray-800">Intelligence Dashboard</h1>
-          <label className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition">
-            <Upload size={18} />
-            <span>{fileName ? fileName : "Upload Data"}</span>
-            <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files[0].name)} />
+    <div style={{ padding: '30px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      
+      {/* HEADER SECTION */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '25px' }}>
+        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Dashboard Intelligence</h1>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <label style={{ cursor: 'pointer', backgroundColor: '#2563eb', color: '#fff', padding: '10px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: '500' }}>
+            Upload File {fileName && `(${fileName})`}
+            <input type="file" style={{ display: 'none' }} onChange={(e) => setFileName(e.target.files[0].name)} />
           </label>
+          <button onClick={downloadDoc} style={{ cursor: 'pointer', backgroundColor: '#1e293b', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: '8px', fontSize: '14px' }}>
+            Download Word Doc
+          </button>
         </div>
-        <button onClick={handleDownload} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition">
-          <Download size={18} /> Download Word Doc
-        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Market Intelligence Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-2 mb-4 text-blue-600 font-bold">
-            <TrendingUp size={20} />
-            <h2>Market Intelligence</h2>
-          </div>
-          <div className="space-y-3 text-sm text-gray-600">
-            <p>• Competitor volatility index: <strong>4.2 (Stable)</strong></p>
-            <p>• Emerging Tech Trend: <strong>Generative UI (+115% YoY)</strong></p>
-            <p>• Key Player Activity: <strong>Meta hiring 400+ specialists in your niche.</strong></p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        
+        {/* MARKET INTELLIGENCE */}
+        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <h2 style={{ fontSize: '16px', color: '#2563eb', marginBottom: '15px' }}>Market Intelligence</h2>
+          <div style={{ fontSize: '14px', lineHeight: '2' }}>
+            <div>Benchmark: <strong>{data.intel.salary}</strong></div>
+            <div>Demand: <span style={{ color: '#059669', fontWeight: 'bold' }}>{data.intel.demand}</span></div>
+            <div style={{ marginTop: '10px', color: '#64748b' }}>Active Competitors: {data.intel.competitors.join(', ')}</div>
           </div>
         </div>
 
-        {/* Email Outreach Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center gap-2 mb-4 text-purple-600 font-bold">
-            <Mail size={20} />
-            <h2>Email Outreach</h2>
-          </div>
-          <div className="p-3 bg-purple-50 rounded-lg text-sm text-purple-800 italic border border-purple-100">
-            "I noticed your team achieved <strong>32% growth</strong> recently. We've identified a <strong>4.5s latency gap</strong> in your checkout that, if fixed, could boost that by another 10%..."
+        {/* EMAIL OUTREACH */}
+        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <h2 style={{ fontSize: '16px', color: '#7c3aed', marginBottom: '15px' }}>Email Outreach</h2>
+          <div style={{ backgroundColor: '#f1f5f9', padding: '15px', borderRadius: '8px', fontSize: '13px', fontStyle: 'italic', color: '#334155' }}>
+            "I saw you achieved a <strong>40% automation rate</strong>. We are looking for that specific quantifiable impact to lead our next phase..."
           </div>
         </div>
 
-        {/* Detailed Strengths & Gaps Table */}
-        <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gray-50 p-4 border-b border-gray-200">
-            <h2 className="font-bold text-gray-700">Detailed Analysis (Quantifiable)</h2>
+        {/* STRENGTHS AND GAPS (QUANTIFIABLE) */}
+        <div style={{ gridColumn: '1 / -1', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+          <div style={{ padding: '15px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold' }}>
+            Strengths & Gaps (Detailed Metrics)
           </div>
-          <table className="w-full text-left">
-            <thead className="text-xs text-gray-400 uppercase bg-gray-50/50">
-              <tr>
-                <th className="p-4">Category</th>
-                <th className="p-4">Evidence & Metric</th>
-                <th className="p-4">Priority</th>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', color: '#64748b' }}>
+                <th style={{ padding: '15px 20px' }}>Type</th>
+                <th style={{ padding: '15px 20px' }}>Quantifiable Detail</th>
+                <th style={{ padding: '15px 20px' }}>Score</th>
               </tr>
             </thead>
-            <tbody className="text-sm divide-y divide-gray-100">
-              {reportData.strengths.map((s, i) => (
-                <tr key={i} className="hover:bg-green-50/30 transition">
-                  <td className="p-4 flex items-center gap-2 text-green-700 font-medium"><CheckCircle size={14}/> {s.area}</td>
-                  <td className="p-4 text-gray-600">{s.metric}</td>
-                  <td className="p-4"><span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">{s.impact}</span></td>
-                </tr>
-              ))}
-              {reportData.gaps.map((g, i) => (
-                <tr key={i} className="hover:bg-red-50/30 transition">
-                  <td className="p-4 flex items-center gap-2 text-red-700 font-medium"><AlertTriangle size={14}/> {g.area}</td>
-                  <td className="p-4 text-gray-600">{g.metric}</td>
-                  <td className="p-4"><span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">{g.impact}</span></td>
+            <tbody>
+              {data.analysis.map((row, i) => (
+                <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '15px 20px', fontWeight: 'bold', color: row.type === 'Strength' ? '#059669' : '#dc2626' }}>{row.type}</td>
+                  <td style={{ padding: '15px 20px', color: '#334155' }}>{row.metric}</td>
+                  <td style={{ padding: '15px 20px' }}>
+                    <span style={{ backgroundColor: row.type === 'Strength' ? '#dcfce7' : '#fee2e2', padding: '4px 8px', borderRadius: '12px', fontSize: '12px' }}>
+                      {row.score}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Interview Questions Section */}
-        <div className="md:col-span-2 bg-indigo-900 text-white p-6 rounded-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <MessageSquare size={20} className="text-indigo-300" />
-            <h2 className="font-bold">Targeted Interview Questions</h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="text-sm space-y-2">
-              <p className="font-bold text-indigo-200">1. Scaling Strategy:</p>
-              <p className="italic">"How would you address the 4.5s latency issue while maintaining your 98% retention rate?"</p>
-            </div>
-            <div className="text-sm space-y-2">
-              <p className="font-bold text-indigo-200">2. Market Expansion:</p>
-              <p className="italic">"What is your 90-day roadmap for moving the APAC market share above 2%?"</p>
-            </div>
-          </div>
+        {/* INTERVIEW QUESTIONS */}
+        <div style={{ gridColumn: '1 / -1', backgroundColor: '#1e293b', color: '#fff', padding: '25px', borderRadius: '12px' }}>
+          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>Targeted Interview Questions</h2>
+          <ul style={{ paddingLeft: '20px', fontSize: '14px', lineHeight: '1.8', color: '#cbd5e1' }}>
+            <li>"Walk me through the technical stack you used to achieve the 40% automation metric."</li>
+            <li>"Given your lack of APAC experience, how would you approach cultural localization for our Tokyo team?"</li>
+          </ul>
         </div>
+
       </div>
     </div>
   );
