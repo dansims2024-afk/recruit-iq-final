@@ -9,24 +9,31 @@ function App() {
       alignItems: 'center', 
       justifyContent: 'center', 
       height: '100vh', 
+      backgroundColor: '#0f172a', // Dark blue background
+      color: '#f8fafc',           // Bright white text
       fontFamily: 'sans-serif',
       textAlign: 'center'
     }}>
-      {/* This header is now visible to EVERYONE immediately */}
-      <h1>My App is Live!</h1>
-      <p>Welcome to the main page. This is now public!</p>
+      <h1 style={{ fontSize: '3rem', marginBottom: '10px' }}>My App is Live!</h1>
+      <p style={{ fontSize: '1.2rem', color: '#94a3b8' }}>Welcome to the main page. This is now public!</p>
 
-      <div style={{ marginTop: '20px' }}>
-        {/* If a user is logged in, show their profile button in the corner */}
+      <div style={{ marginTop: '30px' }}>
         <SignedIn>
           <p>You are logged in:</p>
-          <UserButton />
+          <UserButton afterSignOutUrl="/"/>
         </SignedIn>
 
-        {/* If they aren't logged in, just show a small optional sign-in link */}
         <SignedOut>
           <SignInButton mode="modal">
-            <button style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+            <button style={{ 
+              padding: '10px 20px', 
+              backgroundColor: '#3b82f6', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '5px', 
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}>
               Sign in (Optional)
             </button>
           </SignInButton>
