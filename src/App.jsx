@@ -1,159 +1,127 @@
 import React, { useState } from 'react';
-// Ensure you run: npm install lucide-react
-import { Download, Upload, Mail, BarChart2, AlertCircle, CheckCircle, FileText } from 'lucide-react';
+// Make sure to npm install lucide-react first!
+import { Download, Upload, Mail, TrendingUp, AlertTriangle, CheckCircle, MessageSquare } from 'lucide-react';
 
-const AppDashboard = () => {
-  const [isUploading, setIsUploading] = useState(false);
+const IntelligenceApp = () => {
+  const [fileName, setFileName] = useState(null);
 
-  // Mock Data for the requested features
-  const marketIntel = {
-    avgSalary: "$155,000",
-    demandLevel: "Extreme",
-    competitorHiring: ["OpenAI", "Anthropic", "Tesla"],
-    skillTrend: "+40% growth in Agentic Workflows"
-  };
-
-  const analysis = {
+  // Feature: Quantifiable Strengths & Gaps
+  const reportData = {
     strengths: [
-      { metric: "Revenue Impact", detail: "Generated $2.4M in new pipeline within 6 months.", score: 95 },
-      { metric: "Efficiency", detail: "Reduced cloud infrastructure costs by 30% ($12k/mo).", score: 90 }
+      { area: "Revenue Growth", metric: "32% increase in YoY ARR ($1.2M)", impact: "High" },
+      { area: "Retention", metric: "98% client retention rate over 24 months", impact: "High" }
     ],
     gaps: [
-      { metric: "Leadership Span", detail: "Experience limited to teams of <10; role requires 50+.", score: 50 },
-      { metric: "Compliance", detail: "No direct experience with SOC2 or ISO 27001 audits.", score: 35 }
+      { area: "Market Share", metric: "Currently holds <2% of APAC region", impact: "Medium" },
+      { area: "Tech Debt", metric: "Legacy system causes 4.5s latency in checkout", impact: "High" }
     ]
   };
 
-  // Feature: Download Button Logic
+  // Feature: Download to Word (Mock functionality)
   const handleDownload = () => {
-    const content = `Report: Strengths and Gaps\n\nStrengths:\n- ${analysis.strengths[0].detail}\nGaps:\n- ${analysis.gaps[0].detail}`;
-    const element = document.createElement("a");
-    const file = new Blob([content], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
-    element.download = "Assessment_Report.doc";
-    document.body.appendChild(element);
-    element.click();
+    const header = "MARKET INTELLIGENCE & GAP ANALYSIS\n" + "=".repeat(30) + "\n\n";
+    const body = reportData.strengths.map(s => `[STRENGTH] ${s.area}: ${s.metric}`).join("\n");
+    const blob = new Blob([header + body], { type: 'application/msword' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = "Market_Intelligence_Report.doc";
+    link.click();
   };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen text-slate-900">
-      {/* Top Navigation / Actions */}
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h1 className="text-xl font-heavy tracking-tight">Intelligence Engine v2</h1>
-        <div className="flex gap-3">
-          {/* Feature: Upload Button */}
-          <label className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition">
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      {/* Header & Upload/Download Controls */}
+      <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold text-gray-800">Intelligence Dashboard</h1>
+          <label className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition">
             <Upload size={18} />
-            <span>Upload Data</span>
-            <input type="file" className="hidden" onChange={() => setIsUploading(true)} />
+            <span>{fileName ? fileName : "Upload Data"}</span>
+            <input type="file" className="hidden" onChange={(e) => setFileName(e.target.files[0].name)} />
           </label>
-          
-          {/* Feature: Download Button */}
-          <button 
-            onClick={handleDownload}
-            className="flex items-center gap-2 border border-slate-300 px-4 py-2 rounded-lg hover:bg-slate-50 transition"
-          >
-            <Download size={18} /> Download Doc
-          </button>
         </div>
+        <button onClick={handleDownload} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition">
+          <Download size={18} /> Download Word Doc
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Feature: Market Intelligence */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center gap-2 mb-4 text-indigo-600 font-bold">
-            <BarChart2 size={20} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Market Intelligence Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2 mb-4 text-blue-600 font-bold">
+            <TrendingUp size={20} />
             <h2>Market Intelligence</h2>
           </div>
-          <div className="space-y-4 text-sm">
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Benchmark Salary</span>
-              <span className="font-semibold">{marketIntel.avgSalary}</span>
-            </div>
-            <div className="flex justify-between border-b pb-2">
-              <span className="text-slate-500">Market Demand</span>
-              <span className="text-orange-600 font-bold">{marketIntel.demandLevel}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block mb-2">Targeting Competitors:</span>
-              <div className="flex gap-2">
-                {marketIntel.competitorHiring.map(c => (
-                  <span key={c} className="bg-slate-100 px-2 py-1 rounded text-xs">{c}</span>
-                ))}
-              </div>
-            </div>
+          <div className="space-y-3 text-sm text-gray-600">
+            <p>• Competitor volatility index: <strong>4.2 (Stable)</strong></p>
+            <p>• Emerging Tech Trend: <strong>Generative UI (+115% YoY)</strong></p>
+            <p>• Key Player Activity: <strong>Meta hiring 400+ specialists in your niche.</strong></p>
           </div>
         </div>
 
-        {/* Feature: Email Outreach */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-emerald-600 font-bold">
-              <Mail size={20} />
-              <h2>Email Outreach</h2>
-            </div>
-            <button className="text-xs text-indigo-600 hover:underline">Copy Template</button>
+        {/* Email Outreach Card */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center gap-2 mb-4 text-purple-600 font-bold">
+            <Mail size={20} />
+            <h2>Email Outreach</h2>
           </div>
-          <div className="bg-slate-50 p-4 rounded-lg border border-dashed border-slate-300 text-sm leading-relaxed text-slate-600">
-            "Hi [Name], I saw your work on **{analysis.strengths[0].metric}** where you hit **{analysis.strengths[0].detail.split(' ')[1]}**. 
-            Our team is currently looking for someone with exactly that quantifiable impact..."
+          <div className="p-3 bg-purple-50 rounded-lg text-sm text-purple-800 italic border border-purple-100">
+            "I noticed your team achieved <strong>32% growth</strong> recently. We've identified a <strong>4.5s latency gap</strong> in your checkout that, if fixed, could boost that by another 10%..."
           </div>
         </div>
 
-        {/* Feature: Strengths & Gaps (Detailed/Quantifiable) */}
-        <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-5 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="font-bold">Strengths & Gaps Analysis</h2>
+        {/* Detailed Strengths & Gaps Table */}
+        <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gray-50 p-4 border-b border-gray-200">
+            <h2 className="font-bold text-gray-700">Detailed Analysis (Quantifiable)</h2>
           </div>
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-slate-400 font-medium border-b border-slate-100">
+          <table className="w-full text-left">
+            <thead className="text-xs text-gray-400 uppercase bg-gray-50/50">
+              <tr>
                 <th className="p-4">Category</th>
-                <th className="p-4">Quantifiable Metric / Evidence</th>
-                <th className="p-4 text-center">Fit Score</th>
+                <th className="p-4">Evidence & Metric</th>
+                <th className="p-4">Priority</th>
               </tr>
             </thead>
-            <tbody>
-              {analysis.strengths.map((s, i) => (
-                <tr key={i} className="border-b border-slate-50 hover:bg-emerald-50/30 transition">
-                  <td className="p-4 font-semibold text-emerald-700 flex items-center gap-2"><CheckCircle size={16}/> {s.metric}</td>
-                  <td className="p-4 text-slate-600">{s.detail}</td>
-                  <td className="p-4 text-center"><span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-bold">{s.score}%</span></td>
+            <tbody className="text-sm divide-y divide-gray-100">
+              {reportData.strengths.map((s, i) => (
+                <tr key={i} className="hover:bg-green-50/30 transition">
+                  <td className="p-4 flex items-center gap-2 text-green-700 font-medium"><CheckCircle size={14}/> {s.area}</td>
+                  <td className="p-4 text-gray-600">{s.metric}</td>
+                  <td className="p-4"><span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">{s.impact}</span></td>
                 </tr>
               ))}
-              {analysis.gaps.map((g, i) => (
-                <tr key={i} className="border-b border-slate-50 hover:bg-red-50/30 transition">
-                  <td className="p-4 font-semibold text-red-700 flex items-center gap-2"><AlertCircle size={16}/> {g.metric}</td>
-                  <td className="p-4 text-slate-600">{g.detail}</td>
-                  <td className="p-4 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">{g.score}%</span></td>
+              {reportData.gaps.map((g, i) => (
+                <tr key={i} className="hover:bg-red-50/30 transition">
+                  <td className="p-4 flex items-center gap-2 text-red-700 font-medium"><AlertTriangle size={14}/> {g.area}</td>
+                  <td className="p-4 text-gray-600">{g.metric}</td>
+                  <td className="p-4"><span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">{g.impact}</span></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Feature: Interview Questions */}
-        <div className="lg:col-span-3 bg-indigo-900 text-white p-6 rounded-xl shadow-lg shadow-indigo-200">
+        {/* Interview Questions Section */}
+        <div className="md:col-span-2 bg-indigo-900 text-white p-6 rounded-xl">
           <div className="flex items-center gap-2 mb-4">
-            <FileText size={20} className="text-indigo-300" />
-            <h2 className="text-lg font-bold">Targeted Interview Guide</h2>
+            <MessageSquare size={20} className="text-indigo-300" />
+            <h2 className="font-bold">Targeted Interview Questions</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-indigo-800/50 p-4 rounded-lg border border-indigo-700">
-              <p className="text-xs uppercase tracking-wider text-indigo-300 mb-2 font-bold">Question 1</p>
-              <p className="text-sm italic">"Your data shows a 30% reduction in cloud costs. What specific trade-offs did you make to achieve that without affecting uptime?"</p>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="text-sm space-y-2">
+              <p className="font-bold text-indigo-200">1. Scaling Strategy:</p>
+              <p className="italic">"How would you address the 4.5s latency issue while maintaining your 98% retention rate?"</p>
             </div>
-            <div className="bg-indigo-800/50 p-4 rounded-lg border border-indigo-700">
-              <p className="text-xs uppercase tracking-wider text-indigo-300 mb-2 font-bold">Question 2</p>
-              <p className="text-sm italic">"Since you've primarily led teams of under 10, how would you approach the first 90 days of managing a 50-person department?"</p>
+            <div className="text-sm space-y-2">
+              <p className="font-bold text-indigo-200">2. Market Expansion:</p>
+              <p className="italic">"What is your 90-day roadmap for moving the APAC market share above 2%?"</p>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
 };
 
-export default AppDashboard;
+export default IntelligenceApp;
