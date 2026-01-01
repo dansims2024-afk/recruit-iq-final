@@ -1,5 +1,5 @@
 import React from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 
 function App() {
   return (
@@ -9,32 +9,29 @@ function App() {
       alignItems: 'center', 
       justifyContent: 'center', 
       height: '100vh', 
-      fontFamily: 'sans-serif' 
+      fontFamily: 'sans-serif',
+      textAlign: 'center'
     }}>
+      {/* This header is now visible to EVERYONE immediately */}
       <h1>My App is Live!</h1>
-      
-      {/* This section shows if you are NOT logged in */}
-      <SignedOut>
-        <p>Your connection to Clerk is working. Please sign in:</p>
-        <SignInButton mode="modal">
-          <button style={{ 
-            padding: '10px 20px', 
-            backgroundColor: '#2563eb', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '5px', 
-            cursor: 'pointer' 
-          }}>
-            Sign In
-          </button>
-        </SignInButton>
-      </SignedOut>
+      <p>Welcome to the main page. This is now public!</p>
 
-      {/* This section shows only AFTER you log in */}
-      <SignedIn>
-        <p>Success! You are securely logged in.</p>
-        <UserButton />
-      </SignedIn>
+      <div style={{ marginTop: '20px' }}>
+        {/* If a user is logged in, show their profile button in the corner */}
+        <SignedIn>
+          <p>You are logged in:</p>
+          <UserButton />
+        </SignedIn>
+
+        {/* If they aren't logged in, just show a small optional sign-in link */}
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+              Sign in (Optional)
+            </button>
+          </SignInButton>
+        </SignedOut>
+      </div>
     </div>
   );
 }
