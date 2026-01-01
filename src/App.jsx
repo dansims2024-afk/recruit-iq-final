@@ -1,111 +1,125 @@
 import React, { useState } from 'react';
 
-const IntelligenceApp = () => {
-  const [fileName, setFileName] = useState("");
+const DashboardIntelligence = () => {
+  const [activeTab, setActiveTab] = useState('analysis');
+  const [isUploading, setIsUploading] = useState(false);
 
-  const data = {
-    intel: {
-      salary: "$160,000 - $195,000",
-      demand: "Aggressive",
-      competitors: ["Salesforce", "HubSpot", "Zendesk"]
-    },
-    analysis: [
-      { type: "Strength", area: "Efficiency", metric: "Automated 40% of manual reporting, saving 15 hrs/week.", score: "94%" },
-      { type: "Strength", area: "Revenue", metric: "Attributed to $3.1M in expansion revenue in FY25.", score: "88%" },
-      { type: "Gap", area: "Global Ops", metric: "Limited to US/EMEA; lacks experience in APAC scaling.", score: "42%" },
-      { type: "Gap", area: "Security", metric: "No direct experience with HIPAA compliance protocols.", score: "30%" }
-    ]
+  // Core Data Structure
+  const marketIntel = {
+    benchmark: "$165,000 - $210,000",
+    demand: "Critical / High",
+    competitors: ["Microsoft", "Google", "Amazon Web Services"],
+    trends: ["AI-Driven Automation", "Zero-Trust Architecture"]
   };
 
-  const downloadDoc = () => {
-    const text = `INTELLIGENCE REPORT\n\nMARKET INTEL:\nSalary: ${data.intel.salary}\n\nSTRENGTHS/GAPS:\n` + 
-                 data.analysis.map(a => `${a.type}: ${a.area} - ${a.metric}`).join("\n");
-    const blob = new Blob([text], { type: 'application/msword' });
+  const analysisData = [
+    { type: 'Strength', category: 'Operational Growth', detail: 'Increased team output by 35% through Agile restructuring.', score: 96 },
+    { type: 'Strength', category: 'Revenue Impact', detail: 'Closed $4.2M in new enterprise contracts within Q3-Q4.', score: 92 },
+    { type: 'Gap', category: 'Compliance', detail: 'No previous experience with FedRAMP or high-level gov security.', score: 38 },
+    { type: 'Gap', category: 'Technical Scaling', detail: 'Lacks experience managing databases exceeding 1PB of data.', score: 25 },
+  ];
+
+  // Feature: Download to Word
+  const handleDownload = () => {
+    const content = `INTELLIGENCE REPORT\n\nMARKET INTEL:\nSalary: ${marketIntel.benchmark}\n\nANALYSIS:\n` + 
+                    analysisData.map(d => `${d.type}: ${d.category} - ${d.detail}`).join('\n');
+    const blob = new Blob([content], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = "Intelligence_Report.doc";
+    link.download = "Assessment_Report.doc";
     link.click();
   };
 
   return (
-    <div style={{ padding: '30px', backgroundColor: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-      
-      {/* HEADER SECTION */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '25px' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Dashboard Intelligence</h1>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <label style={{ cursor: 'pointer', backgroundColor: '#2563eb', color: '#fff', padding: '10px 18px', borderRadius: '8px', fontSize: '14px', fontWeight: '500' }}>
-            Upload File {fileName && `(${fileName})`}
-            <input type="file" style={{ display: 'none' }} onChange={(e) => setFileName(e.target.files[0].name)} />
+    <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      {/* Top Navigation Bar */}
+      <header style={{ backgroundColor: '#1e293b', color: 'white', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Intelligence Engine v3</h1>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <label style={{ backgroundColor: '#2563eb', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
+            <input type="file" style={{ display: 'none' }} onChange={() => setIsUploading(true)} />
+            {isUploading ? 'File Uploaded' : 'Upload Button'}
           </label>
-          <button onClick={downloadDoc} style={{ cursor: 'pointer', backgroundColor: '#1e293b', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: '8px', fontSize: '14px' }}>
+          <button onClick={handleDownload} style={{ backgroundColor: '#475569', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>
             Download Word Doc
           </button>
         </div>
-      </div>
+      </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-        
-        {/* MARKET INTELLIGENCE */}
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ fontSize: '16px', color: '#2563eb', marginBottom: '15px' }}>Market Intelligence</h2>
-          <div style={{ fontSize: '14px', lineHeight: '2' }}>
-            <div>Benchmark: <strong>{data.intel.salary}</strong></div>
-            <div>Demand: <span style={{ color: '#059669', fontWeight: 'bold' }}>{data.intel.demand}</span></div>
-            <div style={{ marginTop: '10px', color: '#64748b' }}>Active Competitors: {data.intel.competitors.join(', ')}</div>
-          </div>
+      <main style={{ maxWidth: '1200px', margin: '2rem auto', padding: '0 1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+          
+          {/* Feature: Market Intelligence */}
+          <section style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
+            <h2 style={{ color: '#2563eb', fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+               Market Intelligence
+            </h2>
+            <div style={{ fontSize: '0.9rem', color: '#374151' }}>
+              <p><strong>Salary Benchmark:</strong> {marketIntel.benchmark}</p>
+              <p><strong>Demand Level:</strong> <span style={{ color: '#059669', fontWeight: 'bold' }}>{marketIntel.demand}</span></p>
+              <p style={{ marginTop: '0.5rem' }}><strong>Target Competitors:</strong> {marketIntel.competitors.join(', ')}</p>
+            </div>
+          </section>
+
+          {/* Feature: Email Outreach */}
+          <section style={{ backgroundColor: 'white', borderRadius: '12px', padding: '1.5rem', border: '1px solid #e5e7eb' }}>
+            <h2 style={{ color: '#7c3aed', fontSize: '1rem', marginBottom: '1rem' }}>Email Outreach</h2>
+            <div style={{ backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #7c3aed', fontSize: '0.875rem', fontStyle: 'italic', color: '#4b5563' }}>
+              "I noticed your track record in <strong>{analysisData[0].category}</strong>, specifically your ability to <strong>{analysisData[0].detail}</strong>. We're looking for that level of quantifiable impact..."
+            </div>
+          </section>
         </div>
 
-        {/* EMAIL OUTREACH */}
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ fontSize: '16px', color: '#7c3aed', marginBottom: '15px' }}>Email Outreach</h2>
-          <div style={{ backgroundColor: '#f1f5f9', padding: '15px', borderRadius: '8px', fontSize: '13px', fontStyle: 'italic', color: '#334155' }}>
-            "I saw you achieved a <strong>40% automation rate</strong>. We are looking for that specific quantifiable impact to lead our next phase..."
+        {/* Feature: Strengths & Gaps (Detailed Table) */}
+        <section style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          <div style={{ padding: '1.25rem', borderBottom: '1px solid #e5e7eb', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between' }}>
+            <span>Detailed Strengths & Gaps (Quantifiable)</span>
+            <span style={{ color: '#6b7280', fontSize: '0.75rem' }}>Showing 4 Data Points</span>
           </div>
-        </div>
-
-        {/* STRENGTHS AND GAPS (QUANTIFIABLE) */}
-        <div style={{ gridColumn: '1 / -1', backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '15px 20px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold' }}>
-            Strengths & Gaps (Detailed Metrics)
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: '#64748b' }}>
-                <th style={{ padding: '15px 20px' }}>Type</th>
-                <th style={{ padding: '15px 20px' }}>Quantifiable Detail</th>
-                <th style={{ padding: '15px 20px' }}>Score</th>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+            <thead style={{ backgroundColor: '#f8fafc', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
+              <tr>
+                <th style={{ padding: '1rem' }}>Type</th>
+                <th style={{ padding: '1rem' }}>Category</th>
+                <th style={{ padding: '1rem' }}>Quantifiable Evidence</th>
+                <th style={{ padding: '1rem' }}>Score</th>
               </tr>
             </thead>
             <tbody>
-              {data.analysis.map((row, i) => (
+              {analysisData.map((row, i) => (
                 <tr key={i} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '15px 20px', fontWeight: 'bold', color: row.type === 'Strength' ? '#059669' : '#dc2626' }}>{row.type}</td>
-                  <td style={{ padding: '15px 20px', color: '#334155' }}>{row.metric}</td>
-                  <td style={{ padding: '15px 20px' }}>
-                    <span style={{ backgroundColor: row.type === 'Strength' ? '#dcfce7' : '#fee2e2', padding: '4px 8px', borderRadius: '12px', fontSize: '12px' }}>
-                      {row.score}
-                    </span>
+                  <td style={{ padding: '1rem', fontWeight: 'bold', color: row.type === 'Strength' ? '#059669' : '#dc2626' }}>{row.type}</td>
+                  <td style={{ padding: '1rem', fontWeight: '500' }}>{row.category}</td>
+                  <td style={{ padding: '1rem', color: '#4b5563' }}>{row.detail}</td>
+                  <td style={{ padding: '1rem' }}>
+                    <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '999px', height: '8px' }}>
+                      <div style={{ width: `${row.score}%`, backgroundColor: row.type === 'Strength' ? '#10b981' : '#ef4444', height: '100%', borderRadius: '999px' }} />
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
 
-        {/* INTERVIEW QUESTIONS */}
-        <div style={{ gridColumn: '1 / -1', backgroundColor: '#1e293b', color: '#fff', padding: '25px', borderRadius: '12px' }}>
-          <h2 style={{ fontSize: '18px', marginBottom: '15px' }}>Targeted Interview Questions</h2>
-          <ul style={{ paddingLeft: '20px', fontSize: '14px', lineHeight: '1.8', color: '#cbd5e1' }}>
-            <li>"Walk me through the technical stack you used to achieve the 40% automation metric."</li>
-            <li>"Given your lack of APAC experience, how would you approach cultural localization for our Tokyo team?"</li>
-          </ul>
-        </div>
-
-      </div>
+        {/* Feature: Interview Questions */}
+        <section style={{ marginTop: '2rem', backgroundColor: '#111827', borderRadius: '12px', padding: '1.5rem', color: 'white' }}>
+          <h2 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: '#93c5fd' }}>Strategic Interview Questions</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 'bold' }}>Probe Strength</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', fontStyle: 'italic' }}>"You mentioned a 35% output increase. What specific friction points did you identify in the Agile process to reach that number?"</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 'bold' }}>Address Gap</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', fontStyle: 'italic' }}>"How would your scaling strategy change if you were suddenly tasked with managing a petabyte-scale environment?"</p>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
 
-export default IntelligenceApp;
+export default DashboardIntelligence;
