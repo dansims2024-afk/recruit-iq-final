@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignUpButton } from "@clerk/clerk-react";
 
+// --- CONFIGURATION ---
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu8wOesS7Am1wf0Ilcs800"; 
+
 // --- FULL SAMPLE DATA ---
 const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect
 LOCATION: New York, NY (Hybrid)
@@ -62,7 +65,7 @@ EDUCATION:
 `;
 
 export default function Dashboard() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useUser(); 
   const [activeTab, setActiveTab] = useState('jd'); 
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -186,21 +189,19 @@ export default function Dashboard() {
     }, 1500);
   };
 
-  // --- DYNAMIC COLOR CLASSES BASED ON ACTIVE STEP ---
-  const isJd = activeTab === 'jd'; // Step 1 (Blue)
-  const isResume = activeTab === 'resume'; // Step 2 (Indigo)
-
+  // --- DYNAMIC COLOR CLASSES ---
+  const isJd = activeTab === 'jd';
+  const isResume = activeTab === 'resume';
   const activeColor = isJd ? 'blue' : 'indigo';
-  const activeBg = isJd ? 'bg-blue-600' : 'bg-indigo-600';
+  const activeHover = isJd ? 'hover:bg-blue-600/20' : 'hover:bg-indigo-600/20';
   const activeText = isJd ? 'text-blue-400' : 'text-indigo-400';
   const activeBorder = isJd ? 'border-blue-500/20' : 'border-indigo-500/20';
-  const activeHover = isJd ? 'hover:bg-blue-600/20' : 'hover:bg-indigo-600/20';
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 relative font-sans">
       
-      {/* FREE SCREEN COUNTER */}
-      {!isSignedIn && (
+      {/* FREE SCREEN COUNTER / UPGRADE BANNER */}
+      {!isSignedIn ? (
         <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Guest Mode</span>
@@ -210,9 +211,24 @@ export default function Dashboard() {
             <button className="text-xs font-bold uppercase text-emerald-400 hover:text-white transition">Sign Up to Save Data</button>
           </SignUpButton>
         </div>
+      ) : (
+        <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+             <span className="bg-blue-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Free Plan</span>
+             <p className="text-sm text-blue-200">Unlock detailed market data & unlimited screens.</p>
+          </div>
+          <a 
+            href={STRIPE_PAYMENT_LINK} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs font-bold uppercase text-blue-400 hover:text-white transition bg-blue-600/10 px-4 py-2 rounded-lg border border-blue-500/20 hover:bg-blue-600"
+          >
+            Upgrade to Elite
+          </a>
+        </div>
       )}
 
-      {/* 1-2-3 GUIDE (CONSISTENT COLORS) */}
+      {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
             <span className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0">1</span>
@@ -229,37 +245,18 @@ export default function Dashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* INPUT PANEL - DYNAMICALLY COLORED */}
+        {/* INPUT PANEL */}
         <div className={`bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative transition-colors duration-500`}>
-           
-           {/* TABS: STEP 1 (BLUE) vs STEP 2 (INDIGO) */}
            <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
-             <button 
-                onClick={() => setActiveTab('jd')} 
-                className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}
-             >
-               Step 1: Upload/Paste Job Description
-             </button>
-             <button 
-                onClick={() => setActiveTab('resume')} 
-                className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}
-             >
-               Step 2: Upload/Paste Resume
-             </button>
+             <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>Step 1: Upload/Paste Job Description</button>
+             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}>Step 2: Upload/Paste Resume</button>
            </div>
            
            <div className="mb-4 flex gap-2">
-             {/* DYNAMIC UPLOAD BUTTON COLOR */}
              <label className={`flex-1 text-center cursor-pointer ${activeHover} ${activeText} py-3 rounded-xl text-[10px] font-black uppercase border ${activeBorder} transition`}>
                 Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
              </label>
-             {/* DYNAMIC SAMPLE BUTTON COLOR */}
-             <button 
-                onClick={handleLoadSamples}
-                className={`flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition`}
-             >
-                Sample
-             </button>
+             <button onClick={handleLoadSamples} className={`flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition`}>Sample</button>
            </div>
 
            <textarea 
@@ -269,22 +266,16 @@ export default function Dashboard() {
              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
            />
            
-           {/* STEP 3 BUTTON: ALWAYS EMERALD */}
            <button onClick={handleScreen} disabled={loading} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-white">
              {loading ? "Analyzing Candidate..." : "3. Screen Candidate"}
            </button>
 
-           {/* SWIRL LOGO */}
            <div className="absolute top-4 right-4 opacity-20 hover:opacity-100 transition-opacity">
-              <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 10C30 10 10 30 10 50C10 70 30 90 50 90C70 90 90 70 90 50C90 30 70 10 50 10Z" stroke="white" strokeWidth="2" strokeDasharray="4 4"/>
-                <path d="M50 25C65 25 75 35 75 50C75 65 65 75 50 75C35 75 25 65 25 50" stroke="#3b82f6" strokeWidth="4" strokeLinecap="round"/>
-                <path d="M50 40C55 40 60 45 60 50C60 55 55 60 50 60" stroke="#10b981" strokeWidth="6" strokeLinecap="round"/>
-              </svg>
+              <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 10C30 10 10 30 10 50C10 70 30 90 50 90C70 90 90 70 90 50C90 30 70 10 50 10Z" stroke="white" strokeWidth="2" strokeDasharray="4 4"/><path d="M50 25C65 25 75 35 75 50C75 65 65 75 50 75C35 75 25 65 25 50" stroke="#3b82f6" strokeWidth="4" strokeLinecap="round"/><path d="M50 40C55 40 60 45 60 50C60 55 55 60 50 60" stroke="#10b981" strokeWidth="6" strokeLinecap="round"/></svg>
            </div>
         </div>
         
-        {/* OUTPUT PANEL - STEP 3 RESULTS (EMERALD THEME) */}
+        {/* OUTPUT PANEL */}
         <div className="h-[850px] overflow-y-auto pr-2 custom-scrollbar">
            {!analysis ? (
              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 uppercase font-black text-[10px] tracking-widest">
@@ -292,72 +283,38 @@ export default function Dashboard() {
              </div>
            ) : (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-                {/* Score & Summary */}
                 <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
-                   <div className="w-20 h-20 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4 text-white shadow-lg shadow-emerald-500/40">
-                     {analysis.score}
-                   </div>
+                   <div className="w-20 h-20 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4 text-white shadow-lg shadow-emerald-500/40">{analysis.score}</div>
                    <p className="text-slate-300 italic text-sm leading-relaxed">"{analysis.summary}"</p>
                 </div>
-
-                {/* Strengths (5) & Gaps (3) */}
+                
                 <div className="grid grid-cols-1 gap-4">
                   <div className="bg-slate-900 border border-emerald-500/20 p-8 rounded-[2rem]">
                      <h4 className="text-xs font-black uppercase text-emerald-500 mb-4 tracking-widest">5 Key Strengths</h4>
-                     <ul className="space-y-3">
-                       {analysis.strengths.map((s, i) => (
-                         <li key={i} className="text-sm text-slate-300 flex gap-3 leading-snug">
-                           <span className="text-emerald-500 font-bold text-lg">✓</span> {s}
-                         </li>
-                       ))}
-                     </ul>
+                     <ul className="space-y-3">{analysis.strengths.map((s, i) => (<li key={i} className="text-sm text-slate-300 flex gap-3 leading-snug"><span className="text-emerald-500 font-bold text-lg">✓</span> {s}</li>))}</ul>
                   </div>
                   <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-[2rem]">
                      <h4 className="text-xs font-black uppercase text-rose-500 mb-4 tracking-widest">3 Critical Gaps</h4>
-                     <ul className="space-y-3">
-                       {analysis.gaps.map((g, i) => (
-                         <li key={i} className="text-sm text-slate-300 flex gap-3 leading-snug">
-                           <span className="text-rose-500 font-bold text-lg">!</span> {g}
-                         </li>
-                       ))}
-                     </ul>
+                     <ul className="space-y-3">{analysis.gaps.map((g, i) => (<li key={i} className="text-sm text-slate-300 flex gap-3 leading-snug"><span className="text-rose-500 font-bold text-lg">!</span> {g}</li>))}</ul>
                   </div>
                 </div>
 
-                {/* Market Intelligence */}
                 <div className="bg-slate-900 border border-emerald-500/20 p-6 rounded-[2rem]">
                    <h4 className="text-[10px] font-black uppercase text-emerald-400 mb-4 tracking-widest">Market Intelligence</h4>
                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <p className="text-[9px] text-slate-500 uppercase mb-1">Est. Market Salary</p>
-                        <p className="text-lg font-bold text-white">{analysis.marketIntel.salary}</p>
-                      </div>
-                      <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                        <p className="text-[9px] text-slate-500 uppercase mb-1">Competitiveness Score</p>
-                        <p className="text-lg font-bold text-emerald-400">{analysis.marketIntel.competitiveness}</p>
-                      </div>
+                      <div className="bg-black/20 p-4 rounded-xl border border-white/5"><p className="text-[9px] text-slate-500 uppercase mb-1">Est. Market Salary</p><p className="text-lg font-bold text-white">{analysis.marketIntel.salary}</p></div>
+                      <div className="bg-black/20 p-4 rounded-xl border border-white/5"><p className="text-[9px] text-slate-500 uppercase mb-1">Competitiveness Score</p><p className="text-lg font-bold text-emerald-400">{analysis.marketIntel.competitiveness}</p></div>
                    </div>
                 </div>
 
-                {/* Strategic Interview Questions */}
                 <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2rem]">
-                   <div className="flex justify-between items-center mb-4">
-                     <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Interview Guide</h4>
-                     <button onClick={downloadInterviewGuide} className="text-[9px] font-bold uppercase bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-white transition flex items-center gap-2">
-                       <span>↓</span> Download Word Doc
-                     </button>
-                   </div>
-                   <ul className="space-y-4">
-                     {analysis.questions.map((q, i) => <li key={i} className="text-sm text-slate-300 italic border-l-2 border-slate-700 pl-4 py-1">"Q{i+1}: {q}"</li>)}
-                   </ul>
+                   <div className="flex justify-between items-center mb-4"><h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Interview Guide</h4><button onClick={downloadInterviewGuide} className="text-[9px] font-bold uppercase bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded-lg text-white transition flex items-center gap-2"><span>↓</span> Download Word Doc</button></div>
+                   <ul className="space-y-4">{analysis.questions.map((q, i) => <li key={i} className="text-sm text-slate-300 italic border-l-2 border-slate-700 pl-4 py-1">"Q{i+1}: {q}"</li>)}</ul>
                 </div>
 
-                {/* Draft Outreach */}
                 <div className="bg-slate-900 border border-emerald-500/20 p-6 rounded-[2rem]">
                    <h4 className="text-[10px] font-black uppercase text-emerald-400 mb-4 tracking-widest">Draft Outreach</h4>
-                   <div className="bg-black/20 p-6 rounded-xl text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed border border-emerald-500/10">
-                     {analysis.email}
-                   </div>
+                   <div className="bg-black/20 p-6 rounded-xl text-sm text-slate-300 font-mono whitespace-pre-wrap leading-relaxed border border-emerald-500/10">{analysis.email}</div>
                    <button onClick={() => alert("Copied to clipboard!")} className="mt-4 w-full py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-[10px] font-black uppercase rounded-xl transition">Copy to Clipboard</button>
                 </div>
              </div>
@@ -372,6 +329,7 @@ export default function Dashboard() {
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
               <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Unlock Unlimited</h2>
               <p className="text-blue-400 font-bold text-sm mb-6 uppercase tracking-widest">Recruit-IQ Elite</p>
+
               <div className="bg-slate-900/50 rounded-2xl p-6 mb-8 border border-slate-800 text-left">
                 <ul className="space-y-3">
                   <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Unlimited AI Screening & Parsing</li>
@@ -380,15 +338,30 @@ export default function Dashboard() {
                   <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> One-Click Email Outreach Generation</li>
                 </ul>
               </div>
+
               <div className="mb-8">
                 <span className="text-4xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
                 <p className="text-xs text-slate-400 mt-2">Start your <span className="text-white font-bold">3-Day Free Trial</span> today.</p>
               </div>
-              <SignUpButton mode="modal">
-                <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
-                  Start Free 3-Day Trial
-                </button>
-              </SignUpButton>
+
+              {/* LOGIC: If not signed in -> Sign Up. If signed in -> Go to Stripe */}
+              {!isSignedIn ? (
+                <SignUpButton mode="modal">
+                    <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
+                    Create Account to Start Trial
+                    </button>
+                </SignUpButton>
+              ) : (
+                <a 
+                    href={STRIPE_PAYMENT_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]"
+                >
+                    Proceed to Payment
+                </a>
+              )}
+              
               <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-[10px] font-bold uppercase text-slate-600 hover:text-slate-400">No Thanks</button>
            </div>
         </div>
