@@ -1,14 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ClerkProvider } from '@clerk/clerk-react'; // FIXED IMPORT
+import { ClerkProvider } from '@clerk/clerk-react'; // FIXED: Using React SDK
 import App from './App';
-import './index.css';
+import './index.css'; // This now points to the file created in Step 2
 
-// Import your publishable key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key");
+  console.error("Missing Publishable Key");
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
