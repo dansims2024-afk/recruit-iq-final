@@ -4,15 +4,14 @@ import Dashboard from "./components/Dashboard";
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#020617]">
       <SignedOut>
         <LandingPage />
       </SignedOut>
       <SignedIn>
         <Dashboard />
       </SignedIn>
-      {/* Persistent Footer */}
-      <footer className="mt-auto border-t p-6 text-center text-xs text-slate-500">
+      <footer className="mt-auto border-t border-slate-800 p-8 text-center text-[10px] text-slate-500 uppercase tracking-widest">
         © Core Creativity AI 2026 | Privacy | Terms | Support
       </footer>
     </div>
