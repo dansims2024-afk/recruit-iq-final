@@ -10,12 +10,11 @@ export default function App() {
   const handleSupportSubmit = () => {
     if (!supportMessage.trim()) return;
     
-    // This opens the user's default email client with the message pre-filled
+    // Trigger email client
     const subject = encodeURIComponent("Recruit-IQ Support Request");
     const body = encodeURIComponent(supportMessage);
     window.location.href = `mailto:hello@corecreativityai.com?subject=${subject}&body=${body}`;
     
-    // Close modal after triggering
     setIsSupportOpen(false);
     setSupportMessage('');
   };
@@ -30,7 +29,11 @@ export default function App() {
              alt="Recruit-IQ Logo" 
              className="w-12 h-12 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
            />
-           <span className="font-black text-xl tracking-tighter">Recruit-IQ</span>
+           {/* TITLE & TAGLINE CONTAINER */}
+           <div className="flex flex-col">
+             <span className="font-black text-xl tracking-tighter leading-none">Recruit-IQ</span>
+             <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Candidate Match Analyzer</span>
+           </div>
         </div>
         <div>
           {/* Guest Mode: Show Sign In | User Mode: Show Profile */}
@@ -57,11 +60,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-600">
            <span>© Core Creativity AI 2026</span>
            <div className="flex gap-6 items-center">
-             {/* UPDATED LINKS */}
              <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Terms & Conditions</a>
              <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Privacy Policy</a>
-             
-             {/* SUPPORT BUTTON TRIGGERS MODAL */}
              <button onClick={() => setIsSupportOpen(true)} className="hover:text-blue-500 transition uppercase tracking-widest">Support</button>
            </div>
         </div>
