@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import LandingPage from "./components/LandingPage";
 import Dashboard from "./components/Dashboard";
 
