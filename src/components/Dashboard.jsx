@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import mammoth from 'mammoth';
 
-// REQUIRED: Export default ensures App.jsx can import it
+// REQUIRED: export default function
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('jd'); 
   const [jdText, setJdText] = useState('');
