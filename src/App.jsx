@@ -8,7 +8,7 @@ export default function App() {
       {/* Universal Header */}
       <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-           {/* UPDATED LOGO PATH: Points to logo.png */}
+           {/* LOGO IMAGE: Points to 'public/logo.png' in your GitHub repo */}
            <img 
              src="/logo.png" 
              alt="Recruit-IQ Logo" 
