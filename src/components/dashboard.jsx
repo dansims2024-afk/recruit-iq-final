@@ -9,12 +9,12 @@ const handleFileUpload = (e) => {
     const arrayBuffer = event.target.result;
     
     if (file.name.endsWith('.docx')) {
-      // Use mammoth to extract text from Word files
+      // Correctly extract text from Word files
       const result = await mammoth.extractRawText({ arrayBuffer });
       const text = result.value;
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
     } else {
-      // Fallback for .txt files
+      // Standard handling for .txt or other text-based files
       const text = new TextDecoder().decode(arrayBuffer);
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
     }
