@@ -28,13 +28,21 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content: ALWAYS SHOW DASHBOARD */}
+      {/* Main Content */}
       <main className="flex-grow">
         <Dashboard />
       </main>
 
-      <footer className="p-8 text-center text-[10px] text-slate-600 uppercase tracking-widest border-t border-slate-900">
-        © Core Creativity AI 2026
+      {/* RESTORED FOOTER */}
+      <footer className="p-8 border-t border-slate-900 bg-[#020617]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-600">
+           <span>© Core Creativity AI 2026</span>
+           <div className="flex gap-6">
+             <a href="#" className="hover:text-blue-500 transition">Terms & Conditions</a>
+             <a href="#" className="hover:text-blue-500 transition">Privacy Policy</a>
+             <a href="#" className="hover:text-blue-500 transition">Support</a>
+           </div>
+        </div>
       </footer>
     </div>
   );
