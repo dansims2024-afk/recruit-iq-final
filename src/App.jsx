@@ -8,9 +8,12 @@ export default function App() {
       {/* Universal Header */}
       <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-           <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20">
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-           </div>
+           {/* UPDATED LOGO PATH: Points to logo.jpg in your public folder */}
+           <img 
+             src="/logo.jpg" 
+             alt="Recruit-IQ Logo" 
+             className="w-10 h-10 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
+           />
            <span className="font-black text-xl tracking-tighter">Recruit-IQ</span>
         </div>
         <div>
@@ -33,7 +36,7 @@ export default function App() {
         <Dashboard />
       </main>
 
-      {/* RESTORED FOOTER */}
+      {/* Footer */}
       <footer className="p-8 border-t border-slate-900 bg-[#020617]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-600">
            <span>© Core Creativity AI 2026</span>
