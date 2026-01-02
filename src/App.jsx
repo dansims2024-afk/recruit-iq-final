@@ -1,6 +1,7 @@
 import React from 'react';
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import Dashboard from "./components/Dashboard";
+import logo from "./logo.png"; // IMPORTS THE IMAGE FROM YOUR SRC FOLDER
 
 export default function App() {
   return (
@@ -8,11 +9,11 @@ export default function App() {
       {/* Universal Header */}
       <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-3">
-           {/* LOGO IMAGE: Points to 'public/logo.png' in your GitHub repo */}
+           {/* LOGO IMAGE: Uses the imported file 'logo' */}
            <img 
-             src="/logo.png" 
+             src={logo} 
              alt="Recruit-IQ Logo" 
-             className="w-10 h-10 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
+             className="w-12 h-12 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
            />
            <span className="font-black text-xl tracking-tighter">Recruit-IQ</span>
         </div>
