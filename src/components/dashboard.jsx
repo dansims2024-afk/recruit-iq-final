@@ -1,14 +1,23 @@
-// Inside your Screen Candidate function:
-const handleScreen = () => {
-  const localCount = parseInt(localStorage.getItem('screen_count') || '0');
-  
-  if (!isPremium && localCount >= 3) {
-    setShowPaywall(true); // Trigger the $29.99 popup
-    return;
-  }
-  
-  // If allowed, run the analysis...
-  localStorage.setItem('screen_count', (localCount + 1).toString());
-  setScreenCount(localCount + 1);
-  // ... rest of your screening logic
+import mammoth from 'mammoth';
+
+const handleFileUpload = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const arrayBuffer = event.target.result;
+    
+    if (file.name.endsWith('.docx')) {
+      // Use mammoth to extract text from Word files
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const text = result.value;
+      activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+    } else {
+      // Fallback for .txt files
+      const text = new TextDecoder().decode(arrayBuffer);
+      activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+    }
+  };
+  reader.readAsArrayBuffer(file);
 };
