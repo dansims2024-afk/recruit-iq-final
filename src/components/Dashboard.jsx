@@ -65,7 +65,12 @@ EDUCATION:
 `;
 
 export default function Dashboard() {
-  const { isSignedIn } = useUser(); 
+  const { isSignedIn, user } = useUser(); 
+  
+  // 1. CHECK FOR PRO STATUS
+  // We check if the user has the "isPro" tag in their metadata (we will set this via Zapier later)
+  const isPro = user?.publicMetadata?.isPro === true;
+
   const [activeTab, setActiveTab] = useState('jd'); 
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -74,7 +79,6 @@ export default function Dashboard() {
   const [showSignUpGate, setShowSignUpGate] = useState(false);
   const [guestCount, setGuestCount] = useState(0);
 
-  // Load guest usage
   useEffect(() => {
     const savedCount = localStorage.getItem('guest_screens');
     if (savedCount) setGuestCount(parseInt(savedCount));
@@ -144,6 +148,11 @@ export default function Dashboard() {
   };
 
   const handleScreen = () => {
+    // 2. LIMIT CHECK LOGIC
+    // If user is NOT signed in -> Check Guest Limit
+    // If user IS signed in BUT NOT PRO -> We force the paywall (or you can give them a few freebies)
+    // If user IS PRO -> Bypass all limits
+    
     if (!isSignedIn) {
       if (guestCount >= 3) {
         setShowSignUpGate(true);
@@ -152,6 +161,11 @@ export default function Dashboard() {
       const newCount = guestCount + 1;
       setGuestCount(newCount);
       localStorage.setItem('guest_screens', newCount.toString());
+    } else if (!isPro) {
+        // Logged in but Free Tier? For now, we Gate them immediately to force the upgrade.
+        // You can change this to allow X free screens per month later.
+        setShowSignUpGate(true);
+        return;
     }
 
     setLoading(true);
@@ -197,10 +211,16 @@ export default function Dashboard() {
   const activeText = isJd ? 'text-blue-400' : 'text-indigo-400';
   const activeBorder = isJd ? 'border-blue-500/20' : 'border-indigo-500/20';
 
+  // 3. GENERATE DYNAMIC STRIPE LINK
+  // We append the user's ID to the URL so Zapier knows WHO paid
+  const dynamicStripeLink = isSignedIn && user 
+    ? `${STRIPE_PAYMENT_LINK}?client_reference_id=${user.id}` 
+    : STRIPE_PAYMENT_LINK;
+
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 relative font-sans">
       
-      {/* FREE SCREEN COUNTER / UPGRADE BANNER */}
+      {/* BANNER LOGIC: Guest vs Free vs Pro */}
       {!isSignedIn ? (
         <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
@@ -211,14 +231,23 @@ export default function Dashboard() {
             <button className="text-xs font-bold uppercase text-emerald-400 hover:text-white transition">Sign Up to Save Data</button>
           </SignUpButton>
         </div>
+      ) : isPro ? (
+        // SHOW THIS IF PRO
+        <div className="bg-emerald-900/30 border border-emerald-500/30 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+             <span className="bg-emerald-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Elite Plan Active</span>
+             <p className="text-sm text-emerald-200">You have unlimited access.</p>
+          </div>
+        </div>
       ) : (
+        // SHOW THIS IF FREE (Signed in, but not Pro)
         <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
              <span className="bg-blue-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Free Plan</span>
              <p className="text-sm text-blue-200">Unlock detailed market data & unlimited screens.</p>
           </div>
           <a 
-            href={STRIPE_PAYMENT_LINK} 
+            href={dynamicStripeLink} 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-xs font-bold uppercase text-blue-400 hover:text-white transition bg-blue-600/10 px-4 py-2 rounded-lg border border-blue-500/20 hover:bg-blue-600"
@@ -344,7 +373,6 @@ export default function Dashboard() {
                 <p className="text-xs text-slate-400 mt-2">Start your <span className="text-white font-bold">3-Day Free Trial</span> today.</p>
               </div>
 
-              {/* LOGIC: If not signed in -> Sign Up. If signed in -> Go to Stripe */}
               {!isSignedIn ? (
                 <SignUpButton mode="modal">
                     <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
@@ -353,8 +381,8 @@ export default function Dashboard() {
                 </SignUpButton>
               ) : (
                 <a 
-                    href={STRIPE_PAYMENT_LINK}
-                    target="_blank"
+                    href={dynamicStripeLink} 
+                    target="_blank" 
                     rel="noopener noreferrer"
                     className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]"
                 >
