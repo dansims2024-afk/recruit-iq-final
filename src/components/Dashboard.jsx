@@ -338,45 +338,40 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* HIGH-IMPACT GLOWING POP-UP (Matches Image 2) */}
+      {/* FIX: SCROLLABLE POP-UP FOR SMALLER SCREENS */}
       {showSignUpGate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-           {/* Outer Darkening & Blue Glow Background Effect */}
+           {/* Dark Overlay */}
            <div className="absolute inset-0 bg-[#020617]/80 backdrop-blur-sm"></div>
-           <div className="absolute inset-0 bg-radial-gradient from-blue-600/20 via-transparent to-transparent opacity-50 pointer-events-none"></div>
            
-           {/* The Glowing Card */}
-           <div className="bg-gradient-to-b from-slate-900 via-[#0f172a] to-slate-950 border-2 border-blue-500/50 p-10 rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_60px_-15px_rgba(59,130,246,0.6)] relative overflow-hidden z-10">
+           {/* The Card - Added max-h-[90vh] and overflow-y-auto so it scrolls if too tall */}
+           <div className="bg-gradient-to-b from-slate-900 via-[#0f172a] to-slate-950 border-2 border-blue-500/50 p-6 md:p-10 rounded-3xl md:rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_60px_-15px_rgba(59,130,246,0.6)] relative overflow-hidden z-10 max-h-[90vh] overflow-y-auto">
               
-              {/* Title Header with Glow */}
-              <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter [text-shadow:_0_2px_10px_rgb(59_130_246_/_50%)]">Recruit-IQ Elite</h2>
-              <p className="text-blue-300 font-bold text-sm mb-8 uppercase tracking-widest [text-shadow:_0_1px_5px_rgb(59_130_246_/_30%)]">Unlock Your 3-Day Free Trial</p>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-2 uppercase tracking-tighter [text-shadow:_0_2px_10px_rgb(59_130_246_/_50%)]">Recruit-IQ Elite</h2>
+              <p className="text-blue-300 font-bold text-xs md:text-sm mb-6 uppercase tracking-widest [text-shadow:_0_1px_5px_rgb(59_130_246_/_30%)]">Unlock Your 3-Day Free Trial</p>
 
-              {/* PROMINENT "3-DAY FREE TRIAL" GLOWING BANNER */}
-              <div className="w-full py-5 mb-8 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 shadow-[0_0_30px_rgba(59,130,246,0.5)] flex items-center justify-center">
-                <span className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">3-DAY FREE TRIAL</span>
+              <div className="w-full py-4 mb-6 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 shadow-[0_0_30px_rgba(59,130,246,0.5)] flex items-center justify-center">
+                <span className="text-2xl md:text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">3-DAY FREE TRIAL</span>
               </div>
 
-              {/* Feature List with darker background and subtle glow */}
-              <div className="bg-blue-950/30 rounded-2xl p-6 mb-8 border border-blue-800/50 shadow-inner text-left">
-                <ul className="space-y-4">
-                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Unlimited AI Candidate Screens</li>
-                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Exclusive Market Salary Data</li>
-                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Downloadable Interview Guides</li>
-                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> One-Click Email Outreach Drafting</li>
+              <div className="bg-blue-950/30 rounded-2xl p-4 md:p-6 mb-6 border border-blue-800/50 shadow-inner text-left">
+                <ul className="space-y-3">
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg">✓</span> Unlimited AI Candidate Screens</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg">✓</span> Exclusive Market Salary Data</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg">✓</span> Downloadable Interview Guides</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg">✓</span> One-Click Email Outreach</li>
                 </ul>
               </div>
 
-              {/* Price and Buttons with enhanced glow */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                   <div className="text-center">
-                     <span className="text-5xl font-black text-white [text-shadow:_0_2px_15px_rgb(59_130_246_/_60%)]">$29.99</span><span className="text-slate-400 text-xl">/mo</span>
-                     <p className="text-lg text-white font-bold mt-2 [text-shadow:_0_1px_5px_rgb(59_130_246_/_40%)]">First 3 days are 100% free.</p>
+                     <span className="text-4xl md:text-5xl font-black text-white">$29.99</span><span className="text-slate-400 text-lg">/mo</span>
+                     <p className="text-sm md:text-lg text-white font-bold mt-2">First 3 days are 100% free.</p>
                   </div>
 
                   {!isSignedIn ? (
                     <SignUpButton mode="modal">
-                        <button className="w-full py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] active:scale-95 tracking-widest">
+                        <button className="w-full py-4 md:py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-sm md:text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] tracking-widest">
                           Start My Free 3-Day Trial
                         </button>
                     </SignUpButton>
@@ -385,7 +380,7 @@ export default function Dashboard() {
                         href={dynamicStripeLink} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="block w-full py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] active:scale-95 tracking-widest"
+                        className="block w-full py-4 md:py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-sm md:text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] tracking-widest"
                     >
                         Start My Free 3-Day Trial
                     </a>
