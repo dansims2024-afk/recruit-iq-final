@@ -23,30 +23,40 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[#020617] text-white font-sans">
       {/* Universal Header */}
       <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        
+        {/* LEFT SIDE: LOGO + BRAND */}
         <div className="flex items-center gap-3">
            <img 
              src={logo} 
              alt="Recruit-IQ Logo" 
              className="w-12 h-12 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
            />
-           {/* TITLE & TAGLINE CONTAINER */}
            <div className="flex flex-col">
              <span className="font-black text-xl tracking-tighter leading-none">Recruit-IQ</span>
-             <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Candidate Match Analyzer</span>
+             <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">by Core Creativity AI</span>
            </div>
         </div>
-        <div>
-          {/* Guest Mode: Show Sign In | User Mode: Show Profile */}
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest text-white transition border border-slate-700">
-                Sign In
-              </button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+
+        {/* RIGHT SIDE: TAGLINE + AUTH */}
+        <div className="flex items-center gap-6">
+          {/* Tagline moved here (Hidden on mobile phones for space) */}
+          <span className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            Candidate Match Analyzer
+          </span>
+
+          <div>
+            {/* Guest Mode: Show Sign In | User Mode: Show Profile */}
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest text-white transition border border-slate-700">
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </div>
         </div>
       </header>
 
