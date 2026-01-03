@@ -66,9 +66,6 @@ EDUCATION:
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
-  
-  // 1. CHECK FOR PRO STATUS
-  // We check if the user has the "isPro" tag in their metadata (we will set this via Zapier later)
   const isPro = user?.publicMetadata?.isPro === true;
 
   const [activeTab, setActiveTab] = useState('jd'); 
@@ -76,7 +73,7 @@ export default function Dashboard() {
   const [resumeText, setResumeText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showSignUpGate, setShowSignUpGate] = useState(false);
+  const [showSignUpGate, setShowSignUpGate] = useState(false); // Controls the Feature Pop-up
   const [guestCount, setGuestCount] = useState(0);
 
   useEffect(() => {
@@ -148,11 +145,6 @@ export default function Dashboard() {
   };
 
   const handleScreen = () => {
-    // 2. LIMIT CHECK LOGIC
-    // If user is NOT signed in -> Check Guest Limit
-    // If user IS signed in BUT NOT PRO -> We force the paywall (or you can give them a few freebies)
-    // If user IS PRO -> Bypass all limits
-    
     if (!isSignedIn) {
       if (guestCount >= 3) {
         setShowSignUpGate(true);
@@ -162,8 +154,6 @@ export default function Dashboard() {
       setGuestCount(newCount);
       localStorage.setItem('guest_screens', newCount.toString());
     } else if (!isPro) {
-        // Logged in but Free Tier? For now, we Gate them immediately to force the upgrade.
-        // You can change this to allow X free screens per month later.
         setShowSignUpGate(true);
         return;
     }
@@ -203,7 +193,7 @@ export default function Dashboard() {
     }, 1500);
   };
 
-  // --- DYNAMIC COLOR CLASSES ---
+  // --- DYNAMIC LOGIC ---
   const isJd = activeTab === 'jd';
   const isResume = activeTab === 'resume';
   const activeColor = isJd ? 'blue' : 'indigo';
@@ -211,8 +201,10 @@ export default function Dashboard() {
   const activeText = isJd ? 'text-blue-400' : 'text-indigo-400';
   const activeBorder = isJd ? 'border-blue-500/20' : 'border-indigo-500/20';
 
-  // 3. GENERATE DYNAMIC STRIPE LINK
-  // We append the user's ID to the URL so Zapier knows WHO paid
+  // CHECK COMPLETION STATUS (RESTORED CHECKMARKS)
+  const jdComplete = jdText.length > 50; 
+  const resumeComplete = resumeText.length > 50;
+
   const dynamicStripeLink = isSignedIn && user 
     ? `${STRIPE_PAYMENT_LINK}?client_reference_id=${user.id}` 
     : STRIPE_PAYMENT_LINK;
@@ -227,12 +219,10 @@ export default function Dashboard() {
              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Guest Mode</span>
              <p className="text-sm text-slate-300">You have <span className="text-white font-bold">{3 - guestCount} free screens</span> remaining.</p>
           </div>
-          <SignUpButton mode="modal">
-            <button className="text-xs font-bold uppercase text-emerald-400 hover:text-white transition">Sign Up to Save Data</button>
-          </SignUpButton>
+          {/* UPDATED: Open the Feature Pop-up instead of Clerk Modal directly */}
+          <button onClick={() => setShowSignUpGate(true)} className="text-xs font-bold uppercase text-emerald-400 hover:text-white transition">Sign Up to Save Data</button>
         </div>
       ) : isPro ? (
-        // SHOW THIS IF PRO
         <div className="bg-emerald-900/30 border border-emerald-500/30 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
              <span className="bg-emerald-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Elite Plan Active</span>
@@ -240,32 +230,30 @@ export default function Dashboard() {
           </div>
         </div>
       ) : (
-        // SHOW THIS IF FREE (Signed in, but not Pro)
         <div className="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-500/30 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
              <span className="bg-blue-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Free Plan</span>
              <p className="text-sm text-blue-200">Unlock detailed market data & unlimited screens.</p>
           </div>
-          <a 
-            href={dynamicStripeLink} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs font-bold uppercase text-blue-400 hover:text-white transition bg-blue-600/10 px-4 py-2 rounded-lg border border-blue-500/20 hover:bg-blue-600"
-          >
-            Upgrade to Elite
-          </a>
+          <a href={dynamicStripeLink} target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase text-blue-400 hover:text-white transition bg-blue-600/10 px-4 py-2 rounded-lg border border-blue-500/20 hover:bg-blue-600">Upgrade to Elite</a>
         </div>
       )}
 
       {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
-            <span className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0">1</span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload or Paste Job Description</p>
+            {/* Step 1 Checkmark Logic */}
+            <span className={`${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
+              {jdComplete ? "✓" : "1"}
+            </span>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Upload or Paste Job Description</p>
          </div>
          <div className="flex items-center gap-4">
-            <span className="bg-indigo-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0">2</span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload or Paste Resume</p>
+            {/* Step 2 Checkmark Logic */}
+            <span className={`${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0 transition-all`}>
+              {resumeComplete ? "✓" : "2"}
+            </span>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Upload or Paste Resume</p>
          </div>
          <div className="flex items-center gap-4">
             <span className="bg-emerald-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-emerald-500/20 flex-shrink-0">3</span>
@@ -277,8 +265,12 @@ export default function Dashboard() {
         {/* INPUT PANEL */}
         <div className={`bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative transition-colors duration-500`}>
            <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
-             <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>Step 1: Upload/Paste Job Description</button>
-             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}>Step 2: Upload/Paste Resume</button>
+             <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>
+               {jdComplete && <span className="text-emerald-400 font-bold">✓</span>} Step 1: Upload/Paste JD
+             </button>
+             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}>
+               {resumeComplete && <span className="text-emerald-400 font-bold">✓</span>} Step 2: Upload/Paste Resume
+             </button>
            </div>
            
            <div className="mb-4 flex gap-2">
@@ -351,46 +343,57 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* DETAILED PAYWALL MODAL */}
+      {/* FEATURE POP-UP (REPLACES DIRECT SIGN UP) */}
       {showSignUpGate && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
            <div className="bg-[#0f172a] border border-slate-700 p-10 rounded-[3rem] max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
-              <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Unlock Unlimited</h2>
-              <p className="text-blue-400 font-bold text-sm mb-6 uppercase tracking-widest">Recruit-IQ Elite</p>
+              
+              <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Recruit-IQ Elite</h2>
+              <p className="text-blue-400 font-bold text-sm mb-6 uppercase tracking-widest">Unlock Your 3-Day Free Trial</p>
 
               <div className="bg-slate-900/50 rounded-2xl p-6 mb-8 border border-slate-800 text-left">
                 <ul className="space-y-3">
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Unlimited AI Screening & Parsing</li>
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Detailed Market Intelligence Data</li>
+                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Unlimited AI Candidate Screens</li>
+                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Exclusive Market Salary Data</li>
                   <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Downloadable Interview Guides</li>
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> One-Click Email Outreach Generation</li>
+                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> One-Click Email Outreach Drafting</li>
                 </ul>
               </div>
 
-              <div className="mb-8">
-                <span className="text-4xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
-                <p className="text-xs text-slate-400 mt-2">Start your <span className="text-white font-bold">3-Day Free Trial</span> today.</p>
-              </div>
-
               {!isSignedIn ? (
-                <SignUpButton mode="modal">
-                    <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
-                    Create Account to Start Trial
-                    </button>
-                </SignUpButton>
+                // IF GUEST: Show 'Start Trial' which opens Clerk Sign Up
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                     <span className="text-3xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
+                     <p className="text-xs text-slate-400 mt-1">First 3 days are 100% free.</p>
+                  </div>
+                  <SignUpButton mode="modal">
+                      <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
+                        Start My Free 3-Day Trial
+                      </button>
+                  </SignUpButton>
+                  <p className="text-[10px] text-slate-500">No credit card required to sign up.</p>
+                </div>
               ) : (
-                <a 
-                    href={dynamicStripeLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]"
-                >
-                    Proceed to Payment
-                </a>
+                // IF SIGNED IN (BUT FREE): Show 'Proceed to Payment'
+                <div className="space-y-4">
+                   <div className="text-center mb-4">
+                     <span className="text-3xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
+                     <p className="text-xs text-slate-400 mt-1">Start your <span className="text-white font-bold">3-Day Free Trial</span> today.</p>
+                   </div>
+                   <a 
+                      href={dynamicStripeLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]"
+                   >
+                      Activate Trial via Stripe
+                   </a>
+                </div>
               )}
               
-              <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-[10px] font-bold uppercase text-slate-600 hover:text-slate-400">No Thanks</button>
+              <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-[10px] font-bold uppercase text-slate-600 hover:text-slate-400">Close</button>
            </div>
         </div>
       )}
