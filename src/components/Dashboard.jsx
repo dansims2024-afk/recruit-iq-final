@@ -385,7 +385,7 @@ export default function Dashboard() {
                         Start My Free 3-Day Trial
                     </a>
                   )}
-                  <p className="text-xs text-slate-500">No credit card required to sign up.</p>
+                  {/* REMOVED "No credit card required" TEXT HERE */}
               </div>
               
               <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-xs font-bold uppercase text-slate-600 hover:text-blue-400 transition-colors tracking-widest">Close</button>
