@@ -73,7 +73,7 @@ export default function Dashboard() {
   const [resumeText, setResumeText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showSignUpGate, setShowSignUpGate] = useState(false); // Controls the Feature Pop-up
+  const [showSignUpGate, setShowSignUpGate] = useState(false);
   const [guestCount, setGuestCount] = useState(0);
 
   useEffect(() => {
@@ -193,7 +193,6 @@ export default function Dashboard() {
     }, 1500);
   };
 
-  // --- DYNAMIC LOGIC ---
   const isJd = activeTab === 'jd';
   const isResume = activeTab === 'resume';
   const activeColor = isJd ? 'blue' : 'indigo';
@@ -201,7 +200,6 @@ export default function Dashboard() {
   const activeText = isJd ? 'text-blue-400' : 'text-indigo-400';
   const activeBorder = isJd ? 'border-blue-500/20' : 'border-indigo-500/20';
 
-  // CHECK COMPLETION STATUS (RESTORED CHECKMARKS)
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
@@ -212,14 +210,13 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 relative font-sans">
       
-      {/* BANNER LOGIC: Guest vs Free vs Pro */}
+      {/* BANNER LOGIC */}
       {!isSignedIn ? (
         <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
              <span className="bg-emerald-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded">Guest Mode</span>
              <p className="text-sm text-slate-300">You have <span className="text-white font-bold">{3 - guestCount} free screens</span> remaining.</p>
           </div>
-          {/* UPDATED: Open the Feature Pop-up instead of Clerk Modal directly */}
           <button onClick={() => setShowSignUpGate(true)} className="text-xs font-bold uppercase text-emerald-400 hover:text-white transition">Sign Up to Save Data</button>
         </div>
       ) : isPro ? (
@@ -242,14 +239,12 @@ export default function Dashboard() {
       {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
-            {/* Step 1 Checkmark Logic */}
             <span className={`${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
               {jdComplete ? "✓" : "1"}
             </span>
             <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Upload or Paste Job Description</p>
          </div>
          <div className="flex items-center gap-4">
-            {/* Step 2 Checkmark Logic */}
             <span className={`${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0 transition-all`}>
               {resumeComplete ? "✓" : "2"}
             </span>
@@ -343,57 +338,62 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* FEATURE POP-UP (REPLACES DIRECT SIGN UP) */}
+      {/* HIGH-IMPACT GLOWING POP-UP (Matches Image 2) */}
       {showSignUpGate && (
-        <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in">
-           <div className="bg-[#0f172a] border border-slate-700 p-10 rounded-[3rem] max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+           {/* Outer Darkening & Blue Glow Background Effect */}
+           <div className="absolute inset-0 bg-[#020617]/80 backdrop-blur-sm"></div>
+           <div className="absolute inset-0 bg-radial-gradient from-blue-600/20 via-transparent to-transparent opacity-50 pointer-events-none"></div>
+           
+           {/* The Glowing Card */}
+           <div className="bg-gradient-to-b from-slate-900 via-[#0f172a] to-slate-950 border-2 border-blue-500/50 p-10 rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_60px_-15px_rgba(59,130,246,0.6)] relative overflow-hidden z-10">
               
-              <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter">Recruit-IQ Elite</h2>
-              <p className="text-blue-400 font-bold text-sm mb-6 uppercase tracking-widest">Unlock Your 3-Day Free Trial</p>
+              {/* Title Header with Glow */}
+              <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-tighter [text-shadow:_0_2px_10px_rgb(59_130_246_/_50%)]">Recruit-IQ Elite</h2>
+              <p className="text-blue-300 font-bold text-sm mb-8 uppercase tracking-widest [text-shadow:_0_1px_5px_rgb(59_130_246_/_30%)]">Unlock Your 3-Day Free Trial</p>
 
-              <div className="bg-slate-900/50 rounded-2xl p-6 mb-8 border border-slate-800 text-left">
-                <ul className="space-y-3">
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Unlimited AI Candidate Screens</li>
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Exclusive Market Salary Data</li>
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> Downloadable Interview Guides</li>
-                  <li className="flex gap-3 text-sm text-slate-300"><span className="text-emerald-500 font-bold">✓</span> One-Click Email Outreach Drafting</li>
+              {/* PROMINENT "3-DAY FREE TRIAL" GLOWING BANNER */}
+              <div className="w-full py-5 mb-8 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 shadow-[0_0_30px_rgba(59,130,246,0.5)] flex items-center justify-center">
+                <span className="text-3xl font-black text-white uppercase tracking-wider drop-shadow-lg">3-DAY FREE TRIAL</span>
+              </div>
+
+              {/* Feature List with darker background and subtle glow */}
+              <div className="bg-blue-950/30 rounded-2xl p-6 mb-8 border border-blue-800/50 shadow-inner text-left">
+                <ul className="space-y-4">
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Unlimited AI Candidate Screens</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Exclusive Market Salary Data</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> Downloadable Interview Guides</li>
+                  <li className="flex gap-3 text-sm text-slate-200 items-center"><span className="text-emerald-400 font-black text-lg drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]">✓</span> One-Click Email Outreach Drafting</li>
                 </ul>
               </div>
 
-              {!isSignedIn ? (
-                // IF GUEST: Show 'Start Trial' which opens Clerk Sign Up
-                <div className="space-y-4">
-                  <div className="text-center mb-4">
-                     <span className="text-3xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
-                     <p className="text-xs text-slate-400 mt-1">First 3 days are 100% free.</p>
+              {/* Price and Buttons with enhanced glow */}
+              <div className="space-y-6">
+                  <div className="text-center">
+                     <span className="text-5xl font-black text-white [text-shadow:_0_2px_15px_rgb(59_130_246_/_60%)]">$29.99</span><span className="text-slate-400 text-xl">/mo</span>
+                     <p className="text-lg text-white font-bold mt-2 [text-shadow:_0_1px_5px_rgb(59_130_246_/_40%)]">First 3 days are 100% free.</p>
                   </div>
-                  <SignUpButton mode="modal">
-                      <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]">
+
+                  {!isSignedIn ? (
+                    <SignUpButton mode="modal">
+                        <button className="w-full py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] active:scale-95 tracking-widest">
+                          Start My Free 3-Day Trial
+                        </button>
+                    </SignUpButton>
+                  ) : (
+                    <a 
+                        href={dynamicStripeLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block w-full py-5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 rounded-2xl font-black uppercase text-base text-white shadow-[0_0_30px_rgba(59,130,246,0.6)] transition-all transform hover:scale-[1.02] active:scale-95 tracking-widest"
+                    >
                         Start My Free 3-Day Trial
-                      </button>
-                  </SignUpButton>
-                  <p className="text-[10px] text-slate-500">No credit card required to sign up.</p>
-                </div>
-              ) : (
-                // IF SIGNED IN (BUT FREE): Show 'Proceed to Payment'
-                <div className="space-y-4">
-                   <div className="text-center mb-4">
-                     <span className="text-3xl font-black text-white">$29.99</span><span className="text-slate-500">/mo</span>
-                     <p className="text-xs text-slate-400 mt-1">Start your <span className="text-white font-bold">3-Day Free Trial</span> today.</p>
-                   </div>
-                   <a 
-                      href={dynamicStripeLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-2xl font-black uppercase text-xs text-white shadow-xl shadow-blue-600/30 transition-all transform hover:scale-[1.02]"
-                   >
-                      Activate Trial via Stripe
-                   </a>
-                </div>
-              )}
+                    </a>
+                  )}
+                  <p className="text-xs text-slate-500">No credit card required to sign up.</p>
+              </div>
               
-              <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-[10px] font-bold uppercase text-slate-600 hover:text-slate-400">Close</button>
+              <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-xs font-bold uppercase text-slate-600 hover:text-blue-400 transition-colors tracking-widest">Close</button>
            </div>
         </div>
       )}
