@@ -108,33 +108,80 @@ export default function Dashboard() {
     setActiveTab('jd'); 
   };
 
+  // 📝 UPDATED: PROFESSIONAL WORD DOC GENERATOR
   const downloadInterviewGuide = () => {
     if (!analysis) return;
     const reportDate = new Date().toLocaleDateString();
+    
     const content = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset='utf-8'>
         <title>Recruit-IQ Interview Guide</title>
         <style>
-          body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; color: #333; }
-          .header { background-color: #0f172a; color: white; padding: 20px; text-align: center; margin-bottom: 20px; }
-          .logo { font-size: 24px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
-          .meta { font-size: 10pt; color: #cbd5e1; margin-top: 5px; }
-          h1 { color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; margin-top: 30px; font-size: 16pt; }
-          .score-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 30px; }
-          .score-val { font-size: 32pt; font-weight: bold; color: #2563eb; display: block; }
-          .question-box { border-left: 5px solid #2563eb; background-color: #f1f5f9; padding: 10px 15px; margin-bottom: 15px; }
-          .q-text { font-weight: bold; font-size: 12pt; display: block; margin-bottom: 5px; }
-          .footer { margin-top: 50px; text-align: center; font-size: 9pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+          body { font-family: 'Segoe UI', 'Arial', sans-serif; font-size: 11pt; color: #333; }
+          
+          /* HEADER STYLES */
+          .header-container { background-color: #0f172a; padding: 30px; margin-bottom: 20px; color: white; text-align: center; }
+          .brand-title { font-size: 28pt; font-weight: bold; letter-spacing: 4px; text-transform: uppercase; margin: 0; }
+          .sub-title { font-size: 10pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; }
+
+          /* SCORECARD */
+          .score-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border: 1px solid #cbd5e1; }
+          .score-cell { padding: 20px; text-align: center; background-color: #f8fafc; width: 20%; vertical-align: middle; border-right: 1px solid #cbd5e1; }
+          .score-number { font-size: 48pt; font-weight: bold; color: #2563eb; display: block; line-height: 1; }
+          .score-label { font-size: 9pt; text-transform: uppercase; color: #64748b; font-weight: bold; }
+          .summary-cell { padding: 20px; background-color: #ffffff; vertical-align: middle; font-style: italic; color: #475569; font-size: 11pt; }
+
+          /* SECTIONS */
+          h2 { font-size: 14pt; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px; text-transform: uppercase; }
+          
+          .strength-item { color: #065f46; margin-bottom: 8px; font-weight: bold; }
+          .gap-item { color: #9f1239; margin-bottom: 8px; font-weight: bold; }
+
+          /* QUESTIONS */
+          .q-box { background-color: #f1f5f9; border-left: 6px solid #2563eb; padding: 15px; margin-bottom: 15px; }
+          .q-header { font-size: 9pt; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+          .q-text { font-size: 12pt; font-weight: bold; color: #1e293b; }
+          .notes-area { border: 1px dashed #cbd5e1; height: 60px; margin-top: 10px; background-color: white; }
+
+          .footer { margin-top: 50px; text-align: center; font-size: 8pt; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
         </style>
       </head>
       <body>
-        <div class="header"><div class="logo">RECRUIT-IQ</div><div class="meta">Strategic Interview Intelligence | Date: ${reportDate}</div></div>
-        <div class="score-box"><span style="font-size: 12pt; text-transform: uppercase; letter-spacing: 1px; color: #64748b;">Candidate Fit Score</span><span class="score-val">${analysis.score}</span><div>"${analysis.summary}"</div></div>
-        <h1>1. Key Strengths to Validate</h1><ul>${analysis.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
-        <h1>2. Critical Gaps to Probe</h1><ul>${analysis.gaps.map(g => `<li>${g}</li>`).join('')}</ul>
-        <h1>3. Deep-Dive Interview Questions</h1>${analysis.questions.map(q => `<div class="question-box"><span class="q-text">Q: ${q}</span></div>`).join('')}
+        <div class="header-container">
+            <div class="brand-title">RECRUIT-IQ</div>
+            <div class="sub-title">Strategic Interview Intelligence | ${reportDate}</div>
+        </div>
+
+        <table class="score-table">
+            <tr>
+                <td class="score-cell">
+                    <span class="score-number">${analysis.score}</span>
+                    <span class="score-label">Match Score</span>
+                </td>
+                <td class="summary-cell">
+                    "${analysis.summary}"
+                </td>
+            </tr>
+        </table>
+
+        <h2>✅ Key Strengths to Validate</h2>
+        <ul>${analysis.strengths.map(s => `<li class="strength-item">${s}</li>`).join('')}</ul>
+
+        <h2>⚠️ Critical Gaps to Probe</h2>
+        <ul>${analysis.gaps.map(g => `<li class="gap-item">${g}</li>`).join('')}</ul>
+
+        <h2>🎤 Deep-Dive Interview Questions</h2>
+        ${analysis.questions.map((q, i) => `
+            <div class="q-box">
+                <div class="q-header">Question ${i+1}</div>
+                <div class="q-text">${q}</div>
+                <div style="font-size: 9pt; color: #94a3b8; margin-top:10px;">Interviewer Notes:</div>
+                <div class="notes-area"></div>
+            </div>
+        `).join('')}
+
         <div class="footer">Generated by Recruit-IQ AI | Confidential Candidate Analysis</div>
       </body>
       </html>
@@ -205,7 +252,6 @@ export default function Dashboard() {
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
-  // 🔗 THE "GLUE": Appending the User ID to your new Stripe link
   const dynamicStripeLink = isSignedIn && user 
     ? `${STRIPE_PAYMENT_LINK}?client_reference_id=${user.id}` 
     : STRIPE_PAYMENT_LINK;
@@ -239,7 +285,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 1-2-3 GUIDE - UPDATED TEXT AND COLORS */}
+      {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
             <span className={`${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
@@ -262,7 +308,6 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-2 gap-8">
         {/* INPUT PANEL */}
         <div className={`bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative`}>
-           {/* TABS WITH COLOR CODED NUMBERS */}
            <div className="flex flex-col md:flex-row gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
              <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>
                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isJd ? 'bg-white text-blue-600' : 'bg-slate-700 text-slate-400'}`}>{jdComplete ? "✓" : "1"}</span> Upload/ Paste Job Description
@@ -305,11 +350,15 @@ export default function Dashboard() {
                    <p className="text-slate-300 italic text-sm leading-relaxed">"{analysis.summary}"</p>
                 </div>
                 
-                {/* Detailed Analysis Results */}
+                {/* 📝 FIXED: Now showing both Strengths AND Gaps */}
                 <div className="grid grid-cols-1 gap-4">
                   <div className="bg-slate-900 border border-emerald-500/20 p-8 rounded-[2rem]">
                      <h4 className="text-xs font-black uppercase text-emerald-500 mb-4 tracking-widest">Key Strengths</h4>
                      <ul className="space-y-3">{analysis.strengths.map((s, i) => (<li key={i} className="text-sm text-slate-300 flex gap-3"><span className="text-emerald-500 font-bold text-lg">✓</span> {s}</li>))}</ul>
+                  </div>
+                  <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-[2rem]">
+                     <h4 className="text-xs font-black uppercase text-rose-500 mb-4 tracking-widest">Critical Gaps</h4>
+                     <ul className="space-y-3">{analysis.gaps.map((g, i) => (<li key={i} className="text-sm text-slate-300 flex gap-3"><span className="text-rose-500 font-bold text-lg">!</span> {g}</li>))}</ul>
                   </div>
                 </div>
 
