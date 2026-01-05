@@ -239,41 +239,42 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 1-2-3 GUIDE */}
+      {/* 1-2-3 GUIDE - UPDATED TEXT AND COLORS */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
             <span className={`${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
               {jdComplete ? "✓" : "1"}
             </span>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 1: Job Description</p>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 1: Add Job Description</p>
          </div>
          <div className="flex items-center gap-4">
             <span className={`${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0 transition-all`}>
               {resumeComplete ? "✓" : "2"}
             </span>
-            <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 2: Resume</p>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 2: Add Resume</p>
          </div>
          <div className="flex items-center gap-4">
             <span className="bg-emerald-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-emerald-500/20 flex-shrink-0">3</span>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Step 3: Screen Match</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Step 3: Screen candidate for Match Score and additional tools</p>
          </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* INPUT PANEL */}
         <div className={`bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative`}>
-           <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
-             <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>
-               {jdComplete && <span className="text-emerald-400 font-bold">✓</span>} JD
+           {/* TABS WITH COLOR CODED NUMBERS */}
+           <div className="flex flex-col md:flex-row gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
+             <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${isJd ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-blue-400'}`}>
+               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isJd ? 'bg-white text-blue-600' : 'bg-slate-700 text-slate-400'}`}>{jdComplete ? "✓" : "1"}</span> Upload/ Paste Job Description
              </button>
-             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}>
-               {resumeComplete && <span className="text-emerald-400 font-bold">✓</span>} Resume
+             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all ${isResume ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-indigo-400'}`}>
+               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isResume ? 'bg-white text-indigo-600' : 'bg-slate-700 text-slate-400'}`}>{resumeComplete ? "✓" : "2"}</span> Upload/ Paste Resume
              </button>
            </div>
            
            <div className="mb-4 flex gap-2">
              <label className={`flex-1 text-center cursor-pointer ${activeHover} ${activeText} py-3 rounded-xl text-[10px] font-black uppercase border ${activeBorder} transition`}>
-                Upload <input type="file" onChange={handleFileUpload} className="hidden" />
+                Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
              </label>
              <button onClick={handleLoadSamples} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition">Sample</button>
            </div>
@@ -281,11 +282,13 @@ export default function Dashboard() {
            <textarea 
              className={`flex-1 bg-transparent resize-none outline-none text-slate-300 font-medium leading-relaxed p-4 border border-slate-800/50 rounded-2xl mb-4 text-xs focus:border-${activeColor}-500 transition-colors`}
              value={activeTab === 'jd' ? jdText : resumeText}
+             placeholder={activeTab === 'jd' ? "Paste Job Description Text Here..." : "Paste Resume Text Here..."}
              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
            />
            
-           <button onClick={handleScreen} disabled={loading} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-emerald-600/20">
-             {loading ? "Analyzing..." : "Run Analysis"}
+           <button onClick={handleScreen} disabled={loading} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3">
+             <span className="w-6 h-6 bg-white text-emerald-600 rounded-full flex items-center justify-center font-bold text-xs">3</span>
+             {loading ? "Analyzing..." : "Screen Candidate"}
            </button>
         </div>
         
