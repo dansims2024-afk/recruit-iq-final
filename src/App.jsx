@@ -68,7 +68,9 @@ export default function App() {
       {/* Footer */}
       <footer className="p-8 border-t border-slate-900 bg-[#020617]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-600">
-           <span>© Core Creativity AI 2026</span>
+           {/* ✅ UPDATED COPYRIGHT TEXT */}
+           <span>© 2026 Core Creativity AI</span>
+           
            <div className="flex gap-6 items-center">
              <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Terms & Conditions</a>
              <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Privacy Policy</a>
