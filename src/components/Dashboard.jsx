@@ -165,4 +165,10 @@ export default function Dashboard() {
                 <p className="text-slate-300 italic text-sm">"{analysis.summary}"</p>
               </div>
             ) : (
-              <div className="h
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px]">Ready for Analysis</div>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
