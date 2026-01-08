@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
-const genAI = new GoogleGenerativeAI(apiKey || "");
-
-const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect\nLOCATION: New York, NY\nABOUT: Scale high-frequency trading platform ($500M daily volume). Stack: AWS, Node.js, Go.`; 
-const SAMPLE_RESUME = `ALEXANDER MERCER\n12 years exp in high-frequency trading. Migrated core engine to AWS EKS, reducing latency by 45%. Expert in Node.js/Go.`;
+const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect\nLOCATION: New York, NY\nABOUT: We need a leader to scale our high-frequency trading platform handling $500M daily volume. Must know AWS, Node.js, and Go.`; 
+const SAMPLE_RESUME = `ALEXANDER MERCER\nSummary: 12 years exp in high-frequency trading systems. Migrated core engine to AWS EKS, reducing latency by 45%. Expert in Node.js and Go.`;
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
@@ -17,25 +14,12 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
-  const [aiDebug, setAiDebug] = useState(''); // Visual debug for AI connection
+  
+  // TEMPORARY: Allow manual key entry to fix the 404 error
+  const [manualKey, setManualKey] = useState('');
 
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
-
-  // --- AUTOMATIC AI DIAGNOSTIC ---
-  // This runs once when the app loads to check if your API key works
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        await model.generateContent("Test");
-        setAiDebug("✅ AI System Online (gemini-pro)");
-      } catch (err) {
-        setAiDebug(`⚠️ AI Issue: ${err.message.includes('404') ? 'Model Not Found (Enable API in Google Cloud)' : err.message}`);
-      }
-    };
-    if (apiKey) checkConnection();
-  }, []);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -44,12 +28,10 @@ export default function Dashboard() {
     setStatusMsg("Reading file...");
     try {
       let text = "";
-      
-      // PDF SAFETY TRAP
       if (file.name.endsWith('.pdf')) {
-        alert("⚠️ PDF Parsing is temporarily disabled to prevent crashing. Please open your PDF, select all text (Ctrl+A), and paste it here.");
-        setStatusMsg("");
-        return;
+         alert("PDF parsing is temporarily disabled. Please copy/paste text from your PDF.");
+         setStatusMsg("");
+         return;
       } 
       else if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
@@ -73,11 +55,19 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
+    
+    // USE MANUAL KEY IF PROVIDED, OTHERWISE USE VERCEL KEY
+    const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
+    
+    if (!finalKey) return alert("No API Key found. Please enter one in the settings box.");
+
     setLoading(true);
     
     try {
-      // Trying the most standard model first
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const genAI = new GoogleGenerativeAI(finalKey);
+      // Trying 'gemini-1.5-flash' as it is the standard for new keys
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      
       const prompt = `Act as a recruiter. Compare this JD: "${jdText.substring(0,1000)}..." to Resume: "${resumeText.substring(0,1000)}...".
       Output ONLY: 1. Match Score (0-100) and 2. A 2-sentence summary.`;
       
@@ -86,24 +76,24 @@ export default function Dashboard() {
       setAnalysis({ score: 85, summary: response.text() });
     } catch (err) {
       console.error("AI Failure:", err);
-      // Fallback: If AI fails, show a mock score so the user sees the UI works
-      alert(`AI Connection Failed: ${err.message}. Showing simulation mode.`);
-      setAnalysis({ 
-        score: 0, 
-        summary: `Error: ${err.message}. Please check that 'Generative Language API' is enabled in your Google Cloud Console.` 
-      });
+      alert(`Connection Failed: ${err.message}. \n\nTip: Try creating a BRAND NEW unrestricted API key and pasting it in the box.`);
     }
     setLoading(false);
   };
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white font-sans">
-      {/* HEADER WITH DIAGNOSTIC STATUS */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Recruit-IQ Dashboard</h2>
-        <span className={`text-xs px-3 py-1 rounded-full border ${aiDebug.includes('✅') ? 'border-emerald-500 text-emerald-400' : 'border-rose-500 text-rose-400'}`}>
-          {aiDebug || "Checking AI..."}
-        </span>
+      
+      {/* DEBUG BOX: PASTE KEY HERE */}
+      <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ Debug Mode</p>
+        <input 
+          type="password" 
+          placeholder="Paste new API Key here to test..." 
+          className="bg-black/30 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white w-full md:w-96"
+          value={manualKey}
+          onChange={(e) => setManualKey(e.target.value)}
+        />
       </div>
 
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4">
@@ -127,7 +117,7 @@ export default function Dashboard() {
             <div className="mb-4 flex gap-2">
               <label className="flex-1 text-center cursor-pointer bg-slate-800 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 hover:bg-slate-700 transition relative">
                 {statusMsg || "Upload Docx / Txt"}
-                <input type="file" onChange={handleFileUpload} className="hidden" accept=".docx,.txt,.pdf" />
+                <input type="file" onChange={handleFileUpload} className="hidden" accept=".docx,.txt" />
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700">Sample</button>
             </div>
