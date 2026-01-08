@@ -66,7 +66,7 @@ EDUCATION:
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
-  
+
   // Logic to determine if user is on the paid plan
   const isPro = user?.publicMetadata?.isPro === true;
 
@@ -108,10 +108,11 @@ export default function Dashboard() {
     setActiveTab('jd'); 
   };
 
+  // 📝 UPDATED: PROFESSIONAL WORD DOC GENERATOR
   const downloadInterviewGuide = () => {
     if (!analysis) return;
     const reportDate = new Date().toLocaleDateString();
-    
+
     const content = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -156,6 +157,7 @@ export default function Dashboard() {
         <table class="score-table">
             <tr>
                 <td class="score-cell">
+                    <span class="score-number">${analysis.score}</span>
                     <span class="score-number">${analysis.score}%</span>
                     <span class="score-label">Match Score</span>
                 </td>
@@ -257,7 +259,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 relative font-sans">
-      
+
       {/* BANNER LOGIC */}
       {!isSignedIn ? (
         <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-2xl flex justify-between items-center animate-in slide-in-from-top-2">
@@ -287,15 +289,19 @@ export default function Dashboard() {
       {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900/50 border border-slate-800 rounded-3xl gap-4">
          <div className="flex items-center gap-4">
+            <span className={`${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
             <span className={`${jdComplete ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-500/20 flex-shrink-0 transition-all`}>
               {jdComplete ? "✓" : "1"}
             </span>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 1: Add Job Description</p>
             <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-blue-400' : 'text-slate-400'}`}>Step 1: Add Job Description</p>
          </div>
          <div className="flex items-center gap-4">
+            <span className={`${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0 transition-all`}>
             <span className={`${resumeComplete ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400'} w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg shadow-indigo-500/20 flex-shrink-0 transition-all`}>
               {resumeComplete ? "✓" : "2"}
             </span>
+            <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 2: Add Resume</p>
             <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-indigo-400' : 'text-slate-400'}`}>Step 2: Add Resume</p>
          </div>
          <div className="flex items-center gap-4">
@@ -320,7 +326,7 @@ export default function Dashboard() {
                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isResume ? 'bg-white text-indigo-600' : 'bg-slate-700 text-slate-400'}`}>{resumeComplete ? "✓" : "2"}</span> Upload/ Paste Resume
              </button>
            </div>
-           
+
            <div className="mb-4 flex gap-2">
              <label className={`flex-1 text-center cursor-pointer ${activeHover} ${activeText} py-3 rounded-xl text-[10px] font-black uppercase border ${activeBorder} transition`}>
                 Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
@@ -334,14 +340,14 @@ export default function Dashboard() {
              placeholder={activeTab === 'jd' ? "Paste Job Description Text Here..." : "Paste Resume Text Here..."}
              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
            />
-           
+
            {/* STEP 3 BUTTON: ALWAYS EMERALD */}
            <button onClick={handleScreen} disabled={loading} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-3">
              <span className="w-6 h-6 bg-white text-emerald-600 rounded-full flex items-center justify-center font-bold text-xs">3</span>
              {loading ? "Analyzing..." : "Screen Candidate"}
            </button>
         </div>
-        
+
         {/* OUTPUT PANEL */}
         <div className="h-[850px] overflow-y-auto pr-2 custom-scrollbar">
            {!analysis ? (
@@ -351,13 +357,15 @@ export default function Dashboard() {
            ) : (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
                 <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
+                   <div className="w-20 h-20 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4 text-white shadow-lg shadow-emerald-500/40">{analysis.score}</div>
                    {/* 📝 ADDED % SYMBOL TO MATCH SCORE */}
                    <div className="w-24 h-24 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4 text-white shadow-lg shadow-emerald-500/40">
                      {analysis.score}<span className="text-lg align-top relative top-[-4px] ml-1">%</span>
                    </div>
                    <p className="text-slate-300 italic text-sm leading-relaxed">"{analysis.summary}"</p>
                 </div>
-                
+
+                {/* 📝 FIXED: Now showing both Strengths AND Gaps */}
                 <div className="grid grid-cols-1 gap-4">
                   <div className="bg-slate-900 border border-emerald-500/20 p-8 rounded-[2rem]">
                      <h4 className="text-xs font-black uppercase text-emerald-500 mb-4 tracking-widest">Key Strengths</h4>
@@ -390,9 +398,9 @@ export default function Dashboard() {
       {showSignUpGate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
            <div className="absolute inset-0 bg-[#020617]/80 backdrop-blur-sm"></div>
-           
+
            <div className="bg-gradient-to-b from-slate-900 via-[#0f172a] to-slate-950 border-2 border-blue-500/50 p-6 md:p-10 rounded-3xl md:rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_60px_-15px_rgba(59,130,246,0.6)] relative overflow-hidden z-10 max-h-[90vh] overflow-y-auto">
-              
+
               <h2 className="text-3xl md:text-4xl font-black text-white mb-2 uppercase tracking-tighter [text-shadow:_0_2px_10px_rgb(59_130_246_/_50%)]">Recruit-IQ Elite</h2>
               <p className="text-blue-300 font-bold text-xs md:text-sm mb-6 uppercase tracking-widest">Unlock Your 3-Day Free Trial</p>
 
@@ -432,7 +440,7 @@ export default function Dashboard() {
                     </a>
                   )}
               </div>
-              
+
               <button onClick={() => setShowSignUpGate(false)} className="mt-6 text-xs font-bold uppercase text-slate-600 hover:text-blue-400 transition-colors tracking-widest">Close</button>
            </div>
         </div>
