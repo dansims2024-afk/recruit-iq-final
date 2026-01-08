@@ -15,11 +15,28 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   
-  // TEMPORARY: Allow manual key entry to fix the 404 error
+  // MANUAL KEY ENTRY
   const [manualKey, setManualKey] = useState('');
 
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
+
+  // --- DIAGNOSTIC TOOL ---
+  const checkAvailableModels = async () => {
+    const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
+    if (!finalKey) return alert("Please enter an API Key first.");
+    
+    try {
+      const genAI = new GoogleGenerativeAI(finalKey);
+      // We ask Google: "What models do I have access to?"
+      // Note: We use a dummy model init just to check connectivity in this simple setup
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      await model.generateContent("Test connection");
+      alert("✅ SUCCESS! Your API Key works with 'gemini-pro'. You are good to go.");
+    } catch (error) {
+      alert(`❌ DIAGNOSTIC FAILED:\n${error.message}\n\nIf you see '404', your key cannot access the model.`);
+    }
+  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -56,17 +73,16 @@ export default function Dashboard() {
   const handleScreen = async () => {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
     
-    // USE MANUAL KEY IF PROVIDED, OTHERWISE USE VERCEL KEY
     const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
-    
     if (!finalKey) return alert("No API Key found. Please enter one in the settings box.");
 
     setLoading(true);
     
     try {
       const genAI = new GoogleGenerativeAI(finalKey);
-      // Trying 'gemini-1.5-flash' as it is the standard for new keys
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      
+      // *** CRITICAL FIX: SWITCHED TO 'gemini-pro' (Most compatible model) ***
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       
       const prompt = `Act as a recruiter. Compare this JD: "${jdText.substring(0,1000)}..." to Resume: "${resumeText.substring(0,1000)}...".
       Output ONLY: 1. Match Score (0-100) and 2. A 2-sentence summary.`;
@@ -76,7 +92,8 @@ export default function Dashboard() {
       setAnalysis({ score: 85, summary: response.text() });
     } catch (err) {
       console.error("AI Failure:", err);
-      alert(`Connection Failed: ${err.message}. \n\nTip: Try creating a BRAND NEW unrestricted API key and pasting it in the box.`);
+      // Fallback to ensure UI doesn't freeze
+      alert(`AI Connection Failed: ${err.message}. \n\nCheck the console for specific '404' details.`);
     }
     setLoading(false);
   };
@@ -84,16 +101,24 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white font-sans">
       
-      {/* DEBUG BOX: PASTE KEY HERE */}
+      {/* DIAGNOSTIC BOX */}
       <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
-        <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ Debug Mode</p>
-        <input 
-          type="password" 
-          placeholder="Paste new API Key here to test..." 
-          className="bg-black/30 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white w-full md:w-96"
-          value={manualKey}
-          onChange={(e) => setManualKey(e.target.value)}
-        />
+        <div className="flex flex-col">
+          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Connection Settings</p>
+          <p className="text-[10px] text-slate-500">Paste key here to override Vercel settings</p>
+        </div>
+        <div className="flex gap-2 w-full md:w-auto">
+            <input 
+            type="password" 
+            placeholder="Paste Google API Key here..." 
+            className="bg-black/30 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white w-full md:w-80"
+            value={manualKey}
+            onChange={(e) => setManualKey(e.target.value)}
+            />
+            <button onClick={checkAvailableModels} className="bg-slate-600 hover:bg-slate-500 text-xs uppercase font-bold px-3 py-2 rounded-lg transition">
+                Test Key
+            </button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4">
@@ -140,10 +165,4 @@ export default function Dashboard() {
                 <p className="text-slate-300 italic text-sm">"{analysis.summary}"</p>
               </div>
             ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px]">Ready for Analysis</div>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-}
+              <div className="h
