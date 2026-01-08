@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useUser, RedirectToSignIn, UserButton } from "@clerk/clerk-react";
-import { LayoutDashboard, Users, Briefcase, Settings, Menu, Sparkles, CheckCircle, XCircle } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Settings, Sparkles } from 'lucide-react';
 
 // --- CONFIGURATION ---
+// Ensure your Vercel Environment Variable is named: VITE_GEMINI_API_KEY
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
 export default function RecruitIQ() {
   const { isSignedIn, user } = useUser();
-  const [activeTab, setActiveTab] = useState("pipeline"); // Default view
+  const [activeTab, setActiveTab] = useState("pipeline"); // Default to the AI view
   const [resumeText, setResumeText] = useState("");
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,12 +25,13 @@ export default function RecruitIQ() {
     setLoading(true);
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const prompt = `Act as an expert recruiter. Analyze this resume for a small business role. 
-      Format the response with these headers: 
+      const prompt = `Act as a senior hiring manager at Recruit-IQ. Analyze this resume for a small business role. 
+      
+      Please provide the response in this specific format:
       1. 🎯 Match Score (0-100)
-      2. ✅ Key Strengths
-      3. 🚩 Potential Red Flags
-      4. 💡 Interview Question to Ask
+      2. ✅ Top 3 Strengths
+      3. 🚩 Red Flags or Concerns
+      4. 💡 2 Specific Interview Questions to ask this candidate
       
       Resume Text: ${resumeText}`;
 
@@ -38,7 +40,7 @@ export default function RecruitIQ() {
       setAnalysis(response.text());
     } catch (error) {
       console.error("AI Error:", error);
-      setAnalysis("Error: Verify VITE_GEMINI_API_KEY is correct in Vercel.");
+      setAnalysis("Error: AI Analysis failed. Please check your API key in Vercel settings.");
     } finally {
       setLoading(false);
     }
@@ -51,19 +53,19 @@ export default function RecruitIQ() {
       <aside style={styles.sidebar}>
         <div style={styles.logoArea}>
           <div style={styles.logoIcon}><Users color="white" size={24} /></div>
-          <h2 style={styles.logoText}>Staff-IQ</h2>
+          <h2 style={styles.logoText}>Recruit-IQ</h2>
         </div>
 
         <nav style={styles.nav}>
           <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <NavItem icon={<Briefcase size={20} />} label="Active Jobs" active={activeTab === 'jobs'} onClick={() => setActiveTab('jobs')} />
-          <NavItem icon={<Sparkles size={20} />} label="AI Candidate Pipeline" active={activeTab === 'pipeline'} onClick={() => setActiveTab('pipeline')} />
+          <NavItem icon={<Sparkles size={20} />} label="Candidate Intelligence" active={activeTab === 'pipeline'} onClick={() => setActiveTab('pipeline')} />
           <NavItem icon={<Settings size={20} />} label="Settings" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
         </nav>
 
         <div style={styles.userProfile}>
           <UserButton />
-          <span style={styles.userName}>{user.firstName}'s Team</span>
+          <span style={styles.userName}>{user.firstName}'s Workspace</span>
         </div>
       </aside>
 
@@ -72,7 +74,7 @@ export default function RecruitIQ() {
         {/* HEADER */}
         <header style={styles.header}>
           <h1 style={styles.pageTitle}>
-            {activeTab === 'pipeline' ? 'Candidate Intelligence' : 'Dashboard'}
+            {activeTab === 'pipeline' ? 'AI Candidate Evaluation' : 'Recruit-IQ Dashboard'}
           </h1>
           <button style={styles.newJobBtn}>+ Post New Job</button>
         </header>
@@ -86,10 +88,10 @@ export default function RecruitIQ() {
               
               {/* INPUT CARD */}
               <div style={styles.card}>
-                <h3 style={styles.cardTitle}>📄 Resume Screener</h3>
+                <h3 style={styles.cardTitle}>📄 Paste Candidate Resume</h3>
                 <textarea
                   style={styles.textarea}
-                  placeholder="Paste candidate resume here..."
+                  placeholder="Paste the full resume text here..."
                   value={resumeText}
                   onChange={(e) => setResumeText(e.target.value)}
                 />
@@ -98,20 +100,20 @@ export default function RecruitIQ() {
                   onClick={handleAiAnalysis}
                   disabled={loading}
                 >
-                  {loading ? <span style={styles.spin}>⏳ Analyzing...</span> : <span>✨ Analyze with Staff-IQ</span>}
+                  {loading ? <span style={styles.spin}>⏳ Analyzing Candidate...</span> : <span>✨ Analyze with Recruit-IQ</span>}
                 </button>
               </div>
 
               {/* RESULTS CARD */}
               <div style={styles.card}>
-                <h3 style={styles.cardTitle}>📊 AI Analysis Report</h3>
+                <h3 style={styles.cardTitle}>📊 Recruit-IQ Report</h3>
                 {analysis ? (
                   <div style={styles.analysisBox}>
                     <pre style={styles.preWrap}>{analysis}</pre>
                   </div>
                 ) : (
                   <div style={styles.emptyState}>
-                    <p>Results will appear here...</p>
+                    <p>AI analysis results will appear here...</p>
                   </div>
                 )}
               </div>
@@ -122,7 +124,7 @@ export default function RecruitIQ() {
           {activeTab !== 'pipeline' && (
             <div style={styles.placeholder}>
               <h3>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} View</h3>
-              <p>This module is under construction. Head to "AI Candidate Pipeline" to use the engine.</p>
+              <p>This module is coming soon to Recruit-IQ.</p>
             </div>
           )}
         </div>
