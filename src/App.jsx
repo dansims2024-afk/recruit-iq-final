@@ -1,124 +1,89 @@
 import React, { useState } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
-import Dashboard from "./components/Dashboard";
-import logo from "./logo.png"; 
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export default function App() {
-  const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [supportMessage, setSupportMessage] = useState('');
+// 1. Initialize Gemini using the key from your Vercel/Hosting Vault
+// Note: If using Vite, use import.meta.env.VITE_GEMINI_API_KEY
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-  const handleSupportSubmit = () => {
-    if (!supportMessage.trim()) return;
-    
-    // Trigger email client
-    const subject = encodeURIComponent("Recruit-IQ Support Request");
-    const body = encodeURIComponent(supportMessage);
-    window.location.href = `mailto:hello@corecreativityai.com?subject=${subject}&body=${body}`;
-    
-    setIsSupportOpen(false);
-    setSupportMessage('');
+const RecruitIQ = () => {
+  const [resumeText, setResumeText] = useState("");
+  const [analysis, setAnalysis] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // MOCK USER STATE: In a real app, this comes from your Auth (Firebase/Supabase)
+  const [isSubscribed, setIsSubscribed] = useState(false); 
+
+  const handleAiAnalysis = async () => {
+    // --- STEP 2: THE BILLING GATE ---
+    if (!isSubscribed) {
+      alert("Recruit-IQ Pro Required: Redirecting to secure payment...");
+      // Replace with your actual Stripe Payment Link from your Stripe Dashboard
+      window.location.href = "https://buy.stripe.com/your_payment_link_here";
+      return;
+    }
+
+    // --- STEP 1: THE AI LOGIC ---
+    setLoading(true);
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Analyze this candidate for a small business role. 
+                      Identify strengths, red flags, and cultural fit: ${resumeText}`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      setAnalysis(response.text());
+    } catch (error) {
+      console.error("AI Error:", error);
+      setAnalysis("Error: Make sure your API key is set in your Dashboard Settings.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#020617] text-white font-sans">
-      {/* Universal Header */}
-      <header className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
-        
-        {/* LEFT SIDE: LOGO + BRAND */}
-        <div className="flex items-center gap-3">
-           <img 
-             src={logo} 
-             alt="Recruit-IQ Logo" 
-             className="w-12 h-12 rounded-full shadow-lg shadow-blue-600/20 border border-slate-700 object-cover" 
-           />
-           <div className="flex flex-col">
-             <span className="font-black text-xl tracking-tighter leading-none">Recruit-IQ</span>
-             <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">by Core Creativity AI</span>
-           </div>
-        </div>
-
-        {/* RIGHT SIDE: TAGLINE + AUTH */}
-        <div className="flex items-center gap-6">
-          {/* Tagline moved here (Hidden on mobile phones for space) */}
-          <span className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-            Candidate Match Analyzer
-          </span>
-
-          <div>
-            {/* Guest Mode: Show Sign In | User Mode: Show Profile */}
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="bg-slate-800 hover:bg-slate-700 px-5 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest text-white transition border border-slate-700">
-                  Sign In
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-          </div>
-        </div>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <h1>Recruit-IQ</h1>
+        <p>Intelligent Hiring for Small Business</p>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-grow">
-        <Dashboard />
+      <main style={styles.main}>
+        <textarea
+          style={styles.textarea}
+          placeholder="Paste Resume text here..."
+          value={resumeText}
+          onChange={(e) => setResumeText(e.target.value)}
+        />
+
+        <button 
+          style={loading ? styles.buttonDisabled : styles.button} 
+          onClick={handleAiAnalysis}
+          disabled={loading}
+        >
+          {loading ? "Analyzing..." : "Analyze Candidate (Pro)"}
+        </button>
+
+        {analysis && (
+          <div style={styles.results}>
+            <h3>AI Analysis Results:</h3>
+            <p style={styles.text}>{analysis}</p>
+          </div>
+        )}
       </main>
-
-      {/* Footer */}
-      <footer className="p-8 border-t border-slate-900 bg-[#020617]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest text-slate-600">
-           {/* ✅ UPDATED COPYRIGHT TEXT */}
-           <span>© 2026 Core Creativity AI</span>
-           
-           <div className="flex gap-6 items-center">
-             <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Terms & Conditions</a>
-             <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition">Privacy Policy</a>
-             <button onClick={() => setIsSupportOpen(true)} className="hover:text-blue-500 transition uppercase tracking-widest">Support</button>
-           </div>
-        </div>
-      </footer>
-
-      {/* SUPPORT MODAL POPUP */}
-      {isSupportOpen && (
-        <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-           <div className="bg-[#0f172a] border border-slate-700 p-8 rounded-[2rem] max-w-md w-full shadow-2xl relative">
-              
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">Contact Support</h2>
-                <button onClick={() => setIsSupportOpen(false)} className="text-slate-500 hover:text-white transition">
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-              </div>
-
-              <p className="text-slate-400 text-xs mb-4">
-                Have a question or feedback? Describe it below and we'll email you back shortly.
-              </p>
-
-              <textarea 
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-sm text-slate-300 focus:outline-none focus:border-blue-500 transition h-32 resize-none mb-6"
-                placeholder="How can we help you?"
-                value={supportMessage}
-                onChange={(e) => setSupportMessage(e.target.value)}
-              />
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleSupportSubmit}
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-xs uppercase text-white shadow-lg shadow-blue-600/20 transition-all"
-                >
-                  Send Message
-                </button>
-                <button 
-                  onClick={() => setIsSupportOpen(false)}
-                  className="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-xs uppercase text-slate-400 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
-           </div>
-        </div>
-      )}
     </div>
   );
-}
+};
+
+// Simple Styles so you don't need a separate CSS file
+const styles = {
+  container: { fontFamily: 'sans-serif', padding: '40px', maxWidth: '800px', margin: '0 auto' },
+  header: { textAlign: 'center', marginBottom: '40px', color: '#1e293b' },
+  main: { display: 'flex', flexDirection: 'column', gap: '20px' },
+  textarea: { height: '200px', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '16px' },
+  button: { padding: '15px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' },
+  buttonDisabled: { padding: '15px', backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'not-allowed' },
+  results: { marginTop: '30px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', borderLeft: '5px solid #6366f1' },
+  text: { whiteSpace: 'pre-wrap', lineHeight: '1.6' }
+};
+
+export default RecruitIQ;
