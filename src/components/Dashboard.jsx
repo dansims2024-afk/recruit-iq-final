@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
-import { useUser, SignUpButton } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// --- CONFIGURATION ---
-// We set the worker directly to a CDN to avoid complex Vite build configurations
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// --- CRITICAL FIX 1: HARDCODED WORKER VERSION ---
+// This matches the package.json version exactly to prevent worker errors
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY; 
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
-const SAMPLE_JD = `JOB TITLE: Senior Architect... (Paste your full sample text here)`; 
-const SAMPLE_RESUME = `ALEXANDER MERCER... (Paste your full sample text here)`;
+const SAMPLE_JD = `JOB TITLE: Senior Architect... (Paste full sample)`; 
+const SAMPLE_RESUME = `ALEXANDER MERCER... (Paste full sample)`;
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
@@ -23,46 +23,51 @@ export default function Dashboard() {
   const [resumeText, setResumeText] = useState('');
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [parseStatus, setParseStatus] = useState(''); // Visual feedback for user
+  const [parseStatus, setParseStatus] = useState('');
 
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
   // --- PDF PARSING LOGIC ---
   const extractTextFromPDF = async (file) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = "";
 
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map((item) => item.str).join(" ");
-      fullText += pageText + "\n";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item) => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
+    } catch (error) {
+      console.error("PDF Read Error:", error);
+      throw new Error("Could not read PDF structure.");
     }
-    return fullText;
   };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setParseStatus("Reading file...");
+    setParseStatus("⏳ Reading file...");
     try {
       let text = "";
       
-      // 1. Handle PDF
       if (file.name.endsWith('.pdf')) {
         text = await extractTextFromPDF(file);
-      } 
-      // 2. Handle Word Docs
-      else if (file.name.endsWith('.docx')) {
+      } else if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
-      } 
-      // 3. Handle Plain Text
-      else {
+      } else {
         text = await file.text();
+      }
+
+      // Check if text is empty (bad parse)
+      if (!text || text.trim().length < 10) {
+        throw new Error("File appears empty or unreadable.");
       }
 
       if (activeTab === 'jd') {
@@ -70,13 +75,13 @@ export default function Dashboard() {
       } else {
         setResumeText(text);
       }
-      setParseStatus("Success! Text loaded.");
+      setParseStatus("✅ Success!");
       setTimeout(() => setParseStatus(''), 2000);
 
     } catch (err) {
       console.error("File Parse Error:", err);
-      setParseStatus("Error reading file. Please try .txt or copy/paste.");
-      alert("Could not read file. If it's a scanned image PDF, try converting to Word first.");
+      setParseStatus("❌ Error reading file. Please use .txt or paste text.");
+      alert(`Recruit-IQ Error: ${err.message}. Try converting to a simple text file.`);
     }
   };
 
@@ -84,30 +89,33 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please provide both inputs.");
     setLoading(true);
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const prompt = `Analyze this JD: ${jdText} and Resume: ${resumeText}. Provide a match score and summary.`;
+      // --- CRITICAL FIX 2: STABLE AI MODEL ---
+      // Switched to 'gemini-pro' to fix the 404 Not Found error
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      
+      const prompt = `Act as an expert recruiter. Analyze this JD: ${jdText} against this Resume: ${resumeText}. 
+      Provide a Match Score (0-100) and a concise executive summary.`;
+      
       const result = await model.generateContent(prompt);
       const response = await result.response;
       setAnalysis({ score: 88, summary: response.text().substring(0, 300) });
-    } catch (err) { console.error("AI Error:", err); }
+    } catch (err) { 
+      console.error("AI Error:", err); 
+      alert("AI Connection Failed. Check Console for details.");
+    }
     setLoading(false);
   };
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white font-sans">
-      {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4">
           <div className="flex items-center gap-4">
-             <span className={`${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>
-               {jdComplete ? "✓" : "1"}
-             </span>
-             <p className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 1: Job Description</p>
+             <span className={`${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>{jdComplete ? "✓" : "1"}</span>
+             <p className="text-[10px] font-black uppercase tracking-widest">Step 1: Job Description</p>
           </div>
           <div className="flex items-center gap-4">
-             <span className={`${resumeComplete ? 'bg-emerald-500' : 'bg-indigo-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>
-               {resumeComplete ? "✓" : "2"}
-             </span>
-             <p className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-slate-400'}`}>Step 2: Resume</p>
+             <span className={`${resumeComplete ? 'bg-emerald-500' : 'bg-indigo-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>{resumeComplete ? "✓" : "2"}</span>
+             <p className="text-[10px] font-black uppercase tracking-widest">Step 2: Resume</p>
           </div>
       </div>
 
@@ -120,19 +128,26 @@ export default function Dashboard() {
             
             <div className="mb-4 flex gap-2">
               <label className="flex-1 text-center cursor-pointer bg-slate-800 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 hover:bg-slate-700 transition relative">
-                {parseStatus ? <span className="text-emerald-400 animate-pulse">{parseStatus}</span> : "Upload PDF / Docx"}
+                {parseStatus || "Upload PDF / Docx"}
                 <input type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.docx,.txt" />
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700">Sample</button>
             </div>
 
-            <textarea className="flex-1 bg-transparent resize-none outline-none text-slate-300 p-4 border border-slate-800 rounded-2xl mb-4 text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} placeholder="Text will appear here..." />
-            <button onClick={handleScreen} className="w-full py-5 bg-emerald-600 rounded-2xl font-black uppercase text-xs text-white transition">{loading ? "Analyzing..." : "Screen Candidate"}</button>
+            <textarea 
+              className="flex-1 bg-transparent resize-none outline-none text-slate-300 p-4 border border-slate-800 rounded-2xl mb-4 text-xs font-mono" 
+              value={activeTab === 'jd' ? jdText : resumeText} 
+              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} 
+              placeholder="Text will appear here..." 
+            />
+            <button onClick={handleScreen} className="w-full py-5 bg-emerald-600 rounded-2xl font-black uppercase text-xs text-white transition">
+              {loading ? "Analyzing..." : "Screen Candidate"}
+            </button>
         </div>
 
         <div className="h-[750px] overflow-y-auto">
             {analysis ? (
-              <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
+              <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl animate-in fade-in">
                 <div className="w-24 h-24 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4">{analysis.score}%</div>
                 <p className="text-slate-300 italic text-sm">"{analysis.summary}"</p>
               </div>
