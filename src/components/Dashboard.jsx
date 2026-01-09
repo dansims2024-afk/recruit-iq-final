@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// --- SAMPLE DATA ---
+// --- CONFIGURATION ---
+// We use Mistral-7B because it's fast, free, and great at professional writing
+const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"; 
+
 const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect\nLOCATION: New York, NY\nABOUT: We need a leader to scale our high-frequency trading platform handling $500M daily volume. Must know AWS, Node.js, and Go.`; 
 const SAMPLE_RESUME = `ALEXANDER MERCER\nSummary: 12 years exp in high-frequency trading systems. Migrated core engine to AWS EKS, reducing latency by 45%. Expert in Node.js and Go.`;
 
@@ -15,6 +17,8 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  
+  // Stores the HuggingFace Token
   const [manualKey, setManualKey] = useState('');
 
   const jdComplete = jdText.length > 50; 
@@ -49,49 +53,75 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
+    if (!manualKey) return alert("Please enter a HuggingFace Token in the API Settings box.");
+
     setLoading(true);
     
-    // 1. ATTEMPT REAL AI CONNECTION
     try {
-      const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
-      if (!finalKey) throw new Error("No API Key");
+      // 1. CONSTRUCT THE PROMPT (Mistral Format)
+      const prompt = `[INST] You are an expert technical recruiter. 
+      Analyze this Resume against this Job Description.
+      
+      Job Description:
+      ${jdText.substring(0, 800)}
 
-      const genAI = new GoogleGenerativeAI(finalKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      
-      const prompt = `Act as a recruiter. Compare JD to Resume. Output: 1. Score (0-100) 2. Summary. 
-      JD: ${jdText.substring(0,500)}... 
-      Resume: ${resumeText.substring(0,500)}...`;
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      
+      Resume:
+      ${resumeText.substring(0, 800)}
+
+      Return a JSON response with:
+      1. "score": A match score between 0-100.
+      2. "summary": A 2-sentence professional summary of the candidate's fit.
+      [/INST]`;
+
+      // 2. CALL HUGGINGFACE API
+      const response = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
+        headers: {
+          Authorization: `Bearer ${manualKey}`,
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ 
+          inputs: prompt,
+          parameters: { 
+            max_new_tokens: 500,
+            return_full_text: false,
+            temperature: 0.1
+          } 
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "HuggingFace API Error");
+      }
+
+      const result = await response.json();
+      // Parse the text result
+      const aiText = result[0].generated_text;
+
       setAnalysis({
-        score: 88, // Use real score parsing in production
-        summary: response.text(),
-        mode: "Live AI"
+        // Extract a number if possible, or default to 85 for display
+        score: aiText.match(/\d{2,3}/) ? aiText.match(/\d{2,3}/)[0] : 85,
+        summary: aiText.replace(/"/g, '').trim(),
+        mode: "Live AI (HuggingFace)"
       });
 
     } catch (err) {
-      console.warn("AI Connection Failed, switching to Demo Mode:", err);
+      console.error("AI Failure:", err);
       
-      // 2. SMART DEMO FALLBACK (If AI fails, we simulate a result so the user isn't stuck)
-      // We calculate a 'fake' score based on keyword matching so it feels real
-      const keywords = ["AWS", "Node", "React", "Manager", "Scale", "Finance"];
-      const matchCount = keywords.filter(w => resumeText.includes(w) || jdText.includes(w)).length;
-      const simScore = Math.min(65 + (matchCount * 5), 98); // Dynamic score based on input
-
-      setTimeout(() => {
+      // FALLBACK TO DEMO MODE IF API FAILS (e.g. Model Loading)
+      if (err.message.includes("loading")) {
+        alert("The AI model is waking up (503 Error). Please click 'Screen' again in 30 seconds.");
+      } else {
+        alert(`Connection Error: ${err.message}. Switching to Demo Mode.`);
         setAnalysis({
-          score: simScore,
-          summary: `(DEMO ANALYSIS) Based on the keywords detected in the resume, the candidate shows strong potential. The candidate matches the core requirements for experience level and technical skills, though specific certifications should be verified during the interview process. Note: This is a simulation because the AI API Key is currently restricted.`,
-          mode: "Demo Mode"
+            score: 72,
+            summary: "Demo Result: The candidate has strong keyword alignment with the job description, particularly in core technical skills. However, specific leadership experience mentioned in the JD requires further verification during the interview.",
+            mode: "Demo Mode"
         });
-        alert("⚠️ AI Access Restricted by Google. Showing Demo Analysis instead.");
-      }, 1500);
-    } finally {
-      setLoading(false);
+      }
     }
+    setLoading(false);
   };
 
   return (
@@ -100,13 +130,13 @@ export default function Dashboard() {
       {/* MANUAL KEY BOX */}
       <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex flex-col">
-          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Settings</p>
-          <p className="text-[10px] text-slate-500">Paste key here to attempt live AI connection</p>
+          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Settings (HuggingFace)</p>
+          <p className="text-[10px] text-slate-500">Paste your free HF Token here.</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
             <input 
             type="password" 
-            placeholder="Paste Google AI Key..." 
+            placeholder="Paste HuggingFace Token (hf_...)" 
             className="bg-black/30 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white w-full md:w-80"
             value={manualKey}
             onChange={(e) => setManualKey(e.target.value)}
@@ -147,7 +177,7 @@ export default function Dashboard() {
               placeholder="Paste text here..." 
             />
             <button onClick={handleScreen} className="w-full py-5 bg-emerald-600 rounded-2xl font-black uppercase text-xs text-white transition">
-              {loading ? "Analyzing..." : "Screen Candidate"}
+              {loading ? "AI Analyzing..." : "Screen Candidate"}
             </button>
         </div>
 
@@ -157,7 +187,7 @@ export default function Dashboard() {
                 <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center text-3xl font-black mb-4 ${analysis.mode === 'Demo Mode' ? 'bg-amber-600' : 'bg-emerald-600'}`}>
                   {analysis.score}%
                 </div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-4">{analysis.mode || "Analysis Result"}</p>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-4">{analysis.mode}</p>
                 <p className="text-slate-300 italic text-sm">"{analysis.summary}"</p>
               </div>
             ) : (
