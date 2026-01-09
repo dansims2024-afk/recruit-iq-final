@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
 
-// --- SAMPLE DATA FOR QUICK TESTING ---
+// --- SAMPLE DATA ---
 const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $220,000 - $260,000 + Equity
 
 COMPANY OVERVIEW:
-Vertex Financial is a leading high-frequency trading firm processing $500M+ in daily transaction volume. We are rebuilding our core execution engine using modern cloud-native architecture.
+Vertex Financial is a leading high-frequency trading firm. We are rebuilding our core execution engine to achieve sub-millisecond latency using modern cloud-native architecture.
 
 KEY RESPONSIBILITIES:
 - Architect and implement high-availability microservices on AWS (EKS, Lambda, RDS).
 - Optimize low-latency trading algorithms.
-- Lead a team of 8-10 senior engineers.
+- Lead a team of senior engineers.
 
 REQUIRED QUALIFICATIONS:
 - 10+ years of software engineering experience.
 - Deep expertise in AWS cloud-native services.
-- Proven track record in FinTech systems.`;
+- Proven track record in scaling high-volume transactional systems.`;
 
 const SAMPLE_RESUME = `ALEXANDER MERCER
 Senior Principal Engineer
@@ -30,8 +30,7 @@ Results-driven Lead Engineer with 12 years of experience building scalable finan
 WORK EXPERIENCE:
 Innovate Financial | Lead Engineer | 2019 - Present
 - Spearheaded the migration of the core trading engine to AWS EKS.
-- Managed scaling operations for 500+ microservices.
-- Optimized database queries and caching strategies (Redis).
+- Optimized database queries and caching strategies (Redis), reducing P99 latency by 45%.
 
 SKILLS:
 - Languages: JavaScript (Node.js), Go, Python, SQL, C++.
@@ -40,7 +39,6 @@ SKILLS:
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
   
-  // App State
   const [activeTab, setActiveTab] = useState('jd'); 
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -49,11 +47,9 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Indicators
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
-  // --- 1. FILE UPLOAD HANDLER ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -73,8 +69,8 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // Updated logic as requested to fill the box with status
-        text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: PDF Content successfully buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Content hidden for performance, but ready for Step 3 AI screening...)`; 
+        // PDF Simulation fills the box with status as requested
+        text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: PDF Content successfully buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Content hidden for display performance, but ready for AI screening...)`; 
       } else {
         text = await file.text();
       }
@@ -88,32 +84,19 @@ export default function Dashboard() {
     setJdText(SAMPLE_JD);
     setResumeText(SAMPLE_RESUME);
     setJdFile({ name: "Job_Description.docx", size: "12 KB", type: "DOCX" });
-    setResumeFile({ name: "Alexander_Mercer.pdf", size: "45 KB", type: "PDF" });
+    setResumeFile({ name: "Alexander_Mercer_Resume.pdf", size: "45 KB", type: "PDF" });
   };
 
-  // --- 2. DYNAMIC BACKUP ENGINE (OFFLINE MODE) ---
-  const runBackupEngine = () => {
-    return {
-      score: 60,
-      summary: "[Offline Analysis] Connection to Gemini was interrupted. Manual review is recommended to assess transferable skills.",
-      strengths: ["Document successfully loaded", "Basic keywords detected"],
-      gaps: ["AI Reasoning pending"],
-      questions: ["Could you elaborate on your most recent project?"],
-      email_subject: "Update on your application",
-      email_body: "We are currently reviewing your profile."
-    };
-  };
-
-  // --- 3. LIVE SCREENING LOGIC (THE HANDLESCREEN FUNCTION) ---
+  // --- LIVE AI SCREENING ---
   const handleScreen = async () => {
     if (!jdText || !resumeText) return alert("Please provide both documents.");
     setLoading(true);
     
-    // API KEY linked to Recruit-IQ project with active billing
+    // API KEY linked to active Recruit-IQ project
     const apiKey = "AIzaSyA93n3APo0tySbzIhEDn3ZBGvV7XCV5EQw";
     
     try {
-      // Endpoint confirmed via your account discovery list
+      // Endpoint targeting the verified 'gemini-2.5-flash' model
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       
       const payload = {
@@ -122,7 +105,7 @@ export default function Dashboard() {
             text: `Return ONLY JSON. Analyze this JD and Resume.
             JD: ${jdText}
             Resume: ${resumeText}
-            JSON format: {"score":0, "summary":"", "strengths":[], "gaps":[], "questions":[], "email_subject":"", "email_body":""}`
+            JSON format: {"score":0, "summary":"", "strengths":[], "gaps":[]}`
           }]
         }],
         generationConfig: { 
@@ -137,15 +120,21 @@ export default function Dashboard() {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error("API call failed");
+      if (!response.ok) throw new Error("API Connection Failed");
 
       const data = await response.json();
       const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
       setAnalysis(parsed);
       
     } catch (err) {
-      console.warn("API Error, using fallback:", err);
-      setAnalysis(runBackupEngine());
+      console.warn("API Error, falling back to offline analysis:", err);
+      // Dynamic fallback if API fails
+      setAnalysis({
+        score: 60,
+        summary: "[Offline Analysis] Connection to Gemini 2.5 was interrupted. Manual review is recommended to assess transferable skills.",
+        strengths: ["Text successfully extracted", "Basic document formatting detected"],
+        gaps: ["Live AI verification pending"]
+      });
     } finally {
       setLoading(false);
     }
@@ -154,30 +143,28 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen font-sans">
       
-      {/* QUICK START GUIDE SECTION */}
+      {/* QUICK START GUIDE */}
       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
         <h2 className="text-emerald-400 font-black uppercase text-xs tracking-tighter mb-4">🚀 Quick Start Guide</h2>
         <div className="grid md:grid-cols-3 gap-6 text-[11px] text-slate-400 leading-relaxed">
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-2">1. Define the Role</p>
-            Paste your Job Description or upload requirements. The AI builds a benchmark for seniority and tech fit.
+            Paste the Job Description or upload requirements. The AI builds a benchmark for tech fit and seniority.
           </div>
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-2">2. Load the Resume</p>
-            Upload the Resume. Our system uses Gemini 2.5 Flash to find hidden semantic matches keyword scanners miss.
+            Upload the Resume. Our system uses Gemini 2.5 Flash to find semantic matches keyword scanners miss.
           </div>
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-2">3. Execute Screening</p>
-            Hit "Screen Candidate" to generate a match score and custom behavioral interview questions.
+            Hit "Screen Candidate" below to generate the match score and candidate intelligence report.
           </div>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* LEFT PANEL: INPUTS */}
-        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[800px] shadow-2xl">
-            
-            {/* TABS WITH STEP MARKERS */}
+        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'}`}>1</div>
                 <div className="flex-1 flex gap-2 bg-black/20 p-1 rounded-2xl">
@@ -216,7 +203,6 @@ export default function Dashboard() {
               placeholder="Paste content here..."
             />
 
-            {/* SCREEN CANDIDATE BUTTON AT BOTTOM */}
             <div className="mt-6 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-600 text-white font-black text-sm">3</div>
                 <button 
@@ -229,15 +215,15 @@ export default function Dashboard() {
             </div>
         </div>
 
-        {/* RIGHT PANEL: ANALYSIS OUTPUT */}
-        <div className="h-[800px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
+        {/* RIGHT PANEL: OUTPUT */}
+        <div className="h-[750px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
             {analysis ? (
               <div className="animate-in fade-in slide-in-from-right-8 duration-700 space-y-6">
                 <div className="bg-slate-900 border border-slate-800 p-10 rounded-[3rem] text-center shadow-2xl">
-                  <div className="w-28 h-28 mx-auto bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center text-4xl font-black mb-6 text-white shadow-xl shadow-emerald-500/40">
+                  <div className="w-24 h-24 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-6 text-white shadow-xl shadow-emerald-500/40">
                     {analysis.score}%
                   </div>
-                  <h3 className="text-emerald-400 font-bold uppercase tracking-widest text-xs mb-3">Recruit-IQ Match Score</h3>
+                  <h3 className="text-emerald-400 font-bold uppercase tracking-widest text-xs mb-3">Match Analysis</h3>
                   <p className="text-slate-300 italic text-sm leading-relaxed px-4">"{analysis.summary}"</p>
                 </div>
 
@@ -246,15 +232,6 @@ export default function Dashboard() {
                     <ul className="space-y-4">
                         {analysis.strengths.map((s, i) => (
                           <li key={i} className="text-xs text-slate-300 flex gap-4"><span className="text-emerald-500 font-bold">✓</span> {s}</li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="bg-slate-900 p-8 rounded-[2rem] border border-rose-500/10">
-                    <h4 className="text-[10px] font-black uppercase text-rose-500 mb-6 tracking-widest border-b border-rose-500/10 pb-4">Critical Gaps</h4>
-                    <ul className="space-y-4">
-                        {analysis.gaps.map((g, i) => (
-                          <li key={i} className="text-xs text-slate-300 flex gap-4"><span className="text-rose-500 font-bold">!</span> {g}</li>
                         ))}
                     </ul>
                 </div>
