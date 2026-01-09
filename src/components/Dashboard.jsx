@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignInButton, SignUpButton } from "@clerk/clerk-react"; // Added SignUpButton
+import { useUser, SignInButton, SignUpButton } from "@clerk/clerk-react"; 
 
 // --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
@@ -63,7 +63,6 @@ export default function Dashboard() {
     const query = new URLSearchParams(window.location.search);
     if (query.get('success')) {
       setIsPro(true);
-      // Clean URL so the user doesn't see the query param
       window.history.replaceState({}, document.title, "/");
     }
   }, []);
@@ -323,9 +322,9 @@ export default function Dashboard() {
                       <span className="text-white font-medium"><span className="text-xl font-black">3 Days Free</span></span>
                    </div>
                    
-                   {/* ACTION BUTTONS */}
+                   {/* DYNAMIC BUTTON LOGIC */}
                    {isSignedIn && !isPro ? (
-                     // State 1: Signed In, But Skipped Payment -> Force Stripe
+                     // State 1: Signed In but no Pro payment yet -> Force Stripe Link
                      <a 
                        href={STRIPE_URL}
                        className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 text-sm"
@@ -333,11 +332,11 @@ export default function Dashboard() {
                        Complete Trial Setup <span>→</span>
                      </a>
                    ) : (
-                     // State 2: Guest -> Create Account -> Auto-Redirect to Stripe
+                     // State 2: Guest -> Create Account -> Auto-Redirect to Stripe via .env or props
                      <SignUpButton 
                         mode="modal" 
                         forceRedirectUrl={STRIPE_URL}
-                        signUpForceRedirectUrl={STRIPE_URL}
+                        fallbackRedirectUrl={STRIPE_URL}
                      >
                        <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
                          <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
