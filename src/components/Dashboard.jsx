@@ -57,7 +57,7 @@ export default function Dashboard() {
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
   
-  // New State for File Info
+  // State for File Info
   const [jdFile, setJdFile] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
 
@@ -113,36 +113,29 @@ export default function Dashboard() {
   };
 
   // --- 2. BACKUP ENGINE (DYNAMIC SCANNER) ---
-  // THIS IS THE FIX: It now reads YOUR text instead of showing static samples.
   const runBackupEngine = () => {
-    // 1. Identify Keywords dynamically from the Job Description
     const commonTerms = ["Management", "Sales", "Marketing", "Java", "Python", "React", "AWS", "Finance", "Accounting", "Design", "Communication", "Leadership", "SQL", "Operations", "Strategy"];
     const jdKeywords = commonTerms.filter(term => jdText.toLowerCase().includes(term.toLowerCase()));
-    
-    // 2. Find matches in the Resume
     const matches = jdKeywords.filter(term => resumeText.toLowerCase().includes(term.toLowerCase()));
     
-    // 3. Generate Dynamic Content
     const score = Math.min(60 + (matches.length * 8), 96);
     const summary = matches.length > 0 
-      ? `[Offline Analysis] The candidate shows a strong background in ${matches[0]} and ${matches[1] || "related fields"}, aligning with ${matches.length} core requirements found in the job description. The experience level appears consistent with the role.`
-      : `[Offline Analysis] The resume content provided does not heavily overlap with standard keywords found in the Job Description. Manual review is recommended to assess transferable skills.`;
+      ? `[Offline Analysis] The candidate shows a strong background in ${matches[0]} and ${matches[1] || "related fields"}, aligning with ${matches.length} core requirements found in the job description.`
+      : `[Offline Analysis] Manual review is recommended to assess transferable skills.`;
 
     return {
       score: score,
       summary: summary,
-      strengths: matches.length > 0 ? matches.map(m => `Confirmed experience with ${m}`) : ["General professional experience", "Clear formatting", "Relevant industry background"],
+      strengths: matches.length > 0 ? matches.map(m => `Confirmed experience with ${m}`) : ["General professional experience"],
       gaps: ["Specific tool proficiency requires verification", "Recent project outcomes not fully detailed", "Certifications not explicitly listed"],
       questions: [
         `Can you describe your specific experience with ${matches[0] || "this role"}?`,
-        "What was the most challenging project you managed in your last position?",
-        "How do you handle tight deadlines and conflicting priorities?",
         "Describe a time you improved a process or workflow.",
         "What are your long-term career goals in this industry?"
       ],
       email: {
         subject: "Interview Invitation: " + (jdFile ? jdFile.name.replace(".txt", "") : "Open Position"),
-        body: "Hello,\n\nThank you for applying. We reviewed your background and were impressed by your alignment with our requirements.\n\nWe would love to schedule a time to discuss your experience in more detail.\n\nAre you available this week?\n\nBest,\nRecruiting Team"
+        body: "Hello,\n\nWe reviewed your background and were impressed by your alignment with our requirements.\n\nAre you available this week for a brief call?\n\nBest,\nRecruiting Team"
       }
     };
   };
@@ -162,20 +155,14 @@ export default function Dashboard() {
           .header { background-color: #0f172a; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #10b981; margin-bottom: 20px; }
           .brand { font-size: 24pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
           .subtitle { font-size: 10pt; color: #cbd5e1; text-transform: uppercase; margin-top: 5px; }
-          
           .score-box { border: 2px solid #e2e8f0; padding: 15px; margin-bottom: 20px; background-color: #f8fafc; border-radius: 8px; text-align: center; }
           .score-val { font-size: 36pt; font-weight: bold; color: #10b981; }
           .summary { font-style: italic; color: #555; margin: 10px 0; padding: 10px; border-left: 4px solid #10b981; background: #f0fdf4; }
-          
           h2 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; font-size: 14pt; text-transform: uppercase; }
-          ul { margin-top: 10px; }
-          li { margin-bottom: 8px; }
-          
           .strength { color: #047857; font-weight: bold; }
           .gap { color: #be123c; font-weight: bold; }
           .question { color: #1e3a8a; font-weight: bold; margin-bottom: 5px; display: block; }
           .notes { border: 1px dashed #cbd5e1; height: 60px; margin-bottom: 15px; background: #f8fafc; }
-          
           .footer { margin-top: 40px; font-size: 8pt; text-align: center; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
         </style>
       </head>
@@ -184,29 +171,18 @@ export default function Dashboard() {
           <div class="brand">RECRUIT-IQ</div>
           <div class="subtitle">Candidate Intelligence Report | ${reportDate}</div>
         </div>
-
         <div class="score-box">
            <div>MATCH SCORE</div>
            <div class="score-val">${analysis.score}%</div>
         </div>
-
         <h2>Executive Summary</h2>
         <div class="summary">"${analysis.summary}"</div>
-
         <h2>✅ Key Strengths</h2>
         <ul>${analysis.strengths.map(s => `<li><span class="strength">✓</span> ${s}</li>`).join('')}</ul>
-
         <h2>⚠️ Critical Gaps</h2>
         <ul>${analysis.gaps.map(g => `<li><span class="gap">!</span> ${g}</li>`).join('')}</ul>
-
         <h2>🎤 Interview Questions</h2>
-        ${analysis.questions.map((q, i) => `
-          <div>
-            <span class="question">Q${i+1}: ${q}</span>
-            <div class="notes"></div>
-          </div>
-        `).join('')}
-
+        ${analysis.questions.map((q, i) => `<div><span class="question">Q${i+1}: ${q}</span><div class="notes"></div></div>`).join('')}
         <div class="footer">Generated by Recruit-IQ AI | Confidential</div>
       </body>
       </html>
@@ -223,11 +199,12 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
     setLoading(true);
     
-    const apiKey = "AIzaSyDlgbsXgts6j4c_tL65uWRODumnqb_VEY8";
+    // --- UPDATED API KEY ---
+    const apiKey = "AIzaSyA93n3APo0tySbzIhEDn3ZBGvV7XCV5EQw";
     
     if (apiKey) {
         try {
-            // Updated to 'gemini-1.5-flash' for better reliability
+            // Using gemini-1.5-flash for optimized performance
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: `Act as a recruiter. Compare JD to Resume. 
@@ -240,7 +217,7 @@ export default function Dashboard() {
             
             if (!response.ok) {
                 console.error("API Error:", response.status, response.statusText);
-                throw new Error("API Blocked");
+                throw new Error("API Blocked or Invalid");
             }
             
             const data = await response.json();
@@ -324,7 +301,6 @@ export default function Dashboard() {
               </button>
             </div>
             
-            {/* ACTION BUTTONS */}
             <div className="mb-4 flex gap-3 relative z-10">
               <label className="flex-1 text-center cursor-pointer bg-slate-800/50 hover:bg-slate-800 py-4 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition flex items-center justify-center gap-2 group">
                 <span className="group-hover:text-white text-slate-400">Upload (PDF/Docx/Txt)</span>
@@ -378,9 +354,7 @@ export default function Dashboard() {
         <div className="h-[850px] overflow-y-auto pr-2 custom-scrollbar">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-700">
-                {/* SCORE CARD */}
                 <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
                   <div className="w-28 h-28 mx-auto bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center text-4xl font-black mb-6 text-white shadow-lg shadow-emerald-500/40 border-4 border-slate-900 z-10 relative">
                     {analysis.score}<span className="text-xl align-top mt-2">%</span>
                   </div>
@@ -388,7 +362,6 @@ export default function Dashboard() {
                   <p className="text-slate-300 italic text-sm leading-relaxed px-4">"{analysis.summary}"</p>
                 </div>
                 
-                {/* STRENGTHS */}
                 <div className="bg-slate-900 border border-emerald-500/20 p-8 rounded-[2rem]">
                     <h4 className="text-xs font-black uppercase text-emerald-500 mb-6 tracking-widest border-b border-emerald-500/20 pb-4">5 Key Strengths</h4>
                     <ul className="space-y-4">
@@ -401,7 +374,6 @@ export default function Dashboard() {
                     </ul>
                 </div>
 
-                {/* GAPS */}
                 <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-[2rem]">
                     <h4 className="text-xs font-black uppercase text-rose-500 mb-6 tracking-widest border-b border-rose-500/20 pb-4">3 Critical Gaps</h4>
                     <ul className="space-y-4">
@@ -414,7 +386,6 @@ export default function Dashboard() {
                     </ul>
                 </div>
 
-                {/* INTERVIEW GUIDE */}
                 <div className="bg-slate-900 border border-blue-500/20 p-8 rounded-[2rem]">
                     <div className="flex justify-between items-center mb-6 border-b border-blue-500/20 pb-4">
                        <h4 className="text-xs font-black uppercase text-blue-400 tracking-widest">Interview Questions</h4>
@@ -431,7 +402,6 @@ export default function Dashboard() {
                     </ul>
                 </div>
 
-                {/* EMAIL GENERATOR */}
                 <div className="bg-slate-900 border border-indigo-500/20 p-8 rounded-[2rem]">
                     <div className="flex justify-between items-center mb-4">
                        <h4 className="text-xs font-black uppercase text-indigo-400 tracking-widest">Candidate Email</h4>
@@ -439,12 +409,10 @@ export default function Dashboard() {
                          {emailOpen ? "Hide Draft" : "Generate Email"}
                        </button>
                     </div>
-                    
                     {emailOpen && (
                       <div className="animate-in fade-in slide-in-from-top-2">
                         <input className="w-full bg-black/30 border border-slate-700 rounded-lg p-3 text-xs text-white mb-2 font-bold" value={analysis.email.subject} readOnly />
                         <textarea className="w-full h-40 bg-black/30 border border-slate-700 rounded-lg p-3 text-xs text-slate-300 resize-none font-mono" value={analysis.email.body} readOnly />
-                        <button className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 py-2 rounded-lg text-[10px] font-black uppercase text-white transition">Copy to Clipboard</button>
                       </div>
                     )}
                 </div>
