@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   
-  // MANUAL KEY ENTRY
+  // MANUAL KEY ENTRY STATE
   const [manualKey, setManualKey] = useState('');
 
   const jdComplete = jdText.length > 50; 
@@ -28,13 +28,12 @@ export default function Dashboard() {
     
     try {
       const genAI = new GoogleGenerativeAI(finalKey);
-      // We ask Google: "What models do I have access to?"
-      // Note: We use a dummy model init just to check connectivity in this simple setup
+      // We test 'gemini-pro' specifically because it is the most reliable model
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       await model.generateContent("Test connection");
-      alert("✅ SUCCESS! Your API Key works with 'gemini-pro'. You are good to go.");
+      alert("✅ SUCCESS! Your API Key works with 'gemini-pro'.");
     } catch (error) {
-      alert(`❌ DIAGNOSTIC FAILED:\n${error.message}\n\nIf you see '404', your key cannot access the model.`);
+      alert(`❌ CONNECTION TEST FAILED:\n${error.message}`);
     }
   };
 
@@ -45,8 +44,9 @@ export default function Dashboard() {
     setStatusMsg("Reading file...");
     try {
       let text = "";
+      // Simple PDF Trap
       if (file.name.endsWith('.pdf')) {
-         alert("PDF parsing is temporarily disabled. Please copy/paste text from your PDF.");
+         alert("PDF parsing is disabled to prevent crashes. Please copy/paste the text instead.");
          setStatusMsg("");
          return;
       } 
@@ -81,7 +81,7 @@ export default function Dashboard() {
     try {
       const genAI = new GoogleGenerativeAI(finalKey);
       
-      // *** CRITICAL FIX: SWITCHED TO 'gemini-pro' (Most compatible model) ***
+      // *** CRITICAL FIX: HARDCODED TO 'gemini-pro' TO FIX 404 ERROR ***
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
       
       const prompt = `Act as a recruiter. Compare this JD: "${jdText.substring(0,1000)}..." to Resume: "${resumeText.substring(0,1000)}...".
@@ -92,8 +92,7 @@ export default function Dashboard() {
       setAnalysis({ score: 85, summary: response.text() });
     } catch (err) {
       console.error("AI Failure:", err);
-      // Fallback to ensure UI doesn't freeze
-      alert(`AI Connection Failed: ${err.message}. \n\nCheck the console for specific '404' details.`);
+      alert(`Connection Failed: ${err.message}. \n\nCheck your API Key permissions.`);
     }
     setLoading(false);
   };
@@ -104,8 +103,8 @@ export default function Dashboard() {
       {/* DIAGNOSTIC BOX */}
       <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex flex-col">
-          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Connection Settings</p>
-          <p className="text-[10px] text-slate-500">Paste key here to override Vercel settings</p>
+          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Debugger</p>
+          <p className="text-[10px] text-slate-500">Fix '404' errors by testing your key here</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
             <input 
@@ -116,11 +115,12 @@ export default function Dashboard() {
             onChange={(e) => setManualKey(e.target.value)}
             />
             <button onClick={checkAvailableModels} className="bg-slate-600 hover:bg-slate-500 text-xs uppercase font-bold px-3 py-2 rounded-lg transition">
-                Test Key
+                Test Connection
             </button>
         </div>
       </div>
 
+      {/* 1-2-3 GUIDE */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4">
           <div className="flex items-center gap-4">
              <span className={`${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>{jdComplete ? "✓" : "1"}</span>
@@ -132,7 +132,10 @@ export default function Dashboard() {
           </div>
       </div>
 
+      {/* MAIN CONTENT GRID */}
       <div className="grid md:grid-cols-2 gap-8">
+        
+        {/* INPUT SECTION */}
         <div className="bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px]">
             <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Job Description</button>
@@ -158,6 +161,7 @@ export default function Dashboard() {
             </button>
         </div>
 
+        {/* OUTPUT SECTION */}
         <div className="h-[750px] overflow-y-auto">
             {analysis ? (
               <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl animate-in fade-in">
