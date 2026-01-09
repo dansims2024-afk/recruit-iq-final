@@ -209,39 +209,74 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen font-sans relative">
       
-      {/* FREEMIUM MODAL */}
+      {/* HIGH-IMPACT FREEMIUM MODAL */}
       {showUpgrade && (
-        <div className="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-3xl shadow-2xl relative animate-in zoom-in-95 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/80">
+          {/* Glowing Animated Border Container */}
+          <div className="relative w-full max-w-lg group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-600 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-75 animate-pulse transition duration-1000"></div>
             
-            <div className="bg-gradient-to-r from-emerald-900/40 to-slate-900 p-8 text-center border-b border-slate-800 relative">
-               <button onClick={() => setShowUpgrade(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white transition">✕</button>
-               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-500/10 mb-4 shadow-lg shadow-emerald-500/20">
-                  <span className="text-3xl">🚀</span>
-               </div>
-               <h2 className="text-3xl font-black text-white mb-2 tracking-tight">You've used your <span className="text-emerald-500">3 Free Guest Screens</span></h2>
-               <p className="text-slate-400 text-sm">Don't lose momentum. Create a free account to keep going.</p>
-            </div>
+            {/* Main Modal Content */}
+            <div className="relative bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden">
+              
+              {/* Hero Header */}
+              <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/60 via-slate-900 to-slate-900 p-10 text-center border-b border-slate-800 relative overflow-hidden">
+                 <button onClick={() => setShowUpgrade(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition z-10">✕</button>
+                 
+                 {/* Background Glow Effect */}
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] -z-10"></div>
+                 
+                 <div className="inline-flex items-center justify-center mb-6 animate-bounce-slow">
+                    <span className="text-6xl drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">🚀</span>
+                 </div>
+                 <h2 className="text-3xl font-black text-white mb-3 tracking-tight leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-emerald-200 to-emerald-500">
+                   UNLEASH YOUR FULL<br/>HIRING POTENTIAL
+                 </h2>
+                 <p className="text-slate-300 text-sm font-medium">You've used your 3 free screens. It's time to upgrade.</p>
+              </div>
 
-            <div className="p-8 space-y-6">
-               <div className="bg-black/20 p-4 rounded-xl border border-slate-800 text-left">
-                  <h4 className="text-emerald-400 font-bold uppercase text-xs tracking-widest mb-2">Sign Up Bonus</h4>
-                  <p className="text-white font-medium text-lg">Unlock 3 Days of Unlimited Pro Access</p>
-                  <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                    <li className="flex gap-2"><span className="text-emerald-500">✓</span> Unlimited AI Screening</li>
-                    <li className="flex gap-2"><span className="text-emerald-500">✓</span> Word Document Exports</li>
-                    <li className="flex gap-2"><span className="text-emerald-500">✓</span> Save Candidate History</li>
-                  </ul>
-               </div>
+              {/* Modal Body */}
+              <div className="p-8 space-y-8">
+                 <div className="space-y-4">
+                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
+                       <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg group-hover/item:bg-emerald-500/30 transition">✓</div>
+                       <div>
+                          <p className="font-black text-base text-white">Unlimited AI Screening</p>
+                          <p className="text-xs text-slate-400">Screen 10 or 10,000 candidates. No limits.</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
+                       <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg group-hover/item:bg-blue-500/30 transition">✓</div>
+                       <div>
+                          <p className="font-black text-base text-white">Pro Word Exports</p>
+                          <p className="text-xs text-slate-400">Download client-ready intelligence reports.</p>
+                       </div>
+                    </div>
+                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
+                       <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-lg group-hover/item:bg-indigo-500/30 transition">✓</div>
+                       <div>
+                          <p className="font-black text-base text-white">Deep Semantic Matching</p>
+                          <p className="text-xs text-slate-400">Unlock advanced Gemini 2.0 reasoning.</p>
+                       </div>
+                    </div>
+                 </div>
 
-               {/* Clerk Sign In Button Trigger */}
-               <SignInButton mode="modal">
-                 <button className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
-                   Create Free Account & Start Trial
-                 </button>
-               </SignInButton>
-               
-               <p className="text-center text-[10px] text-slate-600">No credit card required for sign up.</p>
+                 {/* CTA Section */}
+                 <div className="pt-4">
+                   <div className="flex justify-between items-center mb-4 px-2">
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full">Special Welcome Offer</span>
+                      <span className="text-white font-medium">
+                         <span className="text-xl font-black">3 Days Free</span>
+                      </span>
+                   </div>
+                   <SignInButton mode="modal">
+                     <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
+                       <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
+                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                     </button>
+                   </SignInButton>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
