@@ -36,7 +36,7 @@ SKILLS:
 export default function Dashboard() {
   const { isSignedIn, user } = useUser();
   
-  // State
+  // App State
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -44,15 +44,25 @@ export default function Dashboard() {
   const [resumeFile, setResumeFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
   
-  // Guest Usage Tracking
+  // Freemium & Stripe State
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [guestUsage, setGuestUsage] = useState(0);
+  const [isPro, setIsPro] = useState(false);
   const GUEST_LIMIT = 3;
 
+  // Load usage and check for Stripe success on mount
   useEffect(() => {
     const storedUsage = localStorage.getItem('riq_guest_usage');
     if (storedUsage) setGuestUsage(parseInt(storedUsage));
+
+    // Detect if user just returned from Stripe
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('success')) {
+      setIsPro(true);
+      // Clean URL
+      window.history.replaceState({}, document.title, "/");
+    }
   }, []);
 
   const jdComplete = jdText.length > 50; 
@@ -61,7 +71,6 @@ export default function Dashboard() {
   // --- PDF EXTRACTION (CDN METHOD) ---
   const extractPdfText = async (file) => {
     try {
-      // Dynamic import from CDN to avoid Vercel build errors
       const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm');
       pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
 
@@ -190,7 +199,7 @@ export default function Dashboard() {
 
   // --- LIVE SCREENING LOGIC ---
   const handleScreen = async () => {
-    // FREEMIUM CHECK
+    // 1. GUEST CHECK
     if (!isSignedIn) {
       if (guestUsage >= GUEST_LIMIT) {
         setShowUpgrade(true);
@@ -198,12 +207,19 @@ export default function Dashboard() {
       }
     }
 
+    // 2. PRO SUBSCRIPTION CHECK
+    // If signed in but no Pro flag (Stripe), force upgrade
+    if (isSignedIn && !isPro) {
+      setShowUpgrade(true);
+      return;
+    }
+
     if (!jdText || !resumeText) return alert("Please provide both documents.");
     
-    // SECURE KEY ACCESS
+    // 3. SECURE API CALL
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      return alert("Configuration Error: API Key missing. Please set VITE_GEMINI_API_KEY in your .env file.");
+      return alert("Configuration Error: API Key missing in .env file.");
     }
     
     setLoading(true);
@@ -240,7 +256,7 @@ export default function Dashboard() {
       
       setAnalysis(parsed);
       
-      // Increment Guest Usage
+      // Increment Guest Usage only if not signed in
       if (!isSignedIn) {
         const newUsage = guestUsage + 1;
         setGuestUsage(newUsage);
@@ -262,9 +278,11 @@ export default function Dashboard() {
       {showUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/80">
           <div className="relative w-full max-w-lg group">
+            {/* Pulsing Border */}
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-600 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-75 animate-pulse transition duration-1000"></div>
             
             <div className="relative bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden">
+              {/* Header */}
               <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/60 via-slate-900 to-slate-900 p-10 text-center border-b border-slate-800 relative overflow-hidden">
                  <button onClick={() => setShowUpgrade(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition z-10">✕</button>
                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-[100px] -z-10"></div>
@@ -277,44 +295,48 @@ export default function Dashboard() {
                  <p className="text-slate-300 text-sm font-medium">You've used your 3 free screens. It's time to upgrade.</p>
               </div>
 
+              {/* Body */}
               <div className="p-8 space-y-8">
                  <div className="space-y-4">
-                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
-                       <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg group-hover/item:bg-emerald-500/30 transition">✓</div>
+                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02]">
+                       <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-lg">✓</div>
                        <div>
                           <p className="font-black text-base text-white">Unlimited AI Screening</p>
                           <p className="text-xs text-slate-400">Screen 10 or 10,000 candidates. No limits.</p>
                        </div>
                     </div>
-                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
-                       <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg group-hover/item:bg-blue-500/30 transition">✓</div>
+                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02]">
+                       <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg">✓</div>
                        <div>
                           <p className="font-black text-base text-white">Pro Word Exports</p>
                           <p className="text-xs text-slate-400">Download client-ready intelligence reports.</p>
                        </div>
                     </div>
-                    <div className="flex items-center gap-5 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl border border-slate-700/50 hover:border-emerald-500/30 transition-all hover:scale-[1.02] group/item">
-                       <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-lg group-hover/item:bg-indigo-500/30 transition">✓</div>
-                       <div>
-                          <p className="font-black text-base text-white">Deep Semantic Matching</p>
-                          <p className="text-xs text-slate-400">Unlock advanced Gemini 2.0 reasoning.</p>
-                       </div>
-                    </div>
                  </div>
 
+                 {/* CTA Logic */}
                  <div className="pt-4">
                    <div className="flex justify-between items-center mb-4 px-2">
-                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full">Special Welcome Offer</span>
-                      <span className="text-white font-medium">
-                         <span className="text-xl font-black">3 Days Free</span>
-                      </span>
+                      <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full">Trial Offer</span>
+                      <span className="text-white font-medium"><span className="text-xl font-black">3 Days Free</span></span>
                    </div>
-                   <SignInButton mode="modal">
-                     <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
-                       <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
-                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
-                     </button>
-                   </SignInButton>
+                   
+                   {/* LOGIC: If Signed In but No Pro, show Stripe Link. Else show Clerk Sign Up */}
+                   {isSignedIn && !isPro ? (
+                     <a 
+                       href="YOUR_STRIPE_PAYMENT_LINK_HERE"
+                       className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 text-sm"
+                     >
+                       Complete Trial Setup <span>→</span>
+                     </a>
+                   ) : (
+                     <SignInButton mode="modal" afterSignUpUrl="YOUR_STRIPE_PAYMENT_LINK_HERE">
+                       <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
+                         <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
+                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                       </button>
+                     </SignInButton>
+                   )}
                  </div>
               </div>
             </div>
@@ -326,10 +348,10 @@ export default function Dashboard() {
       <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2rem]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-emerald-400 font-black uppercase text-xs tracking-widest">🚀 Quick Start Guide</h2>
-          {isSignedIn ? (
+          {isPro ? (
             <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-4 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Pro Trial Active
+              Pro Active
             </span>
           ) : (
             <span className="bg-slate-800 text-slate-400 px-3 py-1 rounded-full text-[10px] font-bold">
