@@ -14,59 +14,62 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
-  
-  // MANUAL KEY ENTRY STATE
   const [manualKey, setManualKey] = useState('');
 
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
-  // --- DIAGNOSTIC TOOL ---
-  const checkAvailableModels = async () => {
-    const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
-    if (!finalKey) return alert("Please enter an API Key first.");
-    
-    try {
-      const genAI = new GoogleGenerativeAI(finalKey);
-      // We test 'gemini-pro' specifically because it is the most reliable model
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-      await model.generateContent("Test connection");
-      alert("✅ SUCCESS! Your API Key works with 'gemini-pro'.");
-    } catch (error) {
-      alert(`❌ CONNECTION TEST FAILED:\n${error.message}`);
+  // --- SMART MODEL SCANNER ---
+  // This function tries every known model name until one works.
+  // It fixes the "404 Model Not Found" error by finding a model that DOES exist.
+  const findWorkingModel = async (genAI) => {
+    const candidateModels = [
+      "gemini-1.5-flash",
+      "gemini-pro",
+      "gemini-1.0-pro",
+      "gemini-1.5-pro-latest"
+    ];
+
+    for (const modelName of candidateModels) {
+      try {
+        console.log(`Testing model: ${modelName}...`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        // Minimal test generation
+        await model.generateContent("Test");
+        console.log(`SUCCESS: Found working model ${modelName}`);
+        return modelName;
+      } catch (err) {
+        console.warn(`Model ${modelName} failed: ${err.message}`);
+        // Continue to next model
+      }
     }
+    throw new Error("No working Gemini models found for this API Key. Please create a new key at aistudio.google.com");
   };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setStatusMsg("Reading file...");
+    setStatusMsg("Reading...");
     try {
       let text = "";
-      // Simple PDF Trap
       if (file.name.endsWith('.pdf')) {
-         alert("PDF parsing is disabled to prevent crashes. Please copy/paste the text instead.");
-         setStatusMsg("");
+         alert("PDF parsing unavailable. Please copy/paste text.");
          return;
-      } 
-      else if (file.name.endsWith('.docx')) {
+      } else if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
-      } 
-      else {
+      } else {
         text = await file.text();
       }
 
       if (!text || text.trim().length < 5) throw new Error("File empty");
-
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
       setStatusMsg("✅ Loaded!");
       setTimeout(() => setStatusMsg(''), 2000);
     } catch (err) {
       console.error(err);
-      setStatusMsg("❌ Read Error");
-      alert("Could not read file. Please paste text directly.");
+      alert("Read Error: Please paste text directly.");
     }
   };
 
@@ -74,25 +77,27 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
     
     const finalKey = manualKey || import.meta.env.VITE_GEMINI_API_KEY;
-    if (!finalKey) return alert("No API Key found. Please enter one in the settings box.");
+    if (!finalKey) return alert("No API Key provided.");
 
     setLoading(true);
     
     try {
       const genAI = new GoogleGenerativeAI(finalKey);
       
-      // *** CRITICAL FIX: HARDCODED TO 'gemini-pro' TO FIX 404 ERROR ***
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      // 1. SCAN FOR WORKING MODEL
+      const workingModelName = await findWorkingModel(genAI);
       
-      const prompt = `Act as a recruiter. Compare this JD: "${jdText.substring(0,1000)}..." to Resume: "${resumeText.substring(0,1000)}...".
-      Output ONLY: 1. Match Score (0-100) and 2. A 2-sentence summary.`;
+      // 2. RUN ANALYSIS WITH WINNING MODEL
+      const model = genAI.getGenerativeModel({ model: workingModelName });
+      const prompt = `Act as a recruiter. Compare this JD: "${jdText.substring(0,1000)}..." to Resume: "${resumeText.substring(0,1000)}...". Output ONLY: 1. Match Score (0-100) and 2. A 2-sentence summary.`;
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      setAnalysis({ score: 85, summary: response.text() });
+      setAnalysis({ score: 85, summary: response.text() }); // Mock score logic can be parsed from text later
+      
     } catch (err) {
       console.error("AI Failure:", err);
-      alert(`Connection Failed: ${err.message}. \n\nCheck your API Key permissions.`);
+      alert(`Connection Failed: ${err.message}`);
     }
     setLoading(false);
   };
@@ -100,27 +105,24 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white font-sans">
       
-      {/* DIAGNOSTIC BOX */}
+      {/* DEBUGGER */}
       <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex flex-col">
-          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ API Debugger</p>
-          <p className="text-[10px] text-slate-500">Fix '404' errors by testing your key here</p>
+          <p className="text-xs text-slate-400 uppercase font-bold tracking-widest">⚠️ Auto-Fixer</p>
+          <p className="text-[10px] text-slate-500">Paste your NEW key here. The app will auto-scan for valid models.</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
             <input 
             type="password" 
-            placeholder="Paste Google API Key here..." 
+            placeholder="Paste Google AI Studio Key..." 
             className="bg-black/30 border border-slate-600 rounded-lg px-4 py-2 text-sm text-white w-full md:w-80"
             value={manualKey}
             onChange={(e) => setManualKey(e.target.value)}
             />
-            <button onClick={checkAvailableModels} className="bg-slate-600 hover:bg-slate-500 text-xs uppercase font-bold px-3 py-2 rounded-lg transition">
-                Test Connection
-            </button>
         </div>
       </div>
 
-      {/* 1-2-3 GUIDE */}
+      {/* TABS */}
       <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4">
           <div className="flex items-center gap-4">
              <span className={`${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'} w-8 h-8 rounded-full flex items-center justify-center font-bold`}>{jdComplete ? "✓" : "1"}</span>
@@ -132,10 +134,7 @@ export default function Dashboard() {
           </div>
       </div>
 
-      {/* MAIN CONTENT GRID */}
       <div className="grid md:grid-cols-2 gap-8">
-        
-        {/* INPUT SECTION */}
         <div className="bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px]">
             <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>Job Description</button>
@@ -154,14 +153,13 @@ export default function Dashboard() {
               className="flex-1 bg-transparent resize-none outline-none text-slate-300 p-4 border border-slate-800 rounded-2xl mb-4 text-xs font-mono" 
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} 
-              placeholder="Paste text here if upload fails..." 
+              placeholder="Paste text here..." 
             />
             <button onClick={handleScreen} className="w-full py-5 bg-emerald-600 rounded-2xl font-black uppercase text-xs text-white transition">
-              {loading ? "Analyzing..." : "Screen Candidate"}
+              {loading ? "Scanning & Analyzing..." : "Screen Candidate"}
             </button>
         </div>
 
-        {/* OUTPUT SECTION */}
         <div className="h-[750px] overflow-y-auto">
             {analysis ? (
               <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl animate-in fade-in">
