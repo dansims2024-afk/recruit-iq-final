@@ -112,33 +112,37 @@ export default function Dashboard() {
     setActiveTab('jd');
   };
 
-  // --- 2. BACKUP ENGINE (SIMULATION) ---
+  // --- 2. BACKUP ENGINE (DYNAMIC SCANNER) ---
+  // THIS IS THE FIX: It now reads YOUR text instead of showing static samples.
   const runBackupEngine = () => {
+    // 1. Identify Keywords dynamically from the Job Description
+    const commonTerms = ["Management", "Sales", "Marketing", "Java", "Python", "React", "AWS", "Finance", "Accounting", "Design", "Communication", "Leadership", "SQL", "Operations", "Strategy"];
+    const jdKeywords = commonTerms.filter(term => jdText.toLowerCase().includes(term.toLowerCase()));
+    
+    // 2. Find matches in the Resume
+    const matches = jdKeywords.filter(term => resumeText.toLowerCase().includes(term.toLowerCase()));
+    
+    // 3. Generate Dynamic Content
+    const score = Math.min(60 + (matches.length * 8), 96);
+    const summary = matches.length > 0 
+      ? `[Offline Analysis] The candidate shows a strong background in ${matches[0]} and ${matches[1] || "related fields"}, aligning with ${matches.length} core requirements found in the job description. The experience level appears consistent with the role.`
+      : `[Offline Analysis] The resume content provided does not heavily overlap with standard keywords found in the Job Description. Manual review is recommended to assess transferable skills.`;
+
     return {
-      score: 94,
-      summary: "Alexander is an exceptional match for the Senior Architect role. His direct experience migrating trading engines to AWS EKS and reducing latency by 45% aligns perfectly with Vertex Financial's modernization goals.",
-      strengths: [
-        "Perfect alignment on AWS EKS & Microservices migration experience.",
-        "Quantifiable success reducing latency (45%) and costs ($2M), demonstrating high ROI.",
-        "Direct leadership experience managing large engineering teams (15+ people).",
-        "Strong domain expertise in High-Frequency Trading (HFT) and FinTech.",
-        "Deep technical stack match: Node.js, Go, and PostgreSQL."
-      ],
-      gaps: [
-        "Resume does not explicitly mention experience with 'Kafka' or 'Kinesis' for streaming.",
-        "While C++ is listed in skills, recent work history focuses heavily on Node/Go.",
-        "Specific experience navigating a SOC2 Type II audit is implied but not explicitly detailed."
-      ],
+      score: score,
+      summary: summary,
+      strengths: matches.length > 0 ? matches.map(m => `Confirmed experience with ${m}`) : ["General professional experience", "Clear formatting", "Relevant industry background"],
+      gaps: ["Specific tool proficiency requires verification", "Recent project outcomes not fully detailed", "Certifications not explicitly listed"],
       questions: [
-        "Can you walk us through the specific challenges you faced when migrating the core trading engine to EKS?",
-        "You mentioned reducing latency by 45%—was this primarily through Redis caching or database optimization?",
-        "Describe a time you had to mentor a senior engineer who was resistant to adopting new architecture.",
-        "How have you handled data consistency in high-volume distributed transactions?",
-        "What is your approach to ensuring PCI-DSS compliance in a microservices environment?"
+        `Can you describe your specific experience with ${matches[0] || "this role"}?`,
+        "What was the most challenging project you managed in your last position?",
+        "How do you handle tight deadlines and conflicting priorities?",
+        "Describe a time you improved a process or workflow.",
+        "What are your long-term career goals in this industry?"
       ],
       email: {
-        subject: "Interview Request: Senior FinTech Architect Role - Vertex Financial",
-        body: "Hi Alexander,\n\nI reviewed your background and was incredibly impressed by your work at Innovate Financial—specifically how you reduced core engine latency by 45% while migrating to EKS.\n\nWe are currently tackling a similar scale challenge ($500M+ daily volume) and I think your architectural approach would be invaluable here.\n\nAre you open to a brief conversation this Thursday or Friday?\n\nBest,\n[Your Name]"
+        subject: "Interview Invitation: " + (jdFile ? jdFile.name.replace(".txt", "") : "Open Position"),
+        body: "Hello,\n\nThank you for applying. We reviewed your background and were impressed by your alignment with our requirements.\n\nWe would love to schedule a time to discuss your experience in more detail.\n\nAre you available this week?\n\nBest,\nRecruiting Team"
       }
     };
   };
@@ -219,21 +223,25 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
     setLoading(true);
     
-    // --- KEY INSERTED HERE ---
     const apiKey = "AIzaSyDlgbsXgts6j4c_tL65uWRODumnqb_VEY8";
     
     if (apiKey) {
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+            // Updated to 'gemini-1.5-flash' for better reliability
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: `Act as a recruiter. Compare JD to Resume. 
-                JD: ${jdText.substring(0,1000)}... 
-                Resume: ${resumeText.substring(0,1000)}... 
+                JD: ${jdText.substring(0,2000)}... 
+                Resume: ${resumeText.substring(0,2000)}... 
                 Output a JSON with: score (num), summary (string), strengths (array of 5 strings), gaps (array of 3 strings), questions (array of 5 strings), email_subject (string), email_body (string).` }] }]
             };
             
             const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error("API Blocked");
+            
+            if (!response.ok) {
+                console.error("API Error:", response.status, response.statusText);
+                throw new Error("API Blocked");
+            }
             
             const data = await response.json();
             const rawText = data.candidates[0].content.parts[0].text;
@@ -251,7 +259,7 @@ export default function Dashboard() {
             setLoading(false);
             return;
         } catch (err) {
-            console.warn("API Failed, switching to Backup Engine.");
+            console.warn("API Failed, switching to Dynamic Backup Engine.", err);
         }
     }
 
@@ -327,7 +335,7 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* FILE INFO BAR - SHOWS FILENAME WHEN UPLOADED */}
+            {/* FILE INFO BAR */}
             {activeTab === 'jd' && jdFile && (
                <div className="mb-4 bg-emerald-900/30 border border-emerald-500/30 p-3 rounded-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
