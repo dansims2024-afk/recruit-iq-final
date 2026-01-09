@@ -60,7 +60,7 @@ export default function Dashboard() {
     const query = new URLSearchParams(window.location.search);
     if (query.get('success')) {
       setIsPro(true);
-      // Clean URL
+      // Clean URL so the user doesn't see the query param
       window.history.replaceState({}, document.title, "/");
     }
   }, []);
@@ -199,7 +199,7 @@ export default function Dashboard() {
 
   // --- LIVE SCREENING LOGIC ---
   const handleScreen = async () => {
-    // 1. GUEST CHECK
+    // 1. GUEST LIMIT CHECK
     if (!isSignedIn) {
       if (guestUsage >= GUEST_LIMIT) {
         setShowUpgrade(true);
@@ -207,8 +207,9 @@ export default function Dashboard() {
       }
     }
 
-    // 2. PRO SUBSCRIPTION CHECK
-    // If signed in but no Pro flag (Stripe), force upgrade
+    // 2. PRO SUBSCRIPTION CHECK (HARMONY LOGIC)
+    // If user is Signed In (Identity Verified) BUT Not Pro (Payment Verified)
+    // We block them and force the Upgrade Modal to open
     if (isSignedIn && !isPro) {
       setShowUpgrade(true);
       return;
@@ -219,7 +220,7 @@ export default function Dashboard() {
     // 3. SECURE API CALL
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey) {
-      return alert("Configuration Error: API Key missing in .env file.");
+      return alert("System Error: API Key missing. Check environment variables.");
     }
     
     setLoading(true);
@@ -256,7 +257,7 @@ export default function Dashboard() {
       
       setAnalysis(parsed);
       
-      // Increment Guest Usage only if not signed in
+      // Increment Guest Usage ONLY if not signed in
       if (!isSignedIn) {
         const newUsage = guestUsage + 1;
         setGuestUsage(newUsage);
@@ -321,8 +322,9 @@ export default function Dashboard() {
                       <span className="text-white font-medium"><span className="text-xl font-black">3 Days Free</span></span>
                    </div>
                    
-                   {/* LOGIC: If Signed In but No Pro, show Stripe Link. Else show Clerk Sign Up */}
+                   {/* DYNAMIC BUTTON LOGIC FOR "HARMONY" */}
                    {isSignedIn && !isPro ? (
+                     // State 1: Signed In, But Skipped Payment -> Force Stripe
                      <a 
                        href="YOUR_STRIPE_PAYMENT_LINK_HERE"
                        className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-blue-600/30 flex items-center justify-center gap-3 text-sm"
@@ -330,6 +332,7 @@ export default function Dashboard() {
                        Complete Trial Setup <span>→</span>
                      </a>
                    ) : (
+                     // State 2: Guest -> Create Account (Then Auto-Redirect to Stripe)
                      <SignInButton mode="modal" afterSignUpUrl="YOUR_STRIPE_PAYMENT_LINK_HERE">
                        <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
                          <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
