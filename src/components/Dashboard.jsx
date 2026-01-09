@@ -71,7 +71,7 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // PDF Simulation: Fills text area with metadata for the AI
+        // PDF Simulation: Fills text area with status for AI context
         text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: Content buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Proceed to Step 3 for AI screening...)`; 
       } else {
         text = await file.text();
@@ -95,9 +95,11 @@ export default function Dashboard() {
     setLoading(true);
     setAnalysis(null);
     
-    const apiKey = "AIzaSyA93n3APo0tySbzIhEDn3ZBGvV7XCV5EQw";
+    // Updated with your new API Key
+    const apiKey = "AIzaSyDLxFEIhTaBbZTIBWR7JxVnuOx1spxr2A0";
     
     try {
+      // Endpoint using stable 2.0-flash from your discovery list
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       
       const response = await fetch(url, {
@@ -106,7 +108,8 @@ export default function Dashboard() {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Act as a recruiter. Analyze JD and Resume. Return ONLY JSON: {"score":0, "summary":"", "strengths":[], "gaps":[]}
+              text: `Act as a professional recruiter. Analyze JD and Resume. 
+              Return ONLY JSON: {"score":0, "summary":"", "strengths":[], "gaps":[]}
               JD: ${jdText}
               Resume: ${resumeText}`
             }]
@@ -115,18 +118,21 @@ export default function Dashboard() {
         })
       });
 
-      if (!response.ok) throw new Error(`Status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error.message || "Connection Failed");
+      }
 
       const data = await response.json();
       const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
       setAnalysis(parsed);
       
     } catch (err) {
-      console.error("API Error:", err);
-      // Fallback Engine if 403 or 404 occurs
+      console.error("Live AI Failed:", err.message);
+      // Fallback used if API rejection persists
       setAnalysis({
         score: 60,
-        summary: "[Offline Analysis] Connection to Gemini was interrupted. Manual review recommended.",
+        summary: `[Offline Analysis] AI connection issue: ${err.message}. Reviewing locally.`,
         strengths: ["Text successfully extracted", "Content ready for review"],
         gaps: ["Live AI reasoning pending"]
       });
@@ -138,21 +144,20 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen font-sans">
       
-      {/* QUICK START GUIDE */}
       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
         <h2 className="text-emerald-400 font-black uppercase text-xs tracking-tighter mb-4">🚀 Quick Start Guide</h2>
         <div className="grid md:grid-cols-3 gap-6 text-[11px] text-slate-400 leading-relaxed">
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-1">1. Define the Role</p>
-            Paste the Job Description or upload requirements. The AI builds a benchmark for tech fit.
+            Paste the Job Description or upload requirements.
           </div>
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-1">2. Load the Resume</p>
-            Upload the Resume. We use Gemini 2.0 Flash to find semantic matches keywords miss.
+            Upload the Resume for deep semantic analysis.
           </div>
           <div className="bg-black/20 p-4 rounded-xl border border-slate-800">
             <p className="text-white font-bold mb-1">3. Screen Candidate</p>
-            Hit "Screen Candidate" below to generate the match score and intelligence report.
+            Hit "Screen Candidate" below to generate live AI matched results.
           </div>
         </div>
       </div>
@@ -161,12 +166,12 @@ export default function Dashboard() {
         {/* INPUT COLUMN */}
         <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white'}`}>1</div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'}`}>1</div>
                 <div className="flex-1 flex gap-2 bg-black/20 p-1 rounded-2xl">
-                  <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'text-slate-500'}`}>JD</button>
-                  <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>Resume</button>
+                  <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'jd' ? 'bg-blue-600' : 'text-slate-500'}`}>JD</button>
+                  <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'resume' ? 'bg-indigo-600' : 'text-slate-500'}`}>Resume</button>
                 </div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'}`}>2</div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${resumeComplete ? 'bg-emerald-500' : 'bg-indigo-600'}`}>2</div>
             </div>
 
             <div className="flex gap-3 mb-4">
@@ -177,9 +182,8 @@ export default function Dashboard() {
               <button onClick={loadSamples} className="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition">Load Sample</button>
             </div>
 
-            {/* FILE INFO BAR */}
             {(activeTab === 'jd' ? jdFile : resumeFile) && (
-               <div className="mb-4 bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-2xl flex items-center justify-between animate-in fade-in">
+               <div className="mb-4 bg-emerald-900/20 border border-emerald-500/30 p-4 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
                      <span className="text-xl">📄</span>
                      <div>
@@ -192,7 +196,7 @@ export default function Dashboard() {
             )}
 
             <textarea 
-              className="flex-1 bg-black/30 resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed"
+              className="flex-1 bg-black/30 resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
@@ -235,7 +239,7 @@ export default function Dashboard() {
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-6 px-12 text-center">
                  <div className="text-6xl opacity-10">🧠</div>
                  <p className="uppercase tracking-widest leading-loose">
-                   Complete Steps <span className="text-blue-500">1</span> & <span className="text-indigo-500">2</span> to unlock Analysis
+                   Complete Steps 1 & 2 to unlock Live Analysis
                  </p>
               </div>
             )}
