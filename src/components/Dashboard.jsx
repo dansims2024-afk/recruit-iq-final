@@ -3,7 +3,6 @@ import mammoth from 'mammoth';
 import { useUser, SignInButton, SignUpButton } from "@clerk/clerk-react"; // Added SignUpButton
 
 // --- CONFIGURATION ---
-// PASTE YOUR FULL STRIPE LINK HERE ONCE
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
 // --- SAMPLE DATA ---
@@ -335,7 +334,11 @@ export default function Dashboard() {
                      </a>
                    ) : (
                      // State 2: Guest -> Create Account -> Auto-Redirect to Stripe
-                     <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                     <SignUpButton 
+                        mode="modal" 
+                        forceRedirectUrl={STRIPE_URL}
+                        signUpForceRedirectUrl={STRIPE_URL}
+                     >
                        <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black rounded-2xl uppercase tracking-widest transition-all shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-3 text-sm relative overflow-hidden group/btn">
                          <span className="relative z-10 flex items-center gap-2">Create Free Account & Start Trial <span>→</span></span>
                          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
