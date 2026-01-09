@@ -8,7 +8,7 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $220,000 - $260,000 + Equity
 
 COMPANY OVERVIEW:
-Vertex Financial is a leading high-frequency trading firm. We are rebuilding our core execution engine to achieve sub-millisecond latency using modern cloud-native architecture.
+Vertex Financial is a leading high-frequency trading firm. We are rebuilding our core execution engine using modern cloud-native architecture.
 
 KEY RESPONSIBILITIES:
 - Architect and implement high-availability microservices on AWS (EKS, Lambda, RDS).
@@ -69,7 +69,7 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // PDF Simulation fills the box with status as requested
+        // PDF status message as per your earlier dashboard version
         text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: PDF Content successfully buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Content hidden for display performance, but ready for AI screening...)`; 
       } else {
         text = await file.text();
@@ -92,20 +92,19 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please provide both documents.");
     setLoading(true);
     
-    // API KEY linked to active Recruit-IQ project
+    // API KEY linked to active Recruit-IQ project with active billing
     const apiKey = "AIzaSyA93n3APo0tySbzIhEDn3ZBGvV7XCV5EQw";
     
     try {
-      // Endpoint targeting the verified 'gemini-2.5-flash' model
+      // Endpoint targeting the verified 'gemini-2.5-flash' model from your discovery list
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       
       const payload = {
         contents: [{
           parts: [{
-            text: `Return ONLY JSON. Analyze this JD and Resume.
+            text: `Analyze JD and Resume. Return ONLY JSON: {"score":0, "summary":"", "strengths":[], "gaps":[]}
             JD: ${jdText}
-            Resume: ${resumeText}
-            JSON format: {"score":0, "summary":"", "strengths":[], "gaps":[]}`
+            Resume: ${resumeText}`
           }]
         }],
         generationConfig: { 
@@ -127,11 +126,11 @@ export default function Dashboard() {
       setAnalysis(parsed);
       
     } catch (err) {
-      console.warn("API Error, falling back to offline analysis:", err);
-      // Dynamic fallback if API fails
+      console.warn("API Error, using fallback:", err);
+      // Fallback used if 403 or 404 errors occur
       setAnalysis({
         score: 60,
-        summary: "[Offline Analysis] Connection to Gemini 2.5 was interrupted. Manual review is recommended to assess transferable skills.",
+        summary: "[Offline Analysis] Connection to Gemini was interrupted. Manual review is recommended to assess transferable skills.",
         strengths: ["Text successfully extracted", "Basic document formatting detected"],
         gaps: ["Live AI verification pending"]
       });
@@ -143,7 +142,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen font-sans">
       
-      {/* QUICK START GUIDE */}
+      {/* QUICK START GUIDE SECTION */}
       <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-3xl">
         <h2 className="text-emerald-400 font-black uppercase text-xs tracking-tighter mb-4">🚀 Quick Start Guide</h2>
         <div className="grid md:grid-cols-3 gap-6 text-[11px] text-slate-400 leading-relaxed">
@@ -163,7 +162,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* LEFT PANEL: INPUTS */}
         <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex items-center gap-4 mb-6">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'}`}>1</div>
@@ -215,7 +213,6 @@ export default function Dashboard() {
             </div>
         </div>
 
-        {/* RIGHT PANEL: OUTPUT */}
         <div className="h-[750px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
             {analysis ? (
               <div className="animate-in fade-in slide-in-from-right-8 duration-700 space-y-6">
