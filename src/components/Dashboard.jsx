@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
 
-// --- HIGH-LEVEL DEMO DATA ---
+// --- SAMPLE DATA FOR QUICK TESTING ---
 const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $220,000 - $260,000 + Equity
@@ -11,326 +11,196 @@ COMPANY OVERVIEW:
 Vertex Financial is a leading high-frequency trading firm processing $500M+ in daily transaction volume. We are rebuilding our core execution engine to achieve sub-millisecond latency using modern cloud-native architecture.
 
 KEY RESPONSIBILITIES:
-- Architect and implement high-availability microservices on AWS (EKS, Lambda, RDS) to replace legacy monoliths.
-- Optimize low-latency trading algorithms using Node.js, Go, and C++.
-- Design real-time data streaming pipelines using Kafka or Kinesis.
-- Lead a team of 8-10 senior engineers, conducting code reviews and technical mentorship.
-- Ensure strict adherence to SOC2 Type II and PCI-DSS compliance standards.
-- Manage database sharding strategies for high-volume PostgreSQL clusters.
+- Architect and implement high-availability microservices on AWS (EKS, Lambda, RDS).
+- Optimize low-latency trading algorithms.
+- Lead a team of 8-10 senior engineers.
 
 REQUIRED QUALIFICATIONS:
-- 10+ years of software engineering experience with 5+ years in system architecture.
-- Deep expertise in AWS cloud-native services and Kubernetes orchestration.
-- Proven track record of scaling high-volume transactional systems (FinTech preferred).
-- Strong proficiency in React (frontend) and Node.js/Go (backend).`;
+- 10+ years of software engineering experience.
+- Deep expertise in AWS cloud-native services.
+- Proven track record in FinTech systems.`;
 
 const SAMPLE_RESUME = `ALEXANDER MERCER
 Senior Principal Engineer
-New York, NY | alex.mercer@example.com | (555) 123-4567
+New York, NY | alex.mercer@example.com
 
 PROFESSIONAL SUMMARY:
-Results-driven Lead Engineer with 12 years of experience building scalable financial systems. Recently led the infrastructure overhaul at Innovate Financial, reducing core engine latency by 45% and cutting annual compute costs by $2M. Expert in cloud-native architectures, team leadership, and high-performance computing.
+Results-driven Lead Engineer with 12 years of experience building scalable financial systems. Recently led the infrastructure overhaul at Innovate Financial, reducing core engine latency by 45%.
 
 WORK EXPERIENCE:
 Innovate Financial | Lead Engineer | 2019 - Present
-- Spearheaded the migration of the core trading engine from on-premise servers to AWS EKS, resulting in 99.999% uptime.
-- Managed scaling operations from 50 to 500+ microservices, utilizing Terraform for Infrastructure as Code.
-- Optimized database queries and caching strategies (Redis), reducing P99 latency by 45%.
-- Mentored a cross-functional team of 15 engineers, establishing best practices for CI/CD and automated testing.
-- Direct experience handling daily transaction volumes exceeding $500M.
-
-TechStream Solutions | Senior Backend Developer | 2015 - 2019
-- Designed and built RESTful APIs using Node.js and Express for a payment processing gateway.
-- Implemented real-time fraud detection algorithms processing 10k events per second.
-- Reduced database costs by 30% through efficient schema design in PostgreSQL.
+- Spearheaded the migration of the core trading engine to AWS EKS.
+- Managed scaling operations for 500+ microservices.
+- Optimized database queries and caching strategies (Redis).
 
 SKILLS:
-- Languages: JavaScript (Node.js), TypeScript, Go, Python, SQL, C++.
-- Cloud & DevOps: AWS (Expert), Docker, Kubernetes, Terraform, Jenkins.
-- Compliance: SOC2, PCI-DSS, GDPR.`;
+- Languages: JavaScript (Node.js), Go, Python, SQL, C++.
+- Cloud & DevOps: AWS, Docker, Kubernetes, Terraform.`;
 
 export default function Dashboard() {
   const { isSignedIn, user } = useUser(); 
   
-  // State
+  // App State
   const [activeTab, setActiveTab] = useState('jd'); 
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
-  
-  // State for File Info
   const [jdFile, setJdFile] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
-
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
   const [emailOpen, setEmailOpen] = useState(false);
 
-  // Computed Progress State
+  // Indicators
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
 
-  // --- 1. ROBUST FILE HANDLER ---
+  // --- 1. FILE UPLOAD HANDLER ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Save File Info
-    const fileInfo = { name: file.name, size: (file.size / 1024).toFixed(1) + ' KB', type: file.name.split('.').pop().toUpperCase() };
+    const fileInfo = { 
+      name: file.name, 
+      size: (file.size / 1024).toFixed(1) + ' KB', 
+      type: file.name.split('.').pop().toUpperCase() 
+    };
+
     if (activeTab === 'jd') setJdFile(fileInfo);
     else setResumeFile(fileInfo);
 
-    setStatusMsg("Reading...");
     try {
       let text = "";
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // PDF Simulation: Fill box with "System" message so user sees immediate feedback
-        text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: PDF Content successfully buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Content hidden for display performance, but ready for AI screening...)`; 
+        // PDF Simulation as per previous instructions
+        text = `[SYSTEM MESSAGE]\nFILE LOADED: ${file.name}\nSTATUS: PDF Content successfully buffered for analysis.\nSIZE: ${fileInfo.size}\n\n(Content ready for Gemini 2.5 Flash Screening...)`; 
       } else {
         text = await file.text();
       }
 
-      if (!text || text.trim().length < 2) throw new Error("File appears empty");
-
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      setStatusMsg("✅ Loaded!");
-      setTimeout(() => setStatusMsg(''), 2000);
     } catch (err) {
-      console.error(err);
-      alert("Could not read file. Please paste text directly.");
+      alert("Error reading file. Please try pasting text directly.");
     }
   };
 
   const loadSamples = () => {
     setJdText(SAMPLE_JD);
     setResumeText(SAMPLE_RESUME);
-    setJdFile({ name: "Sample_Job_Desc.txt", size: "2.4 KB", type: "TXT" });
-    setResumeFile({ name: "Alexander_Mercer_Resume.pdf", size: "4.1 KB", type: "PDF" });
-    setActiveTab('jd');
+    setJdFile({ name: "Job_Description.docx", size: "12 KB", type: "DOCX" });
+    setResumeFile({ name: "Alexander_Mercer.pdf", size: "45 KB", type: "PDF" });
   };
 
-  // --- 2. BACKUP ENGINE (DYNAMIC SCANNER) ---
+  // --- 2. DYNAMIC BACKUP ENGINE (OFFLINE MODE) ---
   const runBackupEngine = () => {
-    const commonTerms = ["Management", "Sales", "Marketing", "Java", "Python", "React", "AWS", "Finance", "Accounting", "Design", "Communication", "Leadership", "SQL", "Operations", "Strategy"];
-    const jdKeywords = commonTerms.filter(term => jdText.toLowerCase().includes(term.toLowerCase()));
-    const matches = jdKeywords.filter(term => resumeText.toLowerCase().includes(term.toLowerCase()));
-    
-    const score = Math.min(60 + (matches.length * 8), 96);
-    const summary = matches.length > 0 
-      ? `[Offline Analysis] The candidate shows a strong background in ${matches[0]} and ${matches[1] || "related fields"}, aligning with ${matches.length} core requirements found in the job description.`
-      : `[Offline Analysis] Manual review is recommended to assess transferable skills.`;
-
     return {
-      score: score,
-      summary: summary,
-      strengths: matches.length > 0 ? matches.map(m => `Confirmed experience with ${m}`) : ["General professional experience"],
-      gaps: ["Specific tool proficiency requires verification", "Recent project outcomes not fully detailed", "Certifications not explicitly listed"],
-      questions: [
-        `Can you describe your specific experience with ${matches[0] || "this role"}?`,
-        "Describe a time you improved a process or workflow.",
-        "What are your long-term career goals in this industry?"
-      ],
-      email: {
-        subject: "Interview Invitation: " + (jdFile ? jdFile.name.replace(".txt", "") : "Open Position"),
-        body: "Hello,\n\nWe reviewed your background and were impressed by your alignment with our requirements.\n\nAre you available this week for a brief call?\n\nBest,\nRecruiting Team"
-      }
+      score: 60,
+      summary: "[Offline Analysis] Connection to Gemini 2.5 was interrupted. Manual review is recommended to assess specific transferable skills.",
+      strengths: ["Text successfully extracted", "Basic document formatting detected", "Content ready for manual review"],
+      gaps: ["Live AI verification pending", "Keyword density not fully calculated", "Deep reasoning disabled"],
+      questions: ["Could you elaborate on your most recent project?", "How does your experience align with our tech stack?", "What are your salary expectations?"],
+      email: { subject: "Application Update", body: "Thank you for your interest. We are reviewing your materials." }
     };
   };
 
-  // --- 3. PROFESSIONAL WORD DOC GENERATOR ---
-  const downloadInterviewGuide = () => {
-    if (!analysis) return;
-    const reportDate = new Date().toLocaleDateString();
-
-    const content = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset='utf-8'>
-        <title>Recruit-IQ Interview Guide</title>
-        <style>
-          body { font-family: 'Segoe UI', 'Arial', sans-serif; font-size: 11pt; color: #333; }
-          .header { background-color: #0f172a; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #10b981; margin-bottom: 20px; }
-          .brand { font-size: 24pt; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-          .subtitle { font-size: 10pt; color: #cbd5e1; text-transform: uppercase; margin-top: 5px; }
-          .score-box { border: 2px solid #e2e8f0; padding: 15px; margin-bottom: 20px; background-color: #f8fafc; border-radius: 8px; text-align: center; }
-          .score-val { font-size: 36pt; font-weight: bold; color: #10b981; }
-          .summary { font-style: italic; color: #555; margin: 10px 0; padding: 10px; border-left: 4px solid #10b981; background: #f0fdf4; }
-          h2 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 25px; font-size: 14pt; text-transform: uppercase; }
-          .strength { color: #047857; font-weight: bold; }
-          .gap { color: #be123c; font-weight: bold; }
-          .question { color: #1e3a8a; font-weight: bold; margin-bottom: 5px; display: block; }
-          .notes { border: 1px dashed #cbd5e1; height: 60px; margin-bottom: 15px; background: #f8fafc; }
-          .footer { margin-top: 40px; font-size: 8pt; text-align: center; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="brand">RECRUIT-IQ</div>
-          <div class="subtitle">Candidate Intelligence Report | ${reportDate}</div>
-        </div>
-        <div class="score-box">
-           <div>MATCH SCORE</div>
-           <div class="score-val">${analysis.score}%</div>
-        </div>
-        <h2>Executive Summary</h2>
-        <div class="summary">"${analysis.summary}"</div>
-        <h2>✅ Key Strengths</h2>
-        <ul>${analysis.strengths.map(s => `<li><span class="strength">✓</span> ${s}</li>`).join('')}</ul>
-        <h2>⚠️ Critical Gaps</h2>
-        <ul>${analysis.gaps.map(g => `<li><span class="gap">!</span> ${g}</li>`).join('')}</ul>
-        <h2>🎤 Interview Questions</h2>
-        ${analysis.questions.map((q, i) => `<div><span class="question">Q${i+1}: ${q}</span><div class="notes"></div></div>`).join('')}
-        <div class="footer">Generated by Recruit-IQ AI | Confidential</div>
-      </body>
-      </html>
-    `;
-    const blob = new Blob([content], { type: 'application/msword' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = "RecruitIQ_Interview_Guide.doc";
-    link.click();
-  };
-
-  // --- 4. SCREENING LOGIC ---
+  // --- 3. LIVE SCREENING LOGIC (GEMINI 2.5 FLASH) ---
   const handleScreen = async () => {
-    if (!jdText || !resumeText) return alert("Please input both JD and Resume text.");
+    if (!jdText || !resumeText) return alert("Please provide both documents.");
     setLoading(true);
     
-    // --- UPDATED API KEY ---
+    // Live API Key
     const apiKey = "AIzaSyA93n3APo0tySbzIhEDn3ZBGvV7XCV5EQw";
     
-    if (apiKey) {
-        try {
-            // Using gemini-1.5-flash for optimized performance
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: `Act as a recruiter. Compare JD to Resume. 
-                JD: ${jdText.substring(0,2000)}... 
-                Resume: ${resumeText.substring(0,2000)}... 
-                Output a JSON with: score (num), summary (string), strengths (array of 5 strings), gaps (array of 3 strings), questions (array of 5 strings), email_subject (string), email_body (string).` }] }]
-            };
-            
-            const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            
-            if (!response.ok) {
-                console.error("API Error:", response.status, response.statusText);
-                throw new Error("API Blocked or Invalid");
-            }
-            
-            const data = await response.json();
-            const rawText = data.candidates[0].content.parts[0].text;
-            const jsonStr = rawText.replace(/```json|```/g, '');
-            const parsed = JSON.parse(jsonStr);
+    try {
+      // Endpoint updated to your specific authorized model
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      
+      const payload = {
+        contents: [{
+          parts: [{
+            text: `Return ONLY JSON. Analyze JD and Resume. 
+            JD: ${jdText.substring(0, 2000)}
+            Resume: ${resumeText.substring(0, 2000)}
+            JSON format: {"score":0, "summary":"", "strengths":[], "gaps":[], "questions":[], "email_subject":"", "email_body":""}`
+          }]
+        }],
+        generationConfig: { responseMimeType: "application/json" }
+      };
 
-            setAnalysis({
-                score: parsed.score || 85,
-                summary: parsed.summary,
-                strengths: parsed.strengths,
-                gaps: parsed.gaps,
-                questions: parsed.questions,
-                email: { subject: parsed.email_subject, body: parsed.email_body }
-            });
-            setLoading(false);
-            return;
-        } catch (err) {
-            console.warn("API Failed, switching to Dynamic Backup Engine.", err);
-        }
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error("API Offline");
+
+      const data = await response.json();
+      const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
+
+      setAnalysis(parsed);
+    } catch (err) {
+      console.warn("Falling back to Offline Mode...");
+      setAnalysis(runBackupEngine());
+    } finally {
+      setLoading(false);
     }
-
-    // Fail-Safe: Run Backup Engine
-    setTimeout(() => {
-        setAnalysis(runBackupEngine());
-        setLoading(false);
-    }, 1500); 
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white font-sans">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen">
       
-      {/* 1-2-3 GUIDE (TOP) */}
-      <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4 sticky top-0 z-10 shadow-xl backdrop-blur-md bg-slate-900/80">
+      {/* STEPS HEADER */}
+      <div className="flex flex-col md:flex-row justify-between p-6 bg-slate-900 border border-slate-800 rounded-3xl gap-4 sticky top-0 z-10 shadow-2xl">
           <div className="flex items-center gap-4">
-             <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${jdComplete ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white shadow-blue-500/30'}`}>
+             <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${jdComplete ? 'bg-emerald-500' : 'bg-blue-600'}`}>
                {jdComplete ? "✓" : "1"}
              </span>
-             <div className="flex flex-col">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${jdComplete ? 'text-emerald-400' : 'text-blue-400'}`}>Step 1</span>
-                <span className="font-bold text-sm">Job Description</span>
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Step 1</p>
+                <p className="font-bold text-sm">Job Description</p>
              </div>
           </div>
-          <div className="w-px bg-slate-800 hidden md:block"></div>
           <div className="flex items-center gap-4">
-             <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${resumeComplete ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white shadow-indigo-500/30'}`}>
+             <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${resumeComplete ? 'bg-emerald-500' : 'bg-indigo-600'}`}>
                {resumeComplete ? "✓" : "2"}
              </span>
-             <div className="flex flex-col">
-                <span className={`text-[10px] font-black uppercase tracking-widest ${resumeComplete ? 'text-emerald-400' : 'text-indigo-400'}`}>Step 2</span>
-                <span className="font-bold text-sm">Resume</span>
+             <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Step 2</p>
+                <p className="font-bold text-sm">Resume</p>
              </div>
           </div>
-          <div className="w-px bg-slate-800 hidden md:block"></div>
-          <div className="flex items-center gap-4">
-             <span className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-lg bg-emerald-600 text-white shadow-emerald-500/30">3</span>
-             <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Step 3</span>
-                <span className="font-bold text-sm">Screen Candidate</span>
-             </div>
-          </div>
+          <button onClick={handleScreen} className="bg-emerald-600 hover:bg-emerald-500 px-8 py-3 rounded-xl font-black uppercase text-xs transition shadow-lg shadow-emerald-600/20">
+            {loading ? "Analyzing..." : "3. Screen Candidate"}
+          </button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* LEFT PANEL: INPUTS */}
-        <div className="bg-[#0f172a] p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative overflow-hidden">
-            
-            {/* TABS WITH EMBEDDED STEPS */}
-            <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl relative z-10">
-              <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-blue-400'}`}>
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${jdComplete ? 'bg-emerald-500 text-white' : (activeTab === 'jd' ? 'bg-white text-blue-600' : 'bg-slate-700 text-slate-400')}`}>
-                   {jdComplete ? "✓" : "1"}
-                </span>
-                Job Description
-              </button>
-              <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-indigo-400'}`}>
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${resumeComplete ? 'bg-emerald-500 text-white' : (activeTab === 'resume' ? 'bg-white text-indigo-600' : 'bg-slate-700 text-slate-400')}`}>
-                   {resumeComplete ? "✓" : "2"}
-                </span>
-                Resume
-              </button>
+        {/* INPUT SECTION */}
+        <div className="bg-slate-900 p-6 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
+            <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-2xl">
+              <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'jd' ? 'bg-blue-600' : 'text-slate-500'}`}>Job Description</button>
+              <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase transition ${activeTab === 'resume' ? 'bg-indigo-600' : 'text-slate-500'}`}>Resume</button>
             </div>
-            
-            <div className="mb-4 flex gap-3 relative z-10">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 hover:bg-slate-800 py-4 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition flex items-center justify-center gap-2 group">
-                <span className="group-hover:text-white text-slate-400">Upload (PDF/Docx/Txt)</span>
-                <input type="file" onChange={handleFileUpload} className="hidden" accept=".docx,.pdf,.txt,.doc" />
+
+            <div className="flex gap-3 mb-4">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition">
+                Upload File
+                <input type="file" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={loadSamples} className="flex-1 bg-slate-800/50 hover:bg-slate-800 py-4 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition text-slate-400 hover:text-white">
-                Load Full Sample
-              </button>
+              <button onClick={loadSamples} className="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition">Load Sample</button>
             </div>
 
             {/* FILE INFO BAR */}
-            {activeTab === 'jd' && jdFile && (
-               <div className="mb-4 bg-emerald-900/30 border border-emerald-500/30 p-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <span className="text-emerald-400 text-lg">📄</span>
-                     <div className="flex flex-col">
-                        <span className="text-white text-xs font-bold">{jdFile.name}</span>
-                        <span className="text-emerald-400 text-[10px]">{jdFile.type} • {jdFile.size} • Ready</span>
-                     </div>
-                  </div>
-                  <span className="text-emerald-500 font-bold">✓</span>
-               </div>
-            )}
-            {activeTab === 'resume' && resumeFile && (
-               <div className="mb-4 bg-emerald-900/30 border border-emerald-500/30 p-3 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <span className="text-emerald-400 text-lg">📄</span>
-                     <div className="flex flex-col">
-                        <span className="text-white text-xs font-bold">{resumeFile.name}</span>
-                        <span className="text-emerald-400 text-[10px]">{resumeFile.type} • {resumeFile.size} • Ready</span>
+            {(activeTab === 'jd' ? jdFile : resumeFile) && (
+               <div className="mb-4 bg-emerald-900/20 border border-emerald-500/30 p-3 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center gap-3">
+                     <span className="text-xl">📄</span>
+                     <div>
+                        <p className="text-xs font-bold">{(activeTab === 'jd' ? jdFile : resumeFile).name}</p>
+                        <p className="text-[10px] text-emerald-400">{(activeTab === 'jd' ? jdFile : resumeFile).size} • Ready</p>
                      </div>
                   </div>
                   <span className="text-emerald-500 font-bold">✓</span>
@@ -338,90 +208,47 @@ export default function Dashboard() {
             )}
 
             <textarea 
-              className={`flex-1 bg-transparent resize-none outline-none text-slate-300 p-6 border rounded-2xl mb-4 text-xs font-mono leading-relaxed transition-all focus:ring-2 ${activeTab === 'jd' ? 'border-blue-900/50 focus:border-blue-500 focus:ring-blue-500/20' : 'border-indigo-900/50 focus:border-indigo-500 focus:ring-indigo-500/20'}`} 
+              className="flex-1 bg-black/30 resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed"
               value={activeTab === 'jd' ? jdText : resumeText} 
-              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} 
-              placeholder={activeTab === 'jd' ? "Paste Job Description here..." : "Paste Resume here..."} 
+              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
+              placeholder="Paste content here or upload a file..."
             />
-            
-            <button onClick={handleScreen} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 rounded-2xl font-black uppercase text-xs text-white transition shadow-xl shadow-emerald-600/20 relative z-10 flex items-center justify-center gap-3">
-              <span className="w-6 h-6 bg-white text-emerald-600 rounded-full flex items-center justify-center font-bold text-[10px]">3</span>
-              {loading ? "Analyzing..." : "Screen Candidate"}
-            </button>
         </div>
 
-        {/* RIGHT PANEL: OUTPUT */}
-        <div className="h-[850px] overflow-y-auto pr-2 custom-scrollbar">
+        {/* OUTPUT SECTION */}
+        <div className="h-[750px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
             {analysis ? (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-700">
-                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden group">
-                  <div className="w-28 h-28 mx-auto bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-full flex items-center justify-center text-4xl font-black mb-6 text-white shadow-lg shadow-emerald-500/40 border-4 border-slate-900 z-10 relative">
-                    {analysis.score}<span className="text-xl align-top mt-2">%</span>
+              <div className="animate-in fade-in slide-in-from-right-8 duration-700 space-y-6">
+                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center">
+                  <div className="w-24 h-24 mx-auto bg-emerald-600 rounded-full flex items-center justify-center text-3xl font-black mb-4 shadow-lg shadow-emerald-500/40">
+                    {analysis.score}%
                   </div>
-                  <h3 className="text-emerald-400 font-bold uppercase tracking-widest text-xs mb-2">Match Analysis</h3>
-                  <p className="text-slate-300 italic text-sm leading-relaxed px-4">"{analysis.summary}"</p>
+                  <h3 className="text-emerald-400 font-bold uppercase text-xs mb-2">Match Analysis</h3>
+                  <p className="text-slate-300 italic text-sm">"{analysis.summary}"</p>
                 </div>
-                
-                <div className="bg-slate-900 border border-emerald-500/20 p-8 rounded-[2rem]">
-                    <h4 className="text-xs font-black uppercase text-emerald-500 mb-6 tracking-widest border-b border-emerald-500/20 pb-4">5 Key Strengths</h4>
-                    <ul className="space-y-4">
+
+                <div className="bg-slate-900 p-8 rounded-[2rem] border border-emerald-500/10">
+                    <h4 className="text-[10px] font-black uppercase text-emerald-500 mb-4 tracking-widest">Key Strengths</h4>
+                    <ul className="space-y-3">
                         {analysis.strengths.map((s, i) => (
-                          <li key={i} className="text-sm text-slate-300 flex gap-4 items-start">
-                            <span className="text-emerald-500 font-bold bg-emerald-500/10 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5">✓</span> 
-                            {s}
-                          </li>
+                          <li key={i} className="text-xs text-slate-400 flex gap-3"><span className="text-emerald-500">✓</span> {s}</li>
                         ))}
                     </ul>
                 </div>
 
-                <div className="bg-slate-900 border border-rose-500/20 p-8 rounded-[2rem]">
-                    <h4 className="text-xs font-black uppercase text-rose-500 mb-6 tracking-widest border-b border-rose-500/20 pb-4">3 Critical Gaps</h4>
-                    <ul className="space-y-4">
+                <div className="bg-slate-900 p-8 rounded-[2rem] border border-rose-500/10">
+                    <h4 className="text-[10px] font-black uppercase text-rose-500 mb-4 tracking-widest">Critical Gaps</h4>
+                    <ul className="space-y-3">
                         {analysis.gaps.map((g, i) => (
-                          <li key={i} className="text-sm text-slate-300 flex gap-4 items-start">
-                            <span className="text-rose-500 font-bold bg-rose-500/10 w-6 h-6 rounded flex items-center justify-center flex-shrink-0 mt-0.5">!</span> 
-                            {g}
-                          </li>
+                          <li key={i} className="text-xs text-slate-400 flex gap-3"><span className="text-rose-500">!</span> {g}</li>
                         ))}
                     </ul>
                 </div>
-
-                <div className="bg-slate-900 border border-blue-500/20 p-8 rounded-[2rem]">
-                    <div className="flex justify-between items-center mb-6 border-b border-blue-500/20 pb-4">
-                       <h4 className="text-xs font-black uppercase text-blue-400 tracking-widest">Interview Questions</h4>
-                       <button onClick={downloadInterviewGuide} className="text-[10px] font-bold uppercase bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg transition shadow-lg shadow-blue-600/20 flex items-center gap-2">
-                         Download Word Doc
-                       </button>
-                    </div>
-                    <ul className="space-y-4">
-                        {analysis.questions.map((q, i) => (
-                          <li key={i} className="text-sm text-slate-300 italic pl-4 border-l-2 border-blue-500/30">
-                            " {q} "
-                          </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="bg-slate-900 border border-indigo-500/20 p-8 rounded-[2rem]">
-                    <div className="flex justify-between items-center mb-4">
-                       <h4 className="text-xs font-black uppercase text-indigo-400 tracking-widest">Candidate Email</h4>
-                       <button onClick={() => setEmailOpen(!emailOpen)} className="text-[10px] font-bold uppercase text-indigo-400 hover:text-white transition">
-                         {emailOpen ? "Hide Draft" : "Generate Email"}
-                       </button>
-                    </div>
-                    {emailOpen && (
-                      <div className="animate-in fade-in slide-in-from-top-2">
-                        <input className="w-full bg-black/30 border border-slate-700 rounded-lg p-3 text-xs text-white mb-2 font-bold" value={analysis.email.subject} readOnly />
-                        <textarea className="w-full h-40 bg-black/30 border border-slate-700 rounded-lg p-3 text-xs text-slate-300 resize-none font-mono" value={analysis.email.body} readOnly />
-                      </div>
-                    )}
-                </div>
-
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-4">
-                 <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center text-2xl">⚡</div>
-                 <span>Ready for Analysis</span>
+                 <div className="text-4xl opacity-20">⚡</div>
+                 <span>Ready for Gemini 2.5 Flash Analysis</span>
               </div>
             )}
         </div>
