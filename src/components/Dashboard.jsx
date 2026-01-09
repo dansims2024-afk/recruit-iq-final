@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
 
@@ -44,13 +44,35 @@ export default function Dashboard() {
   const [resumeFile, setResumeFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  
-  // Freemium State
   const [screensLeft, setScreensLeft] = useState(3);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   const jdComplete = jdText.length > 50; 
   const resumeComplete = resumeText.length > 50;
+
+  // --- PDF EXTRACTION (CDN METHOD) ---
+  const extractPdfText = async (file) => {
+    try {
+      // Dynamic import from CDN to bypass build errors
+      const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm');
+      pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+      let fullText = "";
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+        fullText += pageText + "\n";
+      }
+      return fullText;
+    } catch (err) {
+      console.error("PDF Read Error:", err);
+      return null;
+    }
+  };
 
   // --- FILE HANDLING ---
   const handleFileUpload = async (e) => {
@@ -71,6 +93,14 @@ export default function Dashboard() {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
+      } else if (file.name.endsWith('.pdf')) {
+        // Use the new CDN extractor
+        const extracted = await extractPdfText(file);
+        if (extracted) {
+           text = extracted;
+        } else {
+           text = `[ERROR reading PDF]. Please copy and paste the text directly from the PDF.`;
+        }
       } else {
         text = await file.text();
       }
@@ -87,31 +117,68 @@ export default function Dashboard() {
     setResumeFile({ name: "Alex_Mercer.pdf", size: "45 KB", type: "PDF" });
   };
 
-  // --- WORD DOC DOWNLOAD ---
+  // --- PROFESSIONAL WORD DOC GENERATOR ---
   const downloadReport = () => {
     if (!analysis) return;
     
+    // Professional HTML Template for Word
     const content = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><title>Candidate Report</title></head>
-      <body style="font-family: Arial, sans-serif;">
-        <div style="background-color: #0f172a; color: white; padding: 20px; text-align: center;">
-          <h1 style="color: #10b981; margin: 0;">Recruit-IQ</h1>
-          <p style="margin: 5px 0 0 0;">AI Candidate Intelligence Report</p>
+      <head>
+        <title>Recruit-IQ Report</title>
+        <style>
+          body { font-family: 'Calibri', 'Helvetica', sans-serif; font-size: 11pt; }
+          .header { background-color: #0f172a; padding: 30px; text-align: center; color: white; border-bottom: 4px solid #10b981; }
+          .title { font-size: 24pt; font-weight: bold; color: #10b981; margin-bottom: 5px; }
+          .subtitle { font-size: 12pt; color: #e2e8f0; }
+          .section-title { font-size: 14pt; font-weight: bold; color: #0f172a; margin-top: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+          .score-box { background-color: #ecfdf5; border: 1px solid #10b981; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0; }
+          .score-val { font-size: 32pt; font-weight: bold; color: #059669; }
+          .grid-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          .grid-td { width: 50%; vertical-align: top; padding: 10px; border: 1px solid #cbd5e1; }
+          .strength-header { color: #059669; font-weight: bold; text-transform: uppercase; font-size: 10pt; }
+          .gap-header { color: #dc2626; font-weight: bold; text-transform: uppercase; font-size: 10pt; }
+          .footer { font-size: 8pt; color: #64748b; text-align: center; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+          li { margin-bottom: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">Recruit-IQ</div>
+          <div class="subtitle">Confidential Candidate Intelligence Report</div>
         </div>
-        <br/>
-        <h2 style="color: #333;">Match Score: ${analysis.score}%</h2>
-        <p><strong>Summary:</strong> ${analysis.summary}</p>
-        <hr/>
-        <h3 style="color: #10b981;">Interview Questions</h3>
+
+        <div class="score-box">
+          <div class="score-val">${analysis.score}% Match Score</div>
+          <p><strong>Executive Summary:</strong> ${analysis.summary}</p>
+        </div>
+
+        <table class="grid-table">
+          <tr>
+            <td class="grid-td" style="background-color: #f0fdf4;">
+              <div class="strength-header">Key Strengths</div>
+              <ul>
+                ${analysis.strengths.map(s => `<li>${s}</li>`).join('')}
+              </ul>
+            </td>
+            <td class="grid-td" style="background-color: #fef2f2;">
+              <div class="gap-header">Critical Gaps</div>
+              <ul>
+                ${analysis.gaps.map(g => `<li>${g}</li>`).join('')}
+              </ul>
+            </td>
+          </tr>
+        </table>
+
+        <div class="section-title">Interview Guide</div>
+        <p>Use these targeted questions to verify the candidate's fit:</p>
         <ul>
-          ${analysis.questions.map(q => `<li>${q}</li>`).join('')}
+          ${analysis.questions.map(q => `<li><strong>Q:</strong> ${q}</li>`).join('')}
         </ul>
-        <hr/>
-        <h3 style="color: #ef4444;">Critical Gaps</h3>
-        <ul>
-          ${analysis.gaps.map(g => `<li>${g}</li>`).join('')}
-        </ul>
+
+        <div class="footer">
+          Generated by Recruit-IQ AI Analysis • ${new Date().toLocaleDateString()} • Strictly Confidential
+        </div>
       </body>
       </html>
     `;
@@ -120,7 +187,7 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `RecruitIQ_Report_${new Date().toISOString().slice(0,10)}.doc`;
+    link.download = `RecruitIQ_Report_${analysis.score}Match.doc`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -135,7 +202,6 @@ export default function Dashboard() {
     if (!jdText || !resumeText) return alert("Please provide both documents.");
     
     setLoading(true);
-    // API KEY
     const apiKey = "AIzaSyDLxFEIhTaBbZTIBWR7JxVnuOx1spxr2A0"; 
 
     try {
@@ -166,8 +232,6 @@ export default function Dashboard() {
 
       const data = await response.json();
       const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
-      
-      // Fix decimal scores (e.g., 0.9 -> 90)
       if (parsed.score < 1) parsed.score = Math.round(parsed.score * 100);
       
       setAnalysis(parsed);
@@ -199,7 +263,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* QUICK START GUIDE (Restored) */}
+      {/* QUICK START GUIDE */}
       <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2rem]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-emerald-400 font-black uppercase text-xs tracking-widest">🚀 Quick Start Guide</h2>
@@ -322,7 +386,7 @@ export default function Dashboard() {
                     <div className="flex justify-between items-end mb-4">
                        <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Interview Guide</h4>
                        <button onClick={downloadReport} className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition flex items-center gap-2">
-                          Download Word Doc <span>↓</span>
+                          Download Pro Report <span>↓</span>
                        </button>
                     </div>
                     <ul className="space-y-3 mb-4">
