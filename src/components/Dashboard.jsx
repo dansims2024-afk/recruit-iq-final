@@ -72,12 +72,11 @@ export default function Dashboard() {
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
 
-  // --- EFFECT: Load Usage & Handle Success Return ---
+  // --- EFFECTS ---
   useEffect(() => {
     const storedUsage = localStorage.getItem('riq_guest_usage');
     if (storedUsage) setGuestUsage(parseInt(storedUsage));
 
-    // If returning from Stripe, force a refresh
     const query = new URLSearchParams(window.location.search);
     if (query.get('success') && isLoaded && isSignedIn) {
       user.reload().then(() => { 
@@ -86,10 +85,8 @@ export default function Dashboard() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // --- EFFECT: The Bouncer (Redirects non-pro users) ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
-    // Safety Check: Only redirect if fully loaded, signed in, NOT pro, and NOT on success page
     if (isLoaded && isSignedIn && !isPro && !query.get('success')) {
        window.location.href = STRIPE_URL;
     }
@@ -112,7 +109,7 @@ export default function Dashboard() {
   const handleScreen = async () => {
     if (!isSignedIn && guestUsage >= GUEST_LIMIT) return setShowUpgrade(true);
     if (isSignedIn && !isPro) return setShowUpgrade(true);
-    if (!jdReady || !resumeReady) return alert("Please complete Steps 1 and 2 first.");
+    if (!jdReady || !resumeReady) return alert("Please complete Step 1 (Job Description) and Step 2 (Resume).");
     
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -137,145 +134,194 @@ export default function Dashboard() {
     } catch (err) { alert("Analysis failed."); } finally { setLoading(false); }
   };
 
-  // --- BLANK SCREEN PREVENTER ---
-  if (!isLoaded) return <div className="min-h-screen bg-slate-950" />;
-
-  // --- PRO ACTIVATION SPINNER ---
+  // --- LOADING STATES ---
+  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
   if (isSignedIn && !isPro) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
-         <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-         <h2 className="text-xl font-bold uppercase tracking-widest italic">Activating Pro Intel...</h2>
+      <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center text-white">
+         <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+         <h2 className="text-xl font-bold uppercase tracking-widest italic text-indigo-400">Syncing Pro Access...</h2>
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen relative font-sans">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen relative font-sans">
       
-      {/* 1-2-3 QUICK START GUIDE */}
+      {/* --- QUICK START (1-2-3) --- */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-blue-600/10 border-blue-500/20'}`}>
-             <div className="flex justify-between items-start mb-2">
-                <span className="text-2xl font-black text-blue-500">1</span>
-                {jdReady && <span className="text-emerald-500 text-xl">✓</span>}
+          {/* Step 1 */}
+          <div className={`p-6 rounded-3xl border transition-all duration-300 ${jdReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-start mb-3">
+                <span className={`text-3xl font-black ${jdReady ? 'text-indigo-400' : 'text-slate-600'}`}>1</span>
+                {jdReady && <span className="flex items-center justify-center w-6 h-6 bg-indigo-500 rounded-full text-white text-xs font-bold">✓</span>}
              </div>
-             <h4 className="font-bold text-xs uppercase tracking-widest text-blue-400 mb-2">Define Role</h4>
-             <p className="text-[10px] text-slate-400">Paste your Job Description. AI benchmarks requirements.</p>
+             <h4 className={`font-bold text-xs uppercase tracking-widest mb-2 ${jdReady ? 'text-white' : 'text-slate-400'}`}>Define Role</h4>
+             <p className="text-[11px] text-slate-400 leading-relaxed">Paste the Job Description to benchmark key requirements.</p>
           </div>
-          <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-indigo-600/10 border-indigo-500/20'}`}>
-             <div className="flex justify-between items-start mb-2">
-                <span className="text-2xl font-black text-indigo-500">2</span>
-                {resumeReady && <span className="text-emerald-500 text-xl">✓</span>}
+
+          {/* Step 2 */}
+          <div className={`p-6 rounded-3xl border transition-all duration-300 ${resumeReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-start mb-3">
+                <span className={`text-3xl font-black ${resumeReady ? 'text-indigo-400' : 'text-slate-600'}`}>2</span>
+                {resumeReady && <span className="flex items-center justify-center w-6 h-6 bg-indigo-500 rounded-full text-white text-xs font-bold">✓</span>}
              </div>
-             <h4 className="font-bold text-xs uppercase tracking-widest text-indigo-400 mb-2">Load Candidate</h4>
-             <p className="text-[10px] text-slate-400">Upload resume. AI extracts skills and gaps.</p>
+             <h4 className={`font-bold text-xs uppercase tracking-widest mb-2 ${resumeReady ? 'text-white' : 'text-slate-400'}`}>Load Candidate</h4>
+             <p className="text-[11px] text-slate-400 leading-relaxed">Upload resume. We extract skills, history, and gaps.</p>
           </div>
-          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-emerald-600/10 border-emerald-500/20'}`}>
-             <div className="flex justify-between items-start mb-2">
-                <span className="text-2xl font-black text-emerald-500">3</span>
-                {analysis && <span className="text-emerald-500 text-xl">✓</span>}
+
+          {/* Step 3 */}
+          <div className={`p-6 rounded-3xl border transition-all duration-300 ${analysis ? 'bg-emerald-900/20 border-emerald-500/50 shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-start mb-3">
+                <span className={`text-3xl font-black ${analysis ? 'text-emerald-400' : 'text-slate-600'}`}>3</span>
+                {analysis && <span className="flex items-center justify-center w-6 h-6 bg-emerald-500 rounded-full text-white text-xs font-bold">✓</span>}
              </div>
-             <h4 className="font-bold text-xs uppercase tracking-widest text-emerald-400 mb-2">Get Results</h4>
-             <p className="text-[10px] text-slate-400">View Match Score, Interview Guide & Outreach.</p>
+             <h4 className={`font-bold text-xs uppercase tracking-widest mb-2 ${analysis ? 'text-white' : 'text-slate-400'}`}>Unlock Intel</h4>
+             <p className="text-[11px] text-slate-400 leading-relaxed">Get Match Score, Interview Guide, and Outreach.</p>
           </div>
       </div>
 
-      {/* DASHBOARD GRID */}
+      {/* --- MAIN DASHBOARD GRID --- */}
       <div className="grid md:grid-cols-2 gap-8">
-        {/* INPUT SIDE */}
-        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
-            <div className="flex gap-3 mb-4">
-               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                  Job Description {jdReady && <span className="text-emerald-400 font-bold">✓</span>}
+        
+        {/* INPUT PANEL */}
+        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative">
+            
+            {/* Tabs */}
+            <div className="flex gap-3 mb-6">
+               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'}`}>
+                  Job Description {jdReady && <span className="w-2 h-2 rounded-full bg-emerald-400 ml-1"></span>}
                </button>
-               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                  Resume {resumeReady && <span className="text-emerald-400 font-bold">✓</span>}
+               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'}`}>
+                  Resume {resumeReady && <span className="w-2 h-2 rounded-full bg-emerald-400 ml-1"></span>}
                </button>
             </div>
 
+            {/* Tools */}
             <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-black/30 hover:bg-black/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-800 text-slate-400 transition">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 hover:bg-slate-700/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 transition hover:text-white">
                 Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-black/30 hover:bg-black/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-800 text-slate-400 transition">Load Full Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 transition hover:text-white">Load Full Samples</button>
             </div>
 
+            {/* Text Area */}
             <textarea 
-              className="flex-1 bg-black/20 resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono mb-4 focus:border-slate-600"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6 focus:border-indigo-500/50 transition-colors"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder="Paste content here..."
+              placeholder={activeTab === 'jd' ? "Paste Job Description here..." : "Paste Candidate Resume here..."}
             />
 
-            {/* DYNAMIC 1-2-3 BUTTON */}
-            <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all shadow-xl flex items-center justify-center gap-2 ${jdReady && resumeReady ? 'bg-emerald-600 shadow-emerald-900/50' : 'bg-slate-800 opacity-70'}`}>
-               {!jdReady ? "Step 1: Paste Job Description" : !resumeReady ? "Step 2: Upload Resume" : loading ? "Analyzing..." : "Step 3: Screen Candidate →"}
+            {/* Dynamic Action Button */}
+            <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all shadow-xl flex items-center justify-center gap-3 relative overflow-hidden group ${jdReady && resumeReady ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
+               {!jdReady ? (
+                 <><span>Step 1: Paste Job Description</span></>
+               ) : !resumeReady ? (
+                 <><span>Step 2: Add Resume</span></>
+               ) : loading ? (
+                 <span className="animate-pulse">Analyzing Assets...</span>
+               ) : (
+                 <><span>Step 3: Screen Candidate</span> <span className="group-hover:translate-x-1 transition-transform">→</span></>
+               )}
             </button>
         </div>
 
-        {/* RESULTS SIDE */}
-        <div className="h-[850px] overflow-y-auto space-y-6">
+        {/* RESULTS PANEL */}
+        <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
               <div className="animate-in fade-in slide-in-from-right-8 space-y-6">
-                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-emerald-500 to-indigo-500"></div>
-                  <div className={`w-28 h-28 mx-auto rounded-full flex items-center justify-center text-4xl font-black mb-6 ${analysis.score > 75 ? 'bg-emerald-500' : 'bg-amber-500'}`}>{analysis.score}%</div>
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500"></div>
+                  <div className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center text-5xl font-black mb-6 shadow-2xl ${analysis.score > 75 ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white' : 'bg-gradient-to-br from-amber-500 to-amber-700 text-white'}`}>{analysis.score}%</div>
                   <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-3">Match Confidence</h3>
-                  <p className="text-slate-200 text-sm italic">"{analysis.summary}"</p>
+                  <p className="text-slate-200 text-sm italic font-medium">"{analysis.summary}"</p>
                 </div>
                 
-                {/* Result Cards... */}
-                <div className="bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-500/20">
-                    <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-4">Interview Guide</h4>
-                    <ul className="space-y-3">{analysis.questions.map((q, i) => <li key={i} className="text-xs text-slate-300 bg-slate-900/50 p-3 rounded-xl border border-slate-800">"{q}"</li>)}</ul>
+                <div className="bg-indigo-950/30 p-8 rounded-[2.5rem] border border-indigo-500/20">
+                    <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-6 tracking-widest flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span> AI Interview Guide
+                    </h4>
+                    <ul className="space-y-4">{analysis.questions.map((q, i) => (
+                      <li key={i} className="text-sm text-slate-300 bg-[#0B1120] p-4 rounded-xl border border-slate-800 leading-relaxed shadow-sm">
+                        <span className="text-indigo-500 font-bold mr-2">Q{i+1}.</span> {q}
+                      </li>
+                    ))}</ul>
                 </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-6 px-12 text-center opacity-50 uppercase tracking-widest">
+                 <div className="text-6xl opacity-20">📊</div>
                  Waiting for data...
               </div>
             )}
         </div>
       </div>
 
-      {/* MARKETING UPGRADE MODAL */}
+      {/* --- NEW HIGH-CONVERSION UPGRADE MODAL --- */}
       {showUpgrade && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/80">
-          <div className="relative w-full max-w-lg group animate-in zoom-in-95 duration-300">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-blue-500 to-emerald-400 rounded-[2.5rem] blur-xl opacity-40 animate-pulse"></div>
-            <div className="relative bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-b from-emerald-900/40 to-slate-900 p-10 text-center border-b border-slate-800">
-                 <button onClick={() => setShowUpgrade(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition">✕</button>
-                 <div className="text-6xl mb-6">🚀</div>
-                 <h2 className="text-3xl font-black text-white mb-2 tracking-tighter">Recruit-IQ <span className="text-emerald-400 italic">PRO</span></h2>
-                 <p className="text-emerald-400 font-bold text-lg tracking-widest uppercase mb-4">Try 3 Days Free!</p>
-                 <div className="flex justify-center gap-2 text-xs text-slate-300">
-                    <span className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">✨ Brilliant Insights</span>
-                    <span className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">⚡ Faster Hires</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60">
+          <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
+            
+            {/* The "Glow" Behind */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse"></div>
+            
+            {/* Main Card */}
+            <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+              
+              {/* Left Side: The "Pitch" */}
+              <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
+                 {/* Replaced Rocket with Logo Placeholder */}
+                 <div className="mb-6">
+                    {/* 👇 REPLACE THIS SRC WITH YOUR ACTUAL LOGO URL 👇 */}
+                    <img src="https://via.placeholder.com/150x40/0F172A/FFFFFF?text=Recruit-IQ" alt="Recruit-IQ Logo" className="h-10 opacity-90" /> 
                  </div>
-              </div>
-              <div className="p-8 space-y-6">
-                 <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700 group hover:border-emerald-500/50 transition">
-                       <span className="text-xl">📊</span>
-                       <div>
-                          <p className="text-sm font-bold text-white uppercase tracking-tight">Unlimited AI Screening</p>
-                          <p className="text-[10px] text-slate-500">Screen thousands of candidates. No caps.</p>
-                       </div>
+
+                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">
+                    Scale Your Hiring <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Without Limits.</span>
+                 </h2>
+                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                    You've seen the power of AI. Now unlock the engine used by top recruiters to cut screening time by 90%.
+                 </p>
+
+                 <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">⚡</div>
+                       <span>Unlimited AI Candidate Screening</span>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700 group hover:border-emerald-500/50 transition">
-                       <span className="text-xl">📄</span>
-                       <div>
-                          <p className="text-sm font-bold text-white uppercase tracking-tight">Professional Reports</p>
-                          <p className="text-[10px] text-slate-500">Download formatted Word docs instantly.</p>
-                       </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">📄</div>
+                       <span>Export Executive Briefs (Word/PDF)</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">🧠</div>
+                       <span>Deep Semantic Analysis</span>
                     </div>
                  </div>
+
                  <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
-                    <button className="w-full py-5 bg-emerald-500 text-slate-950 font-black rounded-2xl uppercase tracking-widest hover:scale-[1.02] transition shadow-lg shadow-emerald-500/20">Create Free Account & Start Trial →</button>
+                    <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
+                       Start 3-Day Free Trial
+                    </button>
                  </SignUpButton>
+                 <p className="text-center text-[10px] text-slate-500 mt-4">Cancel anytime. No commitment.</p>
               </div>
+
+              {/* Right Side: The "Visual" (Desktop Only) */}
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 items-center justify-center p-8 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                 <div className="text-center relative z-10">
+                    <div className="text-6xl mb-4">💎</div>
+                    <h3 className="font-bold text-white text-lg">Pro Access</h3>
+                    <p className="text-xs text-slate-400 mt-2">Join elite recruiters automating their workflow.</p>
+                    <div className="mt-6 bg-slate-800/80 p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
+                       <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">Current Status</div>
+                       <div className="text-white font-mono text-lg">Active</div>
+                    </div>
+                 </div>
+              </div>
+
             </div>
           </div>
         </div>
