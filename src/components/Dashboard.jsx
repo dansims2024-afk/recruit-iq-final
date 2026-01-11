@@ -11,35 +11,44 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 ABOUT THE ROLE:
-Vertex Financial Systems is seeking a visionary Architect to lead the evolution of our next-generation high-frequency trading platform. You will be responsible for defining the technical roadmap and ensuring our systems maintain sub-millisecond latency.
+Vertex Financial Systems is seeking a visionary Architect to lead the evolution of our next-generation high-frequency trading platform. You will be responsible for defining the technical roadmap, mentoring lead engineers, and ensuring our systems maintain sub-millisecond latency under extreme market volatility.
 
 KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS.
+- Design and implement high-availability microservices using AWS EKS and Fargate.
+- Lead the migration from legacy monolithic structures to a event-driven architecture.
 - Optimize C++ and Go-based trading engines for maximum throughput.
-- Collaborate with quantitative researchers to productionalize complex models.
+- Collaborate with quantitative researchers to productionalize complex trading models.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
 
 REQUIREMENTS:
-- 12+ years of software engineering experience in FinTech.
-- Deep expertise in AWS Cloud Architecture.
-- Track record with Kubernetes, Kafka, and Redis at scale.`;
+- 12+ years of software engineering experience in FinTech or High-Growth SaaS.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Architect preferred).
+- Proven track record with Kubernetes, Kafka, and Redis at scale.
+- Strong understanding of financial market data and execution protocols (FIX/FAST).`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | m.vandelay@email.com
+Principal Software Architect | m.vandelay@email.com | (555) 123-4567
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS transformations and low-latency system design. Managed teams of 20+ engineers.
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers to deliver 99.99% uptime for global trading platforms.
 
 PROFESSIONAL EXPERIENCE:
 Global Quant Solutions | Principal Architect | 2018 - Present
-- Architected a data pipeline handling 5TB of daily market data.
-- Reduced infrastructure costs by 35% through aggressive AWS migration.
+- Architected a serverless data processing pipeline handling 5TB of daily market data.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration.
+- Led the engineering team through a successful $200M Series D funding round.
 
 InnovaTrade | Senior Staff Engineer | 2014 - 2018
-- Built the core execution engine in Go, achieving a 50% reduction in latency.
+- Built the core execution engine in Go, achieving a 50% reduction in order latency.
+- Implemented automated failover protocols that prevented over $10M in potential slippage.
 
 TECHNICAL SKILLS:
 - Languages: Go, C++, Python, TypeScript.
-- Cloud: AWS (EKS, Lambda), Terraform, Docker, Kafka.`;
+- Cloud: AWS (EKS, Lambda, Aurora, SQS), Terraform, Docker.
+- Systems: Kafka, Redis, PostgreSQL, gRPC.
+
+EDUCATION:
+M.S. in Computer Science | Massachusetts Institute of Technology (MIT)`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -59,15 +68,16 @@ export default function Dashboard() {
   // READ FROM ZAPIER METADATA
   const isPro = user?.publicMetadata?.isPro === true;
 
-  // Completion Logic for Checkmarks
-  const jdReady = jdText.trim().length > 100;
-  const resumeReady = resumeText.trim().length > 100;
+  // Completion Logic
+  const jdReady = jdText.trim().length > 50;
+  const resumeReady = resumeText.trim().length > 50;
 
+  // --- EFFECT: Load Usage & Handle Success Return ---
   useEffect(() => {
     const storedUsage = localStorage.getItem('riq_guest_usage');
     if (storedUsage) setGuestUsage(parseInt(storedUsage));
 
-    // Fix for Blank Screen: Handle success parameter immediately
+    // If returning from Stripe, force a refresh
     const query = new URLSearchParams(window.location.search);
     if (query.get('success') && isLoaded && isSignedIn) {
       user.reload().then(() => { 
@@ -76,16 +86,16 @@ export default function Dashboard() {
     }
   }, [isLoaded, isSignedIn]);
 
-  // The Bouncer Logic - Safely kiking non-pro users to Stripe
+  // --- EFFECT: The Bouncer (Redirects non-pro users) ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
-    // Only redirect if fully loaded, signed in, NOT pro, and NOT already on a success redirect
+    // Safety Check: Only redirect if fully loaded, signed in, NOT pro, and NOT on success page
     if (isLoaded && isSignedIn && !isPro && !query.get('success')) {
        window.location.href = STRIPE_URL;
     }
   }, [isLoaded, isSignedIn, isPro]);
 
-  // --- LOGIC FUNCTIONS ---
+  // --- HANDLERS ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -102,7 +112,7 @@ export default function Dashboard() {
   const handleScreen = async () => {
     if (!isSignedIn && guestUsage >= GUEST_LIMIT) return setShowUpgrade(true);
     if (isSignedIn && !isPro) return setShowUpgrade(true);
-    if (!jdReady || !resumeReady) return alert("Please fill both sections first.");
+    if (!jdReady || !resumeReady) return alert("Please complete Steps 1 and 2 first.");
     
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -127,10 +137,10 @@ export default function Dashboard() {
     } catch (err) { alert("Analysis failed."); } finally { setLoading(false); }
   };
 
-  // Prevent blank screen while Clerk is loading
+  // --- BLANK SCREEN PREVENTER ---
   if (!isLoaded) return <div className="min-h-screen bg-slate-950" />;
 
-  // Loading screen for Pro activation
+  // --- PRO ACTIVATION SPINNER ---
   if (isSignedIn && !isPro) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
@@ -143,7 +153,7 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen relative font-sans">
       
-      {/* 1-2-3 COLOR CODED QUICK START GUIDE */}
+      {/* 1-2-3 QUICK START GUIDE */}
       <div className="grid md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-blue-600/10 border-blue-500/20'}`}>
              <div className="flex justify-between items-start mb-2">
@@ -151,7 +161,7 @@ export default function Dashboard() {
                 {jdReady && <span className="text-emerald-500 text-xl">✓</span>}
              </div>
              <h4 className="font-bold text-xs uppercase tracking-widest text-blue-400 mb-2">Define Role</h4>
-             <p className="text-[10px] text-slate-400">Paste your Job Description to benchmark requirements.</p>
+             <p className="text-[10px] text-slate-400">Paste your Job Description. AI benchmarks requirements.</p>
           </div>
           <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-indigo-600/10 border-indigo-500/20'}`}>
              <div className="flex justify-between items-start mb-2">
@@ -159,15 +169,15 @@ export default function Dashboard() {
                 {resumeReady && <span className="text-emerald-500 text-xl">✓</span>}
              </div>
              <h4 className="font-bold text-xs uppercase tracking-widest text-indigo-400 mb-2">Load Candidate</h4>
-             <p className="text-[10px] text-slate-400">Upload a resume to extract experience and skill gaps.</p>
+             <p className="text-[10px] text-slate-400">Upload resume. AI extracts skills and gaps.</p>
           </div>
           <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-emerald-600/10 border-emerald-500/20'}`}>
              <div className="flex justify-between items-start mb-2">
                 <span className="text-2xl font-black text-emerald-500">3</span>
                 {analysis && <span className="text-emerald-500 text-xl">✓</span>}
              </div>
-             <h4 className="font-bold text-xs uppercase tracking-widest text-emerald-400 mb-2">Unlock Intel</h4>
-             <p className="text-[10px] text-slate-400">Get match scores and custom interview guides.</p>
+             <h4 className="font-bold text-xs uppercase tracking-widest text-emerald-400 mb-2">Get Results</h4>
+             <p className="text-[10px] text-slate-400">View Match Score, Interview Guide & Outreach.</p>
           </div>
       </div>
 
@@ -177,7 +187,7 @@ export default function Dashboard() {
         <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
             <div className="flex gap-3 mb-4">
                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                  JD {jdReady && <span className="text-emerald-400 font-bold">✓</span>}
+                  Job Description {jdReady && <span className="text-emerald-400 font-bold">✓</span>}
                </button>
                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                   Resume {resumeReady && <span className="text-emerald-400 font-bold">✓</span>}
@@ -198,8 +208,9 @@ export default function Dashboard() {
               placeholder="Paste content here..."
             />
 
-            <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all ${jdReady && resumeReady ? 'bg-emerald-600 shadow-xl' : 'bg-slate-800 opacity-50'}`}>
-               {loading ? "Analyzing..." : "Screen Candidate →"}
+            {/* DYNAMIC 1-2-3 BUTTON */}
+            <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all shadow-xl flex items-center justify-center gap-2 ${jdReady && resumeReady ? 'bg-emerald-600 shadow-emerald-900/50' : 'bg-slate-800 opacity-70'}`}>
+               {!jdReady ? "Step 1: Paste Job Description" : !resumeReady ? "Step 2: Upload Resume" : loading ? "Analyzing..." : "Step 3: Screen Candidate →"}
             </button>
         </div>
 
@@ -213,47 +224,56 @@ export default function Dashboard() {
                   <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-3">Match Confidence</h3>
                   <p className="text-slate-200 text-sm italic">"{analysis.summary}"</p>
                 </div>
+                
+                {/* Result Cards... */}
+                <div className="bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-500/20">
+                    <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-4">Interview Guide</h4>
+                    <ul className="space-y-3">{analysis.questions.map((q, i) => <li key={i} className="text-xs text-slate-300 bg-slate-900/50 p-3 rounded-xl border border-slate-800">"{q}"</li>)}</ul>
+                </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-6 px-12 text-center opacity-50 uppercase tracking-widest">
-                 🧠 Waiting for data...
+                 Waiting for data...
               </div>
             )}
         </div>
       </div>
 
-      {/* RECRUIT-IQ PRO UPGRADE MODAL */}
+      {/* MARKETING UPGRADE MODAL */}
       {showUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/80">
-          <div className="relative w-full max-w-lg group">
+          <div className="relative w-full max-w-lg group animate-in zoom-in-95 duration-300">
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-blue-500 to-emerald-400 rounded-[2.5rem] blur-xl opacity-40 animate-pulse"></div>
             <div className="relative bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-b from-emerald-900/40 to-slate-900 p-10 text-center border-b border-slate-800">
                  <button onClick={() => setShowUpgrade(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition">✕</button>
                  <div className="text-6xl mb-6">🚀</div>
-                 <h2 className="text-4xl font-black text-white mb-2 tracking-tighter">Recruit-IQ <span className="text-emerald-400 italic">PRO</span></h2>
-                 <p className="text-emerald-400 font-black text-xl tracking-widest uppercase mb-2">Try 3 Days Free!</p>
-                 <p className="text-slate-400 text-sm">You've hit the guest limit. Unlock the full engine.</p>
+                 <h2 className="text-3xl font-black text-white mb-2 tracking-tighter">Recruit-IQ <span className="text-emerald-400 italic">PRO</span></h2>
+                 <p className="text-emerald-400 font-bold text-lg tracking-widest uppercase mb-4">Try 3 Days Free!</p>
+                 <div className="flex justify-center gap-2 text-xs text-slate-300">
+                    <span className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">✨ Brilliant Insights</span>
+                    <span className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700">⚡ Faster Hires</span>
+                 </div>
               </div>
               <div className="p-8 space-y-6">
                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700">
+                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700 group hover:border-emerald-500/50 transition">
                        <span className="text-xl">📊</span>
                        <div>
                           <p className="text-sm font-bold text-white uppercase tracking-tight">Unlimited AI Screening</p>
-                          <p className="text-[10px] text-slate-500">Screen thousands of candidates with no caps.</p>
+                          <p className="text-[10px] text-slate-500">Screen thousands of candidates. No caps.</p>
                        </div>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700">
+                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700 group hover:border-emerald-500/50 transition">
                        <span className="text-xl">📄</span>
                        <div>
-                          <p className="text-sm font-bold text-white uppercase tracking-tight">AI Interview Guides</p>
-                          <p className="text-[10px] text-slate-500">Targeted questions based on specific resume gaps.</p>
+                          <p className="text-sm font-bold text-white uppercase tracking-tight">Professional Reports</p>
+                          <p className="text-[10px] text-slate-500">Download formatted Word docs instantly.</p>
                        </div>
                     </div>
                  </div>
-                 <SignUpButton mode="modal">
-                    <button className="w-full py-5 bg-emerald-500 text-slate-950 font-black rounded-2xl uppercase tracking-widest hover:scale-[1.02] transition shadow-lg shadow-emerald-500/30">Create Free Account & Start Trial →</button>
+                 <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <button className="w-full py-5 bg-emerald-500 text-slate-950 font-black rounded-2xl uppercase tracking-widest hover:scale-[1.02] transition shadow-lg shadow-emerald-500/20">Create Free Account & Start Trial →</button>
                  </SignUpButton>
               </div>
             </div>
