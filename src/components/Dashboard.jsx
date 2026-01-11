@@ -5,36 +5,50 @@ import { useUser, SignUpButton } from "@clerk/clerk-react";
 // --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLE DATA ---
-const SAMPLE_JD = `JOB TITLE: Senior FinTech Architect
-LOCATION: New York, NY
-SALARY: $220k - $260k + Equity
+// --- FULL LENGTH SAMPLE DATA ---
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
-OVERVIEW:
-Vertex Financial is a high-frequency trading firm rebuilding our core engine for sub-millisecond latency.
+ABOUT THE ROLE:
+Vertex Financial Systems is seeking a visionary Architect to lead the evolution of our next-generation high-frequency trading platform. You will be responsible for defining the technical roadmap, mentoring lead engineers, and ensuring our systems maintain sub-millisecond latency under extreme market volatility.
 
-RESPONSIBILITIES:
-- Architect high-availability microservices on AWS (EKS, Lambda).
-- Optimize low-latency trading algorithms.
-- Lead a team of 8-10 senior engineers.
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate.
+- Lead the migration from legacy monolithic structures to a event-driven architecture.
+- Optimize C++ and Go-based trading engines for maximum throughput.
+- Collaborate with quantitative researchers to productionalize complex trading models.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
 
-QUALIFICATIONS:
-- 10+ years software engineering experience.
-- Deep expertise in AWS cloud-native services.`;
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech or High-Growth SaaS.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Architect preferred).
+- Proven track record with Kubernetes, Kafka, and Redis at scale.
+- Strong understanding of financial market data and execution protocols (FIX/FAST).`;
 
-const SAMPLE_RESUME = `ALEXANDER MERCER
-Senior Principal Engineer | alex.mercer@example.com
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | m.vandelay@email.com | (555) 123-4567
 
-SUMMARY:
-Lead Engineer with 12 years experience building scalable financial systems. 
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers to deliver 99.99% uptime for global trading platforms.
 
-EXPERIENCE:
-Innovate Financial | Lead Engineer | 2019 - Present
-- Migrated core trading engine to AWS EKS.
-- Reduced latency by 45% via Redis caching strategies.
+PROFESSIONAL EXPERIENCE:
+Global Quant Solutions | Principal Architect | 2018 - Present
+- Architected a serverless data processing pipeline handling 5TB of daily market data.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration.
+- Led the engineering team through a successful $200M Series D funding round.
 
-SKILLS:
-- AWS, Docker, Kubernetes, Terraform, Node.js, Go, Python.`;
+InnovaTrade | Senior Staff Engineer | 2014 - 2018
+- Built the core execution engine in Go, achieving a 50% reduction in order latency.
+- Implemented automated failover protocols that prevented over $10M in potential slippage.
+
+TECHNICAL SKILLS:
+- Languages: Go, C++, Python, TypeScript.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS), Terraform, Docker.
+- Systems: Kafka, Redis, PostgreSQL, gRPC.
+
+EDUCATION:
+M.S. in Computer Science | Massachusetts Institute of Technology (MIT)`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -46,58 +60,38 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  // Freemium & Stripe State
+  // Freemium State
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [guestUsage, setGuestUsage] = useState(0);
   const GUEST_LIMIT = 3;
 
-  // READ FROM ZAPIER: If Zapier updated the user, this will be true
+  // READ FROM ZAPIER METADATA
   const isPro = user?.publicMetadata?.isPro === true;
 
-  // --- 1. INITIALIZATION & DATA SYNC ---
+  // Completion Logic
+  const jdReady = jdText.trim().length > 100;
+  const resumeReady = resumeText.trim().length > 100;
+
   useEffect(() => {
     const storedUsage = localStorage.getItem('riq_guest_usage');
     if (storedUsage) setGuestUsage(parseInt(storedUsage));
 
-    // SMART SYNC: If they return from Stripe, reload Clerk data to catch the "isPro" stamp
     const query = new URLSearchParams(window.location.search);
     if (query.get('success') && isLoaded && isSignedIn) {
       setTimeout(() => {
-        user.reload().then(() => {
-          window.history.replaceState({}, document.title, "/");
-        });
+        user.reload().then(() => { window.history.replaceState({}, document.title, "/"); });
       }, 1500); 
     }
   }, [isLoaded, isSignedIn]);
 
-  // --- 2. THE "BOUNCER" (REDIRECTS IF NOT PRO) ---
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
        const query = new URLSearchParams(window.location.search);
-       if (!query.get('success')) {
-          window.location.href = STRIPE_URL;
-       }
+       if (!query.get('success')) { window.location.href = STRIPE_URL; }
     }
   }, [isLoaded, isSignedIn, isPro]);
 
-  // --- PDF EXTRACTION ---
-  const extractPdfText = async (file) => {
-    try {
-      const pdfjs = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm');
-      pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs';
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-      let fullText = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        fullText += textContent.items.map(item => item.str).join(" ") + "\n";
-      }
-      return fullText;
-    } catch (err) { return null; }
-  };
-
-  // --- FILE HANDLING ---
+  // --- LOGIC FUNCTIONS ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -106,38 +100,15 @@ export default function Dashboard() {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
-      } else if (file.name.endsWith('.pdf')) {
-        const extracted = await extractPdfText(file);
-        text = extracted || "Error reading PDF.";
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
     } catch (err) { alert("Error reading file."); }
   };
 
-  const loadSamples = () => {
-    setJdText(SAMPLE_JD);
-    setResumeText(SAMPLE_RESUME);
-  };
-
-  // --- WORD REPORT ---
-  const downloadReport = () => {
-    if (!analysis) return;
-    const content = `<html><body><h1>Recruit-IQ Report</h1><h2>Score: ${analysis.score}%</h2><p>${analysis.summary}</p></body></html>`;
-    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `RecruitIQ_Report.doc`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // --- LIVE SCREENING LOGIC ---
   const handleScreen = async () => {
     if (!isSignedIn && guestUsage >= GUEST_LIMIT) return setShowUpgrade(true);
     if (isSignedIn && !isPro) return setShowUpgrade(true);
-    if (!jdText || !resumeText) return alert("Please provide both Job Description and Resume.");
+    if (!jdReady || !resumeReady) return alert("Please fill both sections before screening.");
     
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -148,15 +119,12 @@ export default function Dashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `Act as a recruiter. Analyze JD and Resume. Return JSON: {"score": 0-100, "summary": "...", "strengths": [], "gaps": [], "questions": [], "email_subject": "...", "email_body": "..."}. JD: ${jdText} Resume: ${resumeText}` }] }],
+          contents: [{ parts: [{ text: `Analyze JD and Resume. Return JSON: {"score": 0-100, "summary": "...", "strengths": [], "gaps": [], "questions": [], "email_subject": "...", "email_body": "..."}. JD: ${jdText} Resume: ${resumeText}` }] }],
           generationConfig: { responseMimeType: "application/json" }
         })
       });
-
       const data = await response.json();
-      const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
-      setAnalysis(parsed);
-      
+      setAnalysis(JSON.parse(data.candidates[0].content.parts[0].text));
       if (!isSignedIn) {
         const newUsage = guestUsage + 1;
         setGuestUsage(newUsage);
@@ -165,13 +133,12 @@ export default function Dashboard() {
     } catch (err) { alert("Analysis failed."); } finally { setLoading(false); }
   };
 
-  // --- LOADING OVERLAY ---
   if (isSignedIn && !isPro && isLoaded) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-10">
          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-         <h2 className="text-xl font-bold uppercase tracking-widest">Finalizing Pro Access...</h2>
-         <p className="text-slate-400 text-sm mt-2 text-center px-6">Zapier is syncing your payment. One moment.</p>
+         <h2 className="text-xl font-bold uppercase tracking-widest">Activating Pro Intel...</h2>
+         <p className="text-slate-400 text-sm mt-2">Zapier is syncing your account. This takes a moment.</p>
       </div>
     );
   }
@@ -179,31 +146,37 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-slate-950 min-h-screen font-sans relative">
       
-      {/* RESTORED WOW UPGRADE MODAL */}
+      {/* PREMIUM UPGRADE MODAL */}
       {showUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-950/80">
           <div className="relative w-full max-w-lg group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-600 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-75 animate-pulse transition duration-1000"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-blue-500 to-emerald-400 rounded-[2.5rem] blur-xl opacity-40 animate-pulse"></div>
             <div className="relative bg-slate-900 border border-slate-700 rounded-[2rem] shadow-2xl overflow-hidden">
-              <div className="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/60 via-slate-900 to-slate-900 p-10 text-center border-b border-slate-800">
+              <div className="bg-gradient-to-b from-emerald-900/40 to-slate-900 p-10 text-center border-b border-slate-800">
                  <button onClick={() => setShowUpgrade(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition">✕</button>
-                 <div className="text-6xl mb-6">🚀</div>
-                 <h2 className="text-3xl font-black text-white mb-3">UNLEASH FULL ACCESS</h2>
-                 <p className="text-slate-300 text-sm">3 Free Guest Screens used. Time to go Pro.</p>
+                 <div className="text-5xl mb-4 font-bold tracking-tighter text-emerald-400">Recruit-IQ <span className="text-white">PRO</span></div>
+                 <h2 className="text-2xl font-black text-white mb-2">3 DAYS OF UNLIMITED ACCESS</h2>
+                 <p className="text-slate-400 text-sm">3 Free screens used. Don't lose your momentum.</p>
               </div>
               <div className="p-8 space-y-6">
-                 <div className="space-y-3">
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-                       <div className="text-emerald-500 font-bold">✓</div>
-                       <p className="text-sm font-bold text-white">Unlimited AI Screening</p>
+                 <div className="space-y-4">
+                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700">
+                       <span className="text-xl">📊</span>
+                       <div>
+                          <p className="text-sm font-bold text-white">Advanced Match Logic</p>
+                          <p className="text-[10px] text-slate-500">Deeper semantic analysis and skill-gap identification.</p>
+                       </div>
                     </div>
-                    <div className="flex items-center gap-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-                       <div className="text-emerald-500 font-bold">✓</div>
-                       <p className="text-sm font-bold text-white">Professional Word Reports</p>
+                    <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-700">
+                       <span className="text-xl">📄</span>
+                       <div>
+                          <p className="text-sm font-bold text-white">Professional Reports</p>
+                          <p className="text-[10px] text-slate-500">Download beautifully formatted Word Intelligence reports.</p>
+                       </div>
                     </div>
                  </div>
                  <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
-                    <button className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black rounded-2xl uppercase tracking-widest shadow-xl shadow-emerald-600/30">Create Free Account & Start Trial →</button>
+                    <button className="w-full py-5 bg-emerald-500 text-slate-950 font-black rounded-2xl uppercase tracking-widest hover:scale-[1.02] transition shadow-lg shadow-emerald-500/20">Claim My 3-Day Free Trial →</button>
                  </SignUpButton>
               </div>
             </div>
@@ -211,78 +184,77 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* QUICK START BAR */}
-      <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-[2rem] flex justify-between items-center">
-          <h2 className="text-emerald-400 font-black uppercase text-xs tracking-widest">🚀 Recruit-IQ Intelligence</h2>
-          <span className="bg-slate-800 text-slate-300 px-4 py-1.5 rounded-full text-[10px] font-bold">
-            {isPro ? "PRO ACTIVE" : `GUEST CREDITS LEFT: ${Math.max(0, GUEST_LIMIT - guestUsage)}`}
-          </span>
+      {/* COLOR CODED QUICK START */}
+      <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl group transition-all hover:bg-blue-600/20">
+             <div className="text-blue-500 font-black text-2xl mb-2 flex justify-between">1 <span className={jdReady ? "text-emerald-500" : "hidden"}>✓</span></div>
+             <h4 className="font-bold text-xs uppercase tracking-widest text-blue-400 mb-2">Define Role</h4>
+             <p className="text-[10px] text-slate-400 leading-relaxed">Paste your Job Description. Our AI benchmarks the core requirements and culture fit.</p>
+          </div>
+          <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-3xl group transition-all hover:bg-indigo-600/20">
+             <div className="text-indigo-500 font-black text-2xl mb-2 flex justify-between">2 <span className={resumeReady ? "text-emerald-500" : "hidden"}>✓</span></div>
+             <h4 className="font-bold text-xs uppercase tracking-widest text-indigo-400 mb-2">Load Candidate</h4>
+             <p className="text-[10px] text-slate-400 leading-relaxed">Upload the resume. We extract skills, experience, and potential gaps in seconds.</p>
+          </div>
+          <div className="bg-emerald-600/10 border border-emerald-500/20 p-6 rounded-3xl group transition-all hover:bg-emerald-600/20">
+             <div className="text-emerald-500 font-black text-2xl mb-2 flex justify-between">3 <span className={analysis ? "text-emerald-500" : "hidden"}>✓</span></div>
+             <h4 className="font-bold text-xs uppercase tracking-widest text-emerald-400 mb-2">Unlock Intel</h4>
+             <p className="text-[10px] text-slate-400 leading-relaxed">Get your Match Score, custom interview questions, and automated outreach draft.</p>
+          </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* RESTORED INPUT PANEL */}
+        {/* INPUT PANEL */}
         <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative">
             <div className="flex gap-3 mb-4">
-               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>1. Job Description</button>
-               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>2. Resume</button>
+               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                  JD {jdReady && <span className="text-emerald-400">●</span>}
+               </button>
+               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[11px] font-black uppercase transition-all flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                  RESUME {resumeReady && <span className="text-emerald-400">●</span>}
+               </button>
             </div>
 
             <div className="flex gap-3 mb-4">
               <label className="flex-1 text-center cursor-pointer bg-black/30 hover:bg-black/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-800 text-slate-400 transition">
                 Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={loadSamples} className="flex-1 bg-black/30 hover:bg-black/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-800 text-slate-400 transition">Load Samples</button>
+              <button onClick={loadSamples} className="flex-1 bg-black/30 hover:bg-black/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-800 text-slate-400 transition">Load Full Samples</button>
             </div>
 
             <textarea 
               className="flex-1 bg-black/20 resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono mb-4 focus:border-slate-600 transition-colors"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder="Paste content here..."
+              placeholder="Paste content to begin..."
             />
 
-            <button onClick={handleScreen} disabled={loading} className="py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl font-black uppercase text-xs tracking-widest text-white shadow-xl shadow-emerald-900/50 flex items-center justify-center gap-3 disabled:opacity-50">
-               {loading ? "Analyzing..." : "3. Screen Candidate"}
+            <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all flex items-center justify-center gap-3 ${jdReady && resumeReady ? 'bg-emerald-600 shadow-xl shadow-emerald-900/50' : 'bg-slate-800 opacity-50'}`}>
+               {loading ? "Analyzing..." : "Screen Candidate →"}
             </button>
         </div>
 
-        {/* RESTORED RESULTS PANEL */}
-        <div className="h-[850px] overflow-y-auto pr-2 custom-scrollbar space-y-6">
+        {/* RESULTS PANEL */}
+        <div className="h-[850px] overflow-y-auto pr-2 space-y-6">
             {analysis ? (
-              <div className="animate-in fade-in slide-in-from-right-8 duration-700 space-y-6 pb-10">
-                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-emerald-500 to-indigo-500"></div>
-                  <div className={`w-28 h-28 mx-auto rounded-full flex items-center justify-center text-4xl font-black mb-6 shadow-2xl ${analysis.score > 75 ? 'bg-emerald-500' : 'bg-amber-500'}`}>{analysis.score}%</div>
-                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-3">Match Confidence</h3>
-                  <p className="text-slate-200 text-sm italic">"{analysis.summary}"</p>
-                </div>
-
-                <div className="bg-slate-900/80 p-6 rounded-[2rem] border border-slate-800">
-                    <h4 className="text-[10px] font-black uppercase text-emerald-400 mb-4 tracking-widest">Key Strengths</h4>
-                    <ul className="space-y-2">{analysis.strengths.map((s, i) => <li key={i} className="text-xs text-slate-300 flex gap-3"><span className="text-emerald-500">✓</span> {s}</li>)}</ul>
+              <div className="space-y-6 pb-10">
+                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
+                  <div className={`w-28 h-28 mx-auto rounded-full flex items-center justify-center text-4xl font-black mb-6 ${analysis.score > 75 ? 'bg-emerald-500' : 'bg-amber-500'}`}>{analysis.score}%</div>
+                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-3">Match Score</h3>
+                  <p className="text-slate-200 text-sm leading-relaxed">"{analysis.summary}"</p>
                 </div>
 
                 <div className="bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-500/20">
-                    <div className="flex justify-between items-end mb-4">
-                       <h4 className="text-[10px] font-black uppercase text-indigo-400">Interview Guide</h4>
-                       <button onClick={downloadReport} className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition flex items-center gap-2">Download Report ↓</button>
+                    <div className="flex justify-between items-end mb-4 font-black uppercase text-[10px] text-indigo-400">
+                       Interview Intel
+                       <button className="bg-indigo-600 px-4 py-2 rounded-lg text-white">Download Pro Report ↓</button>
                     </div>
                     <ul className="space-y-3">{analysis.questions.map((q, i) => <li key={i} className="text-xs text-slate-300 bg-slate-900/50 p-3 rounded-xl border border-slate-800">"{q}"</li>)}</ul>
                 </div>
-
-                <div className="bg-slate-900 p-6 rounded-[2rem] border border-slate-800">
-                    <h4 className="text-[10px] font-black uppercase text-blue-400 mb-4 tracking-widest">Outreach Draft</h4>
-                    <div className="bg-black/30 p-4 rounded-xl border border-slate-800">
-                       <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Subject</p>
-                       <p className="text-xs text-white mb-4">{analysis.email_subject}</p>
-                       <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{analysis.email_body}</p>
-                    </div>
-                </div>
               </div>
             ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-6 px-12 text-center opacity-50">
-                 <div className="text-6xl grayscale">🧠</div>
-                 <p className="uppercase tracking-widest leading-loose">Intelligence Engine Standby.<br/>Upload JD & Resume to Start.</p>
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-6 px-12 text-center opacity-50 uppercase tracking-widest">
+                 Intelligence Standby. <br/> Complete Steps 1 & 2.
               </div>
             )}
         </div>
