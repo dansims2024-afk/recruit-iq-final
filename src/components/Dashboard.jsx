@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignUpButton } from "@clerk/clerk-react";
-
-// --- UPDATED IMPORT ---
-// This looks for logo.png in the 'src' folder (one level up from components)
+// --- IMPORT LOGO ---
+// Based on your screenshot, logo.png is in 'src', so we go up one level from 'components'
 import logo from '../logo.png';
 
 // --- CONFIGURATION ---
@@ -61,6 +60,8 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
+  const [jdFile, setJdFile] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -100,14 +101,62 @@ export default function Dashboard() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const fileInfo = { 
+      name: file.name, 
+      size: (file.size / 1024).toFixed(1) + ' KB', 
+      type: file.name.split('.').pop().toUpperCase() 
+    };
+
+    if (activeTab === 'jd') setJdFile(fileInfo);
+    else setResumeFile(fileInfo);
+
     try {
       let text = "";
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
-      } else { text = await file.text(); }
+      } else { 
+        // Simple text fallback for PDF to avoid build errors
+        text = await file.text(); 
+      }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
     } catch (err) { alert("Error reading file."); }
+  };
+
+  const loadSamples = () => {
+    setJdText(SAMPLE_JD);
+    setResumeText(SAMPLE_RESUME);
+    setJdFile({ name: "Job_Description.docx", size: "12 KB", type: "DOCX" });
+    setResumeFile({ name: "Alex_Mercer.pdf", size: "45 KB", type: "PDF" });
+  };
+
+  // --- WORD REPORT ---
+  const downloadReport = () => {
+    if (!analysis) return;
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><title>Recruit-IQ Report</title></head>
+      <body>
+        <div style="text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 20px;">
+           <h1 style="color:#0f172a; font-size: 24pt;">Recruit-IQ Intelligence Report</h1>
+        </div>
+        <h2>Match Score: ${analysis.score}%</h2>
+        <p><strong>Executive Summary:</strong> ${analysis.summary}</p>
+        <hr/>
+        <h3>Key Strengths</h3><ul>${analysis.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+        <h3>Critical Gaps</h3><ul>${analysis.gaps.map(g => `<li>${g}</li>`).join('')}</ul>
+        <h3>Interview Guide</h3><ul>${analysis.questions.map(q => `<li>${q}</li>`).join('')}</ul>
+      </body></html>
+    `;
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `RecruitIQ_Report_${analysis.score}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleScreen = async () => {
@@ -154,7 +203,6 @@ export default function Dashboard() {
       
       {/* --- QUICK START (1-2-3) --- */}
       <div className="grid md:grid-cols-3 gap-6">
-          {/* Step 1 */}
           <div className={`p-6 rounded-3xl border transition-all duration-300 ${jdReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
              <div className="flex justify-between items-start mb-3">
                 <span className={`text-3xl font-black ${jdReady ? 'text-indigo-400' : 'text-slate-600'}`}>1</span>
@@ -164,7 +212,6 @@ export default function Dashboard() {
              <p className="text-[11px] text-slate-400 leading-relaxed">Paste the Job Description to benchmark key requirements.</p>
           </div>
 
-          {/* Step 2 */}
           <div className={`p-6 rounded-3xl border transition-all duration-300 ${resumeReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_-5px_rgba(99,102,241,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
              <div className="flex justify-between items-start mb-3">
                 <span className={`text-3xl font-black ${resumeReady ? 'text-indigo-400' : 'text-slate-600'}`}>2</span>
@@ -174,7 +221,6 @@ export default function Dashboard() {
              <p className="text-[11px] text-slate-400 leading-relaxed">Upload resume. We extract skills, history, and gaps.</p>
           </div>
 
-          {/* Step 3 */}
           <div className={`p-6 rounded-3xl border transition-all duration-300 ${analysis ? 'bg-emerald-900/20 border-emerald-500/50 shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
              <div className="flex justify-between items-start mb-3">
                 <span className={`text-3xl font-black ${analysis ? 'text-emerald-400' : 'text-slate-600'}`}>3</span>
@@ -190,8 +236,6 @@ export default function Dashboard() {
         
         {/* INPUT PANEL */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative">
-            
-            {/* Tabs */}
             <div className="flex gap-3 mb-6">
                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'}`}>
                   Job Description {jdReady && <span className="w-2 h-2 rounded-full bg-emerald-400 ml-1"></span>}
@@ -201,15 +245,13 @@ export default function Dashboard() {
                </button>
             </div>
 
-            {/* Tools */}
             <div className="flex gap-3 mb-4">
               <label className="flex-1 text-center cursor-pointer bg-slate-800/50 hover:bg-slate-700/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 transition hover:text-white">
                 Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 transition hover:text-white">Load Full Samples</button>
+              <button onClick={loadSamples} className="flex-1 bg-slate-800/50 hover:bg-slate-700/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 transition hover:text-white">Load Full Samples</button>
             </div>
 
-            {/* Text Area */}
             <textarea 
               className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6 focus:border-indigo-500/50 transition-colors"
               value={activeTab === 'jd' ? jdText : resumeText} 
@@ -217,7 +259,6 @@ export default function Dashboard() {
               placeholder={activeTab === 'jd' ? "Paste Job Description here..." : "Paste Candidate Resume here..."}
             />
 
-            {/* Dynamic Action Button */}
             <button onClick={handleScreen} disabled={loading} className={`py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white transition-all shadow-xl flex items-center justify-center gap-3 relative overflow-hidden group ${jdReady && resumeReady ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-500/20' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
                {!jdReady ? (
                  <><span>Step 1: Paste Job Description</span></>
@@ -243,14 +284,22 @@ export default function Dashboard() {
                 </div>
                 
                 <div className="bg-indigo-950/30 p-8 rounded-[2.5rem] border border-indigo-500/20">
-                    <h4 className="text-[10px] font-black uppercase text-indigo-400 mb-6 tracking-widest flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span> AI Interview Guide
-                    </h4>
+                    <div className="flex justify-between items-center mb-6">
+                       <h4 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest flex items-center gap-2">
+                         <span className="w-2 h-2 rounded-full bg-indigo-500"></span> AI Interview Guide
+                       </h4>
+                       <button onClick={downloadReport} className="text-[10px] font-bold uppercase bg-indigo-600 px-3 py-1 rounded text-white">Download</button>
+                    </div>
                     <ul className="space-y-4">{analysis.questions.map((q, i) => (
                       <li key={i} className="text-sm text-slate-300 bg-[#0B1120] p-4 rounded-xl border border-slate-800 leading-relaxed shadow-sm">
                         <span className="text-indigo-500 font-bold mr-2">Q{i+1}.</span> {q}
                       </li>
                     ))}</ul>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem]">
+                    <h4 className="text-[10px] font-black uppercase text-slate-500 mb-4 tracking-widest">Outreach Draft</h4>
+                    <p className="text-xs text-slate-300 bg-black/20 p-4 rounded-xl border border-slate-800 whitespace-pre-wrap">{analysis.email_body}</p>
                 </div>
               </div>
             ) : (
@@ -266,20 +315,34 @@ export default function Dashboard() {
       {showUpgrade && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
-            
-            {/* The "Glow" Behind */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse"></div>
-            
-            {/* Main Card */}
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              
-              {/* Left Side: The "Pitch" */}
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
-                 {/* Replaced Rocket with Local Logo */}
-                 <div className="mb-6">
-                    <img src={logo} alt="Recruit-IQ Logo" className="h-10 w-auto opacity-90" /> 
+                 <div className="mb-6"><img src={logo} alt="Recruit-IQ Logo" className="h-10 w-auto opacity-90" /></div>
+                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">Scale Your Hiring <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Without Limits.</span></h2>
+                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">You've seen the power of AI. Now unlock the engine used by top recruiters to cut screening time by 90%.</p>
+                 <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-sm text-slate-300"><div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">⚡</div><span>Unlimited AI Candidate Screening</span></div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300"><div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">📄</div><span>Export Executive Briefs (Word/PDF)</span></div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300"><div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">🧠</div><span>Deep Semantic Analysis</span></div>
                  </div>
-
-                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">
-                    Scale Your Hiring <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r
+                 <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">Start 3-Day Free Trial</button>
+                 </SignUpButton>
+                 <p className="text-center text-[10px] text-slate-500 mt-4">Cancel anytime. No commitment.</p>
+              </div>
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 items-center justify-center p-8 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                 <div className="text-center relative z-10">
+                    <div className="text-6xl mb-4">💎</div>
+                    <h3 className="font-bold text-white text-lg">Pro Access</h3>
+                    <p className="text-xs text-slate-400 mt-2">Join elite recruiters automating their workflow.</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
