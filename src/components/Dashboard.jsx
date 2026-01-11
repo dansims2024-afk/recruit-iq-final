@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignUpButton } from "@clerk/clerk-react"; 
+import { useUser, SignUpButton } from "@clerk/clerk-react";
+
+// --- UPDATED IMPORT ---
+// This looks for logo.png in the 'src' folder (one level up from components)
+import logo from '../logo.png';
 
 // --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
@@ -271,61 +275,11 @@ export default function Dashboard() {
               
               {/* Left Side: The "Pitch" */}
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
-                 {/* Replaced Rocket with Logo Placeholder */}
+                 {/* Replaced Rocket with Local Logo */}
                  <div className="mb-6">
-                    {/* 👇 REPLACE THIS SRC WITH YOUR ACTUAL LOGO URL 👇 */}
-                    <img src="https://via.placeholder.com/150x40/0F172A/FFFFFF?text=Recruit-IQ" alt="Recruit-IQ Logo" className="h-10 opacity-90" /> 
+                    <img src={logo} alt="Recruit-IQ Logo" className="h-10 w-auto opacity-90" /> 
                  </div>
 
                  <h2 className="text-3xl font-black text-white mb-2 leading-tight">
                     Scale Your Hiring <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Without Limits.</span>
-                 </h2>
-                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-                    You've seen the power of AI. Now unlock the engine used by top recruiters to cut screening time by 90%.
-                 </p>
-
-                 <div className="space-y-4 mb-8">
-                    <div className="flex items-center gap-3 text-sm text-slate-300">
-                       <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">⚡</div>
-                       <span>Unlimited AI Candidate Screening</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-slate-300">
-                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">📄</div>
-                       <span>Export Executive Briefs (Word/PDF)</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-slate-300">
-                       <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">🧠</div>
-                       <span>Deep Semantic Analysis</span>
-                    </div>
-                 </div>
-
-                 <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
-                    <button className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
-                       Start 3-Day Free Trial
-                    </button>
-                 </SignUpButton>
-                 <p className="text-center text-[10px] text-slate-500 mt-4">Cancel anytime. No commitment.</p>
-              </div>
-
-              {/* Right Side: The "Visual" (Desktop Only) */}
-              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 items-center justify-center p-8 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                 <div className="text-center relative z-10">
-                    <div className="text-6xl mb-4">💎</div>
-                    <h3 className="font-bold text-white text-lg">Pro Access</h3>
-                    <p className="text-xs text-slate-400 mt-2">Join elite recruiters automating their workflow.</p>
-                    <div className="mt-6 bg-slate-800/80 p-3 rounded-lg border border-slate-700 backdrop-blur-sm">
-                       <div className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">Current Status</div>
-                       <div className="text-white font-mono text-lg">Active</div>
-                    </div>
-                 </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r
