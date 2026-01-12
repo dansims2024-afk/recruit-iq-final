@@ -9,24 +9,13 @@ const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
-ABOUT THE ROLE:
-Vertex Financial Systems is seeking a visionary Architect to lead the evolution of our next-generation high-frequency trading platform. You will be responsible for defining the technical roadmap, mentoring lead engineers, and ensuring our systems maintain sub-millisecond latency under extreme market volatility.
-
-REQUIREMENTS:
-- 12+ years of software engineering experience in FinTech.
-- Deep expertise in AWS Cloud Architecture.
-- Proven track record with Kubernetes, Kafka, and Redis at scale.`;
+Vertex Financial Systems is seeking a visionary Architect to lead the evolution of our next-generation high-frequency trading platform. You will be responsible for defining the technical roadmap, mentoring lead engineers, and ensuring our systems maintain sub-millisecond latency under extreme market volatility.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | m.vandelay@email.com
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers to deliver 99.99% uptime for global trading platforms.
-
-PROFESSIONAL EXPERIENCE:
-Global Quant Solutions | Principal Architect | 2018 - Present
-- Architected serverless data processing pipelines handling 5TB of daily market data.
-- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration.`;
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers to deliver 99.99% uptime for global trading platforms.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -48,7 +37,7 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
       } else if (file.name.endsWith('.pdf')) {
-        alert("For high-accuracy PDF analysis, please copy/paste the text directly into the box.");
+        alert("PDF detected. For high AI accuracy, please copy/paste the text directly into the box.");
       } else {
         const text = await file.text();
         activeTab === 'jd' ? setJdText(text) : setResumeText(text);
@@ -58,24 +47,17 @@ export default function Dashboard() {
 
   const downloadPDF = () => {
     if (!analysis) return;
-    // Accessing jsPDF from the CDN script loaded in index.html
     const { jsPDF } = window.jspdf; 
     const doc = new jsPDF();
-    
     doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229); // Indigo
-    doc.text("Recruit-IQ Candidate Intelligence", 20, 20);
-    
+    doc.setTextColor(79, 70, 229);
+    doc.text("Recruit-IQ Candidate Report", 20, 20);
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
     doc.text(`Match Score: ${analysis.score}%`, 20, 35);
-    
-    doc.setFontSize(12);
-    doc.text("Targeted Interview Questions:", 20, 50);
-    analysis.questions.forEach((q, i) => {
-      doc.text(`${i + 1}. ${q}`, 20, 60 + (i * 12), { maxWidth: 170 });
-    });
-    
+    doc.setFontSize(10);
+    doc.text("Questions:", 20, 50);
+    analysis.questions.forEach((q, i) => doc.text(`${i+1}. ${q}`, 20, 60 + (i * 10), { maxWidth: 170 }));
     doc.save(`Recruit-IQ-Analysis.pdf`);
   };
 
@@ -106,7 +88,7 @@ export default function Dashboard() {
 
       const data = await response.json();
       setAnalysis(JSON.parse(data.candidates[0].content.parts[0].text));
-    } catch (err) { alert("Analysis failed. Verify your Gemini Key."); } finally { setLoading(false); }
+    } catch (err) { alert("Analysis failed."); } finally { setLoading(false); }
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
@@ -118,7 +100,7 @@ export default function Dashboard() {
       <div className="flex justify-between items-center">
         <img src={logo} alt="Recruit-IQ" className="h-10 w-auto" />
         <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
-           {isPro ? "PRO INTEL ACTIVE" : "MAINTENANCE MODE"}
+           {isPro ? "PRO INTEL ACTIVE" : "AUTHENTICATING..."}
         </div>
       </div>
 
@@ -126,15 +108,15 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-3xl border ${jdReady ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">1. Set Requirements</h4>
-             <p className="text-[11px] text-slate-400 leading-relaxed">Paste JD or load sample.</p>
+             <p className="text-[11px] text-slate-400">Paste JD or load sample.</p>
           </div>
           <div className={`p-6 rounded-3xl border ${resumeReady ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">2. Load Candidate</h4>
-             <p className="text-[11px] text-slate-400 leading-relaxed">Upload PDF/Word or paste resume.</p>
+             <p className="text-[11px] text-slate-400">Upload PDF/Word or paste resume.</p>
           </div>
           <div className={`p-6 rounded-3xl border ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">3. Generate Intel</h4>
-             <p className="text-[11px] text-slate-400 leading-relaxed">Run screen for score and email.</p>
+             <p className="text-[11px] text-slate-400">Run screen for score and email.</p>
           </div>
       </div>
 
@@ -145,7 +127,7 @@ export default function Dashboard() {
                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>Resume</button>
             </div>
             <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 hover:text-white transition-colors">
                 Upload File <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Samples</button>
@@ -160,7 +142,7 @@ export default function Dashboard() {
             </button>
         </div>
 
-        <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+        <div className="h-[850px] overflow-y-auto space-y-6 pr-2">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in">
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
@@ -169,7 +151,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-indigo-400 font-bold uppercase text-[10px] mb-3">Targeted Interview Questions</h4>
+                  <h4 className="text-indigo-400 font-bold uppercase text-[10px] mb-3">Interview Questions</h4>
                   <ul className="text-[11px] text-slate-300 space-y-2">
                     {analysis.questions?.map((q, i) => <li key={i} className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">"{q}"</li>)}
                   </ul>
@@ -189,7 +171,6 @@ export default function Dashboard() {
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
                   <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
                   <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
-                  <button onClick={() => navigator.clipboard.writeText(analysis.outreach_email)} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-colors">Copy to Clipboard</button>
                 </div>
               </div>
             ) : (
