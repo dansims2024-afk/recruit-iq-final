@@ -5,6 +5,7 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
+// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -190,8 +191,17 @@ export default function Dashboard() {
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
   return (
-    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans pt-20">
+    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
+      {/* --- HEADER RESTORED --- */}
+      <div className="flex justify-between items-center mb-8">
+        <img src={logo} alt="Recruit-IQ" className="h-10 w-auto" />
+        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+           <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400'}`}></span>
+           {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
+        </div>
+      </div>
+
       {/* TOAST */}
       {toast.show && (
         <div className={`fixed top-24 right-5 z-[60] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 border ${toast.type === 'error' ? 'bg-rose-950/90 border-rose-500' : 'bg-emerald-950/90 border-emerald-500'}`}>
@@ -200,53 +210,29 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- HIGH CONVERTING SALES MODAL --- */}
+      {/* --- SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
-            {/* Glowing Border Effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
-            
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              
-              {/* Left Side: Sales Pitch */}
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 <div className="mb-4"><img src={logo} alt="Recruit-IQ Logo" className="h-8 w-auto opacity-90" /></div>
-                 
-                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">
-                    Hire Your Next Star <br/>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span>
-                 </h2>
-                 
-                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                    Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.
-                 </p>
-
-                 {/* DYNAMIC BUTTONS */}
+                 <div className="mb-4"><img src={logo} alt="Recruit-IQ" className="h-8 w-auto opacity-90" /></div>
+                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">Hire Your Next Star <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
+                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
                  {!isSignedIn ? (
-                   // GUEST -> SIGN UP
                    <>
-                     <button onClick={() => clerk.openSignUp()} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25">
-                        Create Free Account
-                     </button>
+                     <button onClick={() => clerk.openSignUp()} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25">Create Free Account</button>
                      <p className="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-wide">Save Your Progress • Secure Data</p>
                    </>
                  ) : (
-                   // USER -> STRIPE TRIAL
                    <>
-                     <a href={finalStripeUrl} className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-blue-500/25">
-                        Start 3-Day Free Trial
-                     </a>
-                     <div className="text-center mt-3 space-y-1">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Then $29/mo • Cancel Anytime</p>
-                     </div>
+                     <a href={finalStripeUrl} className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-blue-500/25">Start 3-Day Free Trial</a>
+                     <div className="text-center mt-3 space-y-1"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Then $29/mo • Cancel Anytime</p></div>
                    </>
                  )}
-                 
                  <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-600 mt-4 hover:text-white underline decoration-slate-700 w-full">No thanks, I'll screen manually</button>
               </div>
-
-              {/* Right Side: Visual Proof */}
               <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-8 relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
                  <div className="text-center relative z-10 space-y-4">
@@ -259,30 +245,16 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- QUICK START INSTRUCTIONS (RESTORED) --- */}
+      {/* QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div 
-             onClick={() => { setActiveTab('jd'); showToast("Switched to Job Description Input", "info"); }}
-             className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}
-          >
-             <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
-                {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
-             </div>
+          <div onClick={() => { setActiveTab('jd'); showToast("Switched to Job Description Input", "info"); }} className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2"><h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>{jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}</div>
              <p className="text-[11px] text-slate-300">Click here to upload or paste the Job Description.</p>
           </div>
-          
-          <div 
-             onClick={() => { setActiveTab('resume'); showToast("Switched to Resume Input", "info"); }}
-             className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}
-          >
-             <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
-                {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
-             </div>
+          <div onClick={() => { setActiveTab('resume'); showToast("Switched to Resume Input", "info"); }} className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2"><h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>{resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}</div>
              <p className="text-[11px] text-slate-300">Click here to upload or paste the Resume.</p>
           </div>
-          
           <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
              <p className="text-[11px] text-slate-300">Get match score, interview guide, and outreach email.</p>
@@ -341,6 +313,16 @@ export default function Dashboard() {
             )}
         </div>
       </div>
+
+      {/* --- FOOTER RESTORED --- */}
+      <footer className="mt-12 border-t border-slate-800 pt-6 text-center text-slate-600 text-xs">
+        <p>&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-4 mt-2">
+          <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
+          <a href="#" className="hover:text-slate-400 transition-colors">Support</a>
+        </div>
+      </footer>
     </div>
   );
 }
