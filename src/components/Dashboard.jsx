@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
-
-// Note: Ensure you have added the jsPDF script to your index.html head as discussed previously:
+// Note: Ensure jspdf is loaded in index.html via CDN
 // <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
@@ -72,7 +73,6 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
       } else if (file.name.endsWith('.pdf')) {
-        // Explicit fallback for PDF
         alert("PDF Parsing Limit: Please copy and paste the text from your PDF directly into the text box for the best accuracy.");
       } else {
         const text = await file.text();
@@ -101,25 +101,17 @@ export default function Dashboard() {
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    
-    // Candidate Name (extracted or fallback)
     const cName = analysis.candidate_name || "Candidate Report";
     doc.text(`${cName}`, 20, 55);
-    
-    // Score (Right Aligned)
     doc.setTextColor(79, 70, 229);
     doc.text(`Match Score: ${analysis.score}%`, 140, 55);
     
-    // --- SUMMARY (Dynamic Height Calculation) ---
+    // --- SUMMARY ---
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    
-    // Split text to fit width
     const summaryLines = doc.splitTextToSize(analysis.summary, 170);
     doc.text(summaryLines, 20, 70);
-    
-    // Calculate new Y position based on lines written (approx 7 units per line)
     let currentY = 70 + (summaryLines.length * 6) + 15;
 
     // --- STRENGTHS ---
@@ -127,17 +119,14 @@ export default function Dashboard() {
     doc.setTextColor(16, 185, 129); // Emerald Green
     doc.text("Key Strengths", 20, currentY);
     currentY += 8;
-    
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     analysis.strengths.forEach((s) => {
-      // Check for page break
       if (currentY > 280) { doc.addPage(); currentY = 20; }
       const sLines = doc.splitTextToSize(`• ${s}`, 170);
       doc.text(sLines, 20, currentY);
       currentY += (sLines.length * 6) + 2;
     });
-
     currentY += 10;
 
     // --- GAPS ---
@@ -145,7 +134,6 @@ export default function Dashboard() {
     doc.setTextColor(244, 63, 94); // Rose Red
     doc.text("Critical Gaps", 20, currentY);
     currentY += 8;
-
     doc.setFont("helvetica", "normal");
     doc.setTextColor(60, 60, 60);
     analysis.gaps.forEach((g) => {
@@ -159,17 +147,14 @@ export default function Dashboard() {
     doc.addPage();
     doc.setFillColor(243, 244, 246); // Light Gray Header
     doc.rect(0, 0, 210, 300, 'F');
-    
     doc.setFontSize(18);
     doc.setTextColor(79, 70, 229);
     doc.setFont("helvetica", "bold");
     doc.text("Strategic Interview Guide", 20, 30);
-    
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "italic");
     doc.text(`Suggested questions for ${cName}:`, 20, 45);
-
     doc.setFont("helvetica", "normal");
     let qPos = 60;
     analysis.questions.forEach((q, i) => {
@@ -229,132 +214,48 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
-      {/* UPGRADE MODAL */}
+      {/* --- NEW GLASSMORPHISM UPGRADE MODAL --- */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-           <div className="bg-[#111827] border-2 border-indigo-500 rounded-3xl p-8 max-w-md text-center shadow-2xl relative animate-in fade-in zoom-in">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">Limit Reached</div>
-              <h2 className="text-2xl font-black text-white mb-2">Unlock Unlimited Intel</h2>
-              <p className="text-slate-400 text-sm mb-6">You've used your 3 free screenings. Upgrade to Recruit-IQ Pro to continue without limits.</p>
-              <div className="space-y-3">
-                <a href={STRIPE_URL} className="block w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl font-bold uppercase text-xs tracking-widest hover:scale-105 transition-transform">Upgrade Now - $29/mo</a>
-                <button onClick={() => window.location.reload()} className="block w-full py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400 hover:text-white">I'll Upgrade Later</button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* HEADER (Logo Removed to prevent duplication) */}
-      <div className="flex justify-end items-center">
-        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
-           {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
-        </div>
-      </div>
-
-      {/* QUICK START - INSTRUCTIONS UPDATED */}
-      <div className="grid md:grid-cols-3 gap-6">
-          <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
-             <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
-                {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
-             </div>
-             <p className="text-[11px] text-slate-300">Upload or Paste the Job Description.</p>
-          </div>
-          <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
-             <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
-                {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
-             </div>
-             <p className="text-[11px] text-slate-300">Upload or Paste Resume to analyze skills.</p>
-          </div>
-          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
-             <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
-             <p className="text-[11px] text-slate-300">Get match score, interview guide, and outreach email.</p>
-          </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* INPUT COLUMN */}
-        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
-            {/* TABS WITH CHECKMARKS */}
-            <div className="flex gap-3 mb-6">
-               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
-                 Job Description {jdReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
-               </button>
-               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
-                 Resume {resumeReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
-               </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
+            {/* Glow Effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse"></div>
             
-            <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 hover:text-white transition-colors">
-                Upload or Paste File <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
-              </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
-            </div>
-            <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6"
-              value={activeTab === 'jd' ? jdText : resumeText} 
-              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder="Paste content here..."
-            />
-            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xl hover:shadow-indigo-500/25 transition-all">
-              {loading ? "Analyzing..." : `Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Free Left`}) →`}
-            </button>
-        </div>
-
-        {/* RESULTS COLUMN */}
-        <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
-            {analysis ? (
-              <div className="space-y-6 animate-in fade-in">
-                
-                {/* 1. MATCH SCORE */}
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
-                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
-                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">Match Confidence</h3>
-                  <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
-                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2 mx-auto border border-slate-700">
-                    <span>📄</span> Download Report & Guide
-                  </button>
-                </div>
-
-                {/* 2. STRENGTHS & GAPS */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl">
-                    <h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Strengths</h4>
-                    <ul className="text-[11px] text-slate-300 space-y-2">{analysis.strengths?.map((s, i) => <li key={i}>• {s}</li>)}</ul>
-                  </div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl">
-                    <h4 className="text-rose-400 font-bold uppercase text-[10px] mb-3">Gaps</h4>
-                    <ul className="text-[11px] text-slate-300 space-y-2">{analysis.gaps?.map((g, i) => <li key={i}>• {g}</li>)}</ul>
-                  </div>
-                </div>
-
-                {/* 3. INTERVIEW QUESTIONS */}
-                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-indigo-400 font-bold uppercase text-[10px]">Targeted Interview Questions</h4>
-                    <button onClick={downloadPDF} className="text-slate-400 hover:text-white text-[10px] underline">Download Guide</button>
-                  </div>
-                  <ul className="text-[11px] text-slate-300 space-y-3">
-                    {analysis.questions?.map((q, i) => <li key={i} className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">"{q}"</li>)}
-                  </ul>
-                </div>
-
-                {/* 4. OUTREACH EMAIL */}
-                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
-                  <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
-                  <button onClick={() => navigator.clipboard.writeText(analysis.outreach_email)} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-colors">Copy to Clipboard</button>
-                </div>
+            {/* Main Card */}
+            <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+              
+              {/* Left Side: Pitch */}
+              <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
+                 <div className="mb-6">
+                    <img src={logo} alt="Recruit-IQ Logo" className="h-10 w-auto opacity-90" /> 
+                 </div>
+                 <h2 className="text-2xl font-black text-white mb-2 leading-tight">
+                    Scale Your Hiring <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Without Limits.</span>
+                 </h2>
+                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                    You've used your 3 free screenings. Upgrade to unlock unlimited AI analysis and cut screening time by 90%.
+                 </p>
+                 <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">⚡</div>
+                       <span>Unlimited AI Candidate Screening</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400">📄</div>
+                       <span>Export PDF Intelligence Reports</span>
+                    </div>
+                 </div>
+                 <a href={STRIPE_URL} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
+                    Upgrade Now - $29/mo
+                 </a>
+                 <button onClick={() => window.location.reload()} className="text-center text-[10px] text-slate-500 mt-4 hover:text-white transition-colors w-full">I'll Upgrade Later</button>
               </div>
-            ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-4 uppercase tracking-widest">
-                 Waiting for screening data...
-              </div>
-            )}
-        </div>
-      </div>
-    </div>
-  );
-}
+
+              {/* Right Side: Visual */}
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 items-center justify-center p-8 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                 <div className="text-center relative z-10">
+                    <div className="text-6xl mb-4">💎</div>
+                    <h3 className="font-bold text-white text-lg">Pro Access</h3>
+                    <p className="text-xs text-slate-
