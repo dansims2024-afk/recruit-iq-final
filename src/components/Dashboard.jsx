@@ -5,6 +5,7 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
+// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -55,26 +56,46 @@ export default function Dashboard() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [isRedirecting, setIsRedirecting] = useState(false); // New loading state for redirect
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
 
   const userEmail = user?.primaryEmailAddress?.emailAddress;
-  
-  // Logic: If user is signed in, we try to pre-fill their email.
   const finalStripeUrl = userEmail 
     ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
     : STRIPE_URL;
 
+  // --- 1. LOAD SCAN COUNTS ---
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
+  // --- 2. AUTO-REDIRECT LOGIC ---
+  // If user just signed in AND the 'pending_upgrade' flag is set, send to Stripe
+  useEffect(() => {
+    if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
+      setIsRedirecting(true); // Show loading spinner
+      localStorage.removeItem('recruit_iq_pending_upgrade'); // Clear flag
+      // Small delay to ensure Clerk is fully ready, then redirect
+      setTimeout(() => {
+        window.location.href = finalStripeUrl;
+      }, 1000);
+    }
+  }, [isSignedIn, finalStripeUrl]);
+
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ ...toast, show: false }), 4000);
+  };
+
+  // --- 3. HANDLE GUEST SIGNUP CLICK ---
+  const handleGuestSignup = () => {
+    // Set the flag so we know to redirect them after they sign up
+    localStorage.setItem('recruit_iq_pending_upgrade', 'true');
+    clerk.openSignUp();
   };
 
   const handleClear = () => {
@@ -191,6 +212,17 @@ export default function Dashboard() {
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
+  // --- REDIRECT LOADER ---
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center flex-col text-center">
+        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 className="text-2xl font-bold text-white mb-2">Account Created!</h2>
+        <p className="text-slate-400">Taking you to secure checkout...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans pt-20">
       
@@ -217,7 +249,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- SALES MODAL (AUTO-REDIRECT ENABLED) --- */}
+      {/* --- SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -237,7 +269,7 @@ export default function Dashboard() {
 
                  {/* DYNAMIC BUTTONS */}
                  {!isSignedIn ? (
-                   // GUEST -> SIGN UP -> AUTO-REDIRECT TO STRIPE
+                   // GUEST -> SIGN UP
                    <>
                      <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-xl p-3 mb-4 text-center animate-pulse relative shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                          <span className="absolute -top-2 -right-2 text-xl drop-shadow">🎁</span>
@@ -245,11 +277,8 @@ export default function Dashboard() {
                              Limited Time: Claim Your 3-Day Free Trial!
                          </p>
                      </div>
-                     <button 
-                        onClick={() => clerk.openSignUp({ afterSignUpUrl: STRIPE_URL, afterSignInUrl: STRIPE_URL })} 
-                        className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25"
-                     >
-                        Create Free Account & Start Trial
+                     <button onClick={handleGuestSignup} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25">
+                        Create Free Account
                      </button>
                      <p className="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-wide">Save Your Progress • Secure Data</p>
                    </>
