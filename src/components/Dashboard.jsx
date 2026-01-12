@@ -5,7 +5,6 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -191,12 +190,18 @@ export default function Dashboard() {
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
   return (
-    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
+    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans pt-20">
       
-      {/* --- HEADER RESTORED --- */}
-      <div className="flex justify-between items-center mb-8">
-        <img src={logo} alt="Recruit-IQ" className="h-10 w-auto" />
-        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+      {/* --- HEADER RESTORED (LOGO + COMPANY NAME) --- */}
+      <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
+        <div className="flex items-center gap-4">
+            <img src={logo} alt="Recruit-IQ" className="h-12 w-auto drop-shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
+            <div className="hidden md:block">
+                <h1 className="text-2xl font-black tracking-tighter text-white leading-none">Recruit-IQ</h1>
+                <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-1">By Core Creativity AI</p>
+            </div>
+        </div>
+        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/10">
            <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400'}`}></span>
            {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
         </div>
@@ -314,13 +319,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- FOOTER RESTORED --- */}
-      <footer className="mt-12 border-t border-slate-800 pt-6 text-center text-slate-600 text-xs">
-        <p>&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
-        <div className="flex justify-center gap-4 mt-2">
-          <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
-          <a href="#" className="hover:text-slate-400 transition-colors">Support</a>
+      {/* --- FOOTER RESTORED & RECONNECTED --- */}
+      <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center relative z-10">
+        <p className="text-slate-600 text-xs mb-4 font-medium tracking-wide">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-6 text-[10px] font-bold tracking-widest uppercase text-slate-500">
+          <a href="#" className="hover:text-indigo-400 transition-colors duration-300">Privacy Policy</a>
+          <a href="#" className="hover:text-indigo-400 transition-colors duration-300">Terms of Service</a>
+          {/* Functional Email Link */}
+          <a href="mailto:support@recruit-iq.com" className="hover:text-indigo-400 transition-colors duration-300 flex items-center gap-1">
+             Contact Support
+          </a>
         </div>
       </footer>
     </div>
