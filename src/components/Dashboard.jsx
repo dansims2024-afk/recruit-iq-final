@@ -280,24 +280,68 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* UPGRADE MODAL */}
+      {/* --- MARKETING OPTIMIZED UPGRADE MODAL --- */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-30 animate-pulse"></div>
+            {/* Pulsing Glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
+            
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
-                 <div className="mb-6"><img src={logo} alt="Recruit-IQ Logo" className="h-10 w-auto opacity-90" /></div>
-                 <h2 className="text-2xl font-black text-white mb-2 leading-tight">Scale Your Hiring <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Without Limits.</span></h2>
-                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">You've used your 3 free screenings. Upgrade to unlock unlimited AI analysis.</p>
-                 <a href={STRIPE_URL} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs">Upgrade Now - $29/mo</a>
-                 <button onClick={() => window.location.reload()} className="text-center text-[10px] text-slate-500 mt-4 hover:text-white transition-colors w-full">I'll Upgrade Later</button>
+              
+              {/* Left Side: The "Pitch" */}
+              <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
+                 <div className="mb-4">
+                    <img src={logo} alt="Recruit-IQ Logo" className="h-8 w-auto opacity-90" /> 
+                 </div>
+                 
+                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">
+                    Hire Your Next Star <br/>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span>
+                 </h2>
+                 
+                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                    Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.
+                 </p>
+
+                 {/* Value Bullets */}
+                 <div className="space-y-3 mb-8">
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <span className="text-emerald-400">✓</span>
+                       <span>Unlimited AI Candidate Screening</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <span className="text-emerald-400">✓</span>
+                       <span>One-Click Professional PDF Reports</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-300">
+                       <span className="text-emerald-400">✓</span>
+                       <span>Custom Interview Guide Generator</span>
+                    </div>
+                 </div>
+
+                 {/* CTA + Risk Reversal */}
+                 <a href={STRIPE_URL} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
+                    Start My 3-Day Free Trial
+                 </a>
+                 <div className="text-center mt-3 space-y-1">
+                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Then $29/mo • Cancel Anytime</p>
+                    <button onClick={() => window.location.reload()} className="text-[10px] text-slate-600 hover:text-white transition-colors underline decoration-slate-700">No thanks, I'll stay on the slow path</button>
+                 </div>
               </div>
-              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 items-center justify-center p-8 relative overflow-hidden">
+
+              {/* Right Side: The "Visual Proof" */}
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-8 relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                 <div className="text-center relative z-10">
-                    <div className="text-6xl mb-4">💎</div>
-                    <h3 className="font-bold text-white text-lg">Pro Access</h3>
+                 
+                 <div className="text-center relative z-10 space-y-4">
+                    <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto border border-indigo-500/20 shadow-[0_0_30px_rgba(79,70,229,0.3)]">
+                        <span className="text-4xl">🚀</span>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-white text-lg">Pro Velocity</h3>
+                        <p className="text-xs text-slate-400 mt-1 px-4">Join 500+ recruiters saving 20+ hours per week.</p>
+                    </div>
                  </div>
               </div>
             </div>
