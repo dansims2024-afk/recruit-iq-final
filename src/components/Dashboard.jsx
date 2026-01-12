@@ -5,7 +5,6 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -56,7 +55,7 @@ export default function Dashboard() {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [isRedirecting, setIsRedirecting] = useState(false); // New loading state for redirect
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -73,27 +72,40 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- 2. AUTO-REDIRECT LOGIC ---
-  // If user just signed in AND the 'pending_upgrade' flag is set, send to Stripe
+  // --- 2. AUTO-REDIRECT LOGIC (Guest -> Stripe) ---
   useEffect(() => {
     if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
-      setIsRedirecting(true); // Show loading spinner
-      localStorage.removeItem('recruit_iq_pending_upgrade'); // Clear flag
-      // Small delay to ensure Clerk is fully ready, then redirect
-      setTimeout(() => {
-        window.location.href = finalStripeUrl;
-      }, 1000);
+      setIsRedirecting(true);
+      localStorage.removeItem('recruit_iq_pending_upgrade');
+      setTimeout(() => { window.location.href = finalStripeUrl; }, 1000);
     }
   }, [isSignedIn, finalStripeUrl]);
+
+  // --- 3. STATUS POLLER (THE FIX FOR STRIPE DELAY) ---
+  // This checks your status every 2 seconds for 20 seconds after you load the page.
+  useEffect(() => {
+    if (isSignedIn && !isPro) {
+        const interval = setInterval(() => {
+            console.log("Checking for Pro upgrade...");
+            user.reload(); // Force Clerk to fetch latest metadata
+        }, 2000);
+
+        // Stop checking after 20 seconds to save resources
+        const timeout = setTimeout(() => clearInterval(interval), 20000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }
+  }, [isSignedIn, isPro, user]);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ ...toast, show: false }), 4000);
   };
 
-  // --- 3. HANDLE GUEST SIGNUP CLICK ---
   const handleGuestSignup = () => {
-    // Set the flag so we know to redirect them after they sign up
     localStorage.setItem('recruit_iq_pending_upgrade', 'true');
     clerk.openSignUp();
   };
@@ -212,7 +224,6 @@ export default function Dashboard() {
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
-  // --- REDIRECT LOADER ---
   if (isRedirecting) {
     return (
       <div className="min-h-screen bg-[#0B1120] flex items-center justify-center flex-col text-center">
@@ -236,7 +247,8 @@ export default function Dashboard() {
             </div>
         </div>
         <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-indigo-500/10">
-           <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400'}`}></span>
+           {/* Auto-Refresh visual feedback */}
+           <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
            {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
         </div>
       </div>
