@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignUpButton } from "@clerk/clerk-react";
-// Logo path fixed to match your 'src/logo.png' structure
 import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
@@ -21,28 +20,22 @@ export default function Dashboard() {
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
 
-  // --- UPDATED REDIRECT LOGIC (BREAKS THE LOOP) ---
+  // --- EMERGENCY FIX: REDIRECT IS DISABLED ---
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const justPaid = query.get('success');
 
-    // Resetting local usage if returning from Stripe
-    if (justPaid) {
-      localStorage.setItem('riq_guest_usage', '0');
-      setGuestUsage(0);
-    }
-
-    // Force a reload of user metadata if returning from Stripe to catch the Zapier update
     if (justPaid && isLoaded && isSignedIn) {
       user.reload().then(() => { 
         window.history.replaceState({}, document.title, "/"); 
       });
     }
 
-    // THE SAFETY HATCH: Only redirect if NOT Pro AND NOT returning with success flag
+    /* // REDIRECT TEMPORARILY DISABLED SO YOU CAN FINISH ZAPIER SETUP
     if (isLoaded && isSignedIn && !isPro && !justPaid) {
        window.location.href = STRIPE_URL;
     }
+    */
   }, [isLoaded, isSignedIn, isPro]);
 
   const handleFileUpload = async (e) => {
@@ -60,7 +53,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isSignedIn && guestUsage >= GUEST_LIMIT) return setShowUpgrade(true);
-    if (isSignedIn && !isPro) return setShowUpgrade(true);
+    // Analysis is allowed during emergency fix even if not Pro
     if (!jdReady || !resumeReady) return alert("Please complete Step 1 and Step 2.");
     
     setLoading(true);
@@ -82,26 +75,25 @@ export default function Dashboard() {
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
-  
-  // Display a syncing message if they just paid but metadata hasn't updated yet
-  if (isSignedIn && !isPro) {
-    return (
-      <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center text-white">
-         <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-         <h2 className="text-xl font-bold uppercase tracking-widest italic text-indigo-400">Syncing Pro Access...</h2>
-         <p className="text-slate-400 mt-2">Checking your subscription status...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen relative font-sans">
       <div className="flex justify-between items-center mb-8">
         <img src={logo} alt="Recruit-IQ" className="h-12 w-auto" />
-        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-xs font-bold uppercase tracking-widest">
-          {isPro ? "Pro Plan Active" : `Guest Usage: ${guestUsage}/${GUEST_LIMIT}`}
+        <div className="flex gap-4 items-center">
+            {isPro && <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Pro Active</span>}
+            <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-xs font-bold uppercase tracking-widest">
+                Account: {user?.primaryEmailAddress?.emailAddress || "Guest"}
+            </div>
         </div>
       </div>
+
+      {/* Warning banner so you remember to turn redirects back on later */}
+      {!isPro && isSignedIn && (
+        <div className="bg-amber-900/20 border border-amber-500/50 p-4 rounded-2xl text-amber-200 text-xs text-center">
+            <strong>Maintenance Mode:</strong> Redirects are disabled. Use this time to finish your Zapier setup.
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[700px]">
