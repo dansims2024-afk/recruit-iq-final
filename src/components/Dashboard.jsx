@@ -5,6 +5,7 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
+// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -215,7 +216,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- SALES MODAL (UPDATED WITH 3-DAY FREE MESSAGING) --- */}
+      {/* --- UPDATED SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -233,20 +234,32 @@ export default function Dashboard() {
                     Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.
                  </p>
 
-                 {/* DYNAMIC BUTTONS */}
+                 {/* DYNAMIC BUTTONS & NEW 3-DAY BUBBLE */}
                  {!isSignedIn ? (
                    // GUEST -> SIGN UP
                    <>
+                     {/* NEW BUBBLE */}
+                     <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-xl p-3 mb-4 text-center animate-pulse relative shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                         <span className="absolute -top-2 -right-2 text-xl drop-shadow">🎁</span>
+                         <p className="text-xs font-black text-emerald-300 uppercase tracking-wider">
+                             Limited Time: Claim Your 3-Day Free Trial!
+                         </p>
+                     </div>
                      <button onClick={() => clerk.openSignUp()} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25">
                         Create Free Account
                      </button>
-                     <p className="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-wide">
-                        Sign up to claim your <span className="text-emerald-400">3-Day Free Trial</span>
-                     </p>
+                     <p className="text-center text-[10px] text-slate-500 mt-3 font-bold uppercase tracking-wide">Save Your Progress • Secure Data</p>
                    </>
                  ) : (
                    // USER -> STRIPE TRIAL
                    <>
+                     {/* NEW BUBBLE */}
+                     <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-3 mb-4 text-center animate-pulse relative shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                         <span className="absolute -top-2 -right-2 text-xl drop-shadow">⚡</span>
+                         <p className="text-xs font-black text-blue-300 uppercase tracking-wider">
+                             Ready? Activate Your 3-Day Free Trial.
+                         </p>
+                     </div>
                      <a href={finalStripeUrl} className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-blue-500/25">
                         Start 3-Day Free Trial
                      </a>
@@ -259,13 +272,14 @@ export default function Dashboard() {
                  <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-600 mt-4 hover:text-white underline decoration-slate-700 w-full">No thanks, I'll screen manually</button>
               </div>
 
-              {/* Right Side: Visual Proof */}
+              {/* Right Side: Visual Proof & NEW NAME */}
               <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-8 relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
                  <div className="text-center relative z-10 space-y-4">
                     <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto border border-indigo-500/20 shadow-[0_0_30px_rgba(79,70,229,0.3)]"><span className="text-4xl">💎</span></div>
                     <div>
-                        <h3 className="font-bold text-white text-lg">Pro Velocity</h3>
+                        {/* UPDATED NAME HERE */}
+                        <h3 className="font-bold text-white text-lg">Elite Membership</h3>
                         <p className="text-xs text-slate-400 mt-1 px-4">Join 500+ recruiters saving 20+ hours per week.</p>
                     </div>
                  </div>
@@ -344,13 +358,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- FOOTER RESTORED & RECONNECTED --- */}
+      {/* --- FOOTER --- */}
       <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center relative z-10">
         <p className="text-slate-600 text-xs mb-4 font-medium tracking-wide">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
         <div className="flex justify-center gap-6 text-[10px] font-bold tracking-widest uppercase text-slate-500">
           <a href="#" className="hover:text-indigo-400 transition-colors duration-300">Privacy Policy</a>
           <a href="#" className="hover:text-indigo-400 transition-colors duration-300">Terms of Service</a>
-          {/* Functional Email Link */}
           <a href="mailto:support@recruit-iq.com" className="hover:text-indigo-400 transition-colors duration-300 flex items-center gap-1">
              Contact Support
           </a>
