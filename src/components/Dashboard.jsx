@@ -5,9 +5,44 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLES (Keep your long sample text here) ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect\nLOCATION: New York, NY (Hybrid)\n...`; // Abbreviated for brevity, keep your full version
-const SAMPLE_RESUME = `MARCUS VANDELAY\nPrincipal Software Architect | New York, NY\n...`; // Abbreviated for brevity, keep your full version
+// --- SAMPLES ---
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+ABOUT THE COMPANY:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
+
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate to ensure 99.999% uptime.
+- Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech or Capital Markets.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
+- Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
+- Strong proficiency in Go (Golang), C++, Python, and TypeScript.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY | m.vandelay@email.com
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.
+
+PROFESSIONAL EXPERIENCE:
+Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
+- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration.
+
+InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
+- Built the core execution engine in Go, achieving a 50% reduction in order latency.
+- Implemented automated failover protocols that prevented over $10M in potential slippage.
+
+TECHNICAL SKILLS:
+- Languages: Go, C++, Python, TypeScript, Java.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS), Terraform, Docker, Kubernetes.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -22,8 +57,8 @@ export default function Dashboard() {
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false); // New state for manual verification
 
-  // Pro status is derived from Clerk metadata
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -44,7 +79,6 @@ export default function Dashboard() {
     if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
       setIsRedirecting(true);
       localStorage.removeItem('recruit_iq_pending_upgrade');
-      // Short delay to ensure Clerk session is set before redirecting
       setTimeout(() => { window.location.href = finalStripeUrl; }, 1500);
     }
   }, [isSignedIn, finalStripeUrl]);
@@ -54,42 +88,65 @@ export default function Dashboard() {
     setTimeout(() => setToast({ ...toast, show: false }), 5000);
   };
 
-  // --- 3. THE FIX: AGGRESSIVE POST-CHECKOUT POLLING ---
+  // --- 3. FIXED AGGRESSIVE POLLING ---
   useEffect(() => {
-    // Check URL for the Stripe success signal
     const urlParams = new URLSearchParams(window.location.search);
     const isCheckoutSuccess = urlParams.get('checkout_success');
 
-    // If we just came from Stripe AND we aren't marked as Pro yet...
     if (isSignedIn && !isPro && isCheckoutSuccess) {
-        console.log("Stripe return detected. Starting aggressive polling for Zapier update...");
-        showToast("Finalizing your account setup... please wait.", "info");
+        console.log("Starting Stripe verification...");
+        showToast("Activating Elite Membership... please wait.", "info");
+        setIsVerifying(true);
         
-        // Poll Clerk every 1.5 seconds to see if Zapier finished updated metadata
+        let attempts = 0;
         const interval = setInterval(async () => {
-            console.log("Pinging Clerk...");
-            await user.reload();
-        }, 1500);
+            attempts++;
+            console.log(`Verification attempt ${attempts}...`);
+            
+            try {
+                // IMPORTANT: We use the response from reload(), not the state variable
+                const refreshedUser = await user.reload(); 
+                
+                if (refreshedUser.publicMetadata?.isPro === true) {
+                    clearInterval(interval);
+                    setIsVerifying(false);
+                    showToast("Elite Membership Active!", "success");
+                    // Remove query param to clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    // Force a UI refresh just in case
+                    window.location.reload(); 
+                }
+            } catch (e) {
+                console.error("Polling error", e);
+            }
+        }, 2000); // Check every 2 seconds
 
-        // Stop polling after 45 seconds if it hasn't worked by then
+        // Stop after 60 seconds
         const timeout = setTimeout(() => {
              clearInterval(interval);
+             setIsVerifying(false);
              if (!user.publicMetadata?.isPro) {
-                 showToast("Account update taking longer than usual. Please refresh the page in a minute.", "error");
+                 showToast("Activation is taking longer than usual. Click 'Verify Status' in the header.", "error");
              }
-        }, 45000);
+        }, 60000);
 
-        // Cleanup on unmount
         return () => { clearInterval(interval); clearTimeout(timeout); };
     }
+  }, [isSignedIn, isPro]);
 
-    // If we become Pro during polling, give a success message and clean URL
-    if (isPro && isCheckoutSuccess) {
-        showToast("Elite Membership Active! You are good to go.", "success");
-        // Optional: Clean the URL so a refresh doesn't trigger polling again
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [isSignedIn, isPro, user]); // Re-run logic whenever isPro status changes
+  // --- MANUAL VERIFY FUNCTION ---
+  const handleManualVerify = async () => {
+      setIsVerifying(true);
+      showToast("Checking payment status...", "info");
+      await user.reload();
+      if (user.publicMetadata?.isPro) {
+          showToast("Confirmed! You are Pro.", "success");
+          window.location.reload();
+      } else {
+          showToast("Still processing. Please wait a moment.", "error");
+      }
+      setIsVerifying(false);
+  };
 
   const handleGuestSignup = () => {
     localStorage.setItem('recruit_iq_pending_upgrade', 'true');
@@ -232,9 +289,17 @@ export default function Dashboard() {
                 <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-1">By Core Creativity AI</p>
             </div>
         </div>
-        <div className={`bg-indigo-500/10 border px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all duration-500 ${isPro ? 'border-emerald-500/50 text-emerald-400 shadow-emerald-500/20' : 'border-indigo-500/50 text-indigo-400 shadow-indigo-500/10'}`}>
-           <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
-           {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
+        <div className="flex gap-3">
+            {/* MANUAL VERIFY BUTTON FOR STUCK USERS */}
+            {isSignedIn && !isPro && (
+                <button onClick={handleManualVerify} className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-600 transition-colors">
+                    {isVerifying ? "Verifying..." : "Verify Status"}
+                </button>
+            )}
+            <div className={`bg-indigo-500/10 border px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all duration-500 ${isPro ? 'border-emerald-500/50 text-emerald-400 shadow-emerald-500/20' : 'border-indigo-500/50 text-indigo-400 shadow-indigo-500/10'}`}>
+               <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
+               {isPro ? "ELITE MEMBERSHIP ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
+            </div>
         </div>
       </div>
 
@@ -246,7 +311,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- SALES MODAL (UPDATED) --- */}
+      {/* --- SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -270,19 +335,22 @@ export default function Dashboard() {
                    <>
                      <div className="bg-emerald-500/20 border border-emerald-500/50 rounded-xl p-3 mb-4 text-center animate-pulse relative shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                          <span className="absolute -top-2 -right-2 text-xl drop-shadow">🎁</span>
-                         <p className="text-xs font-black text-emerald-300 uppercase tracking-wider">Limited Time: Claim Your 3-Day Free Trial!</p>
+                         <p className="text-xs font-black text-emerald-300 uppercase tracking-wider">
+                             Limited Time: Claim Your 3-Day Free Trial!
+                         </p>
                      </div>
                      <button onClick={handleGuestSignup} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-indigo-500/25">
                         Create Free Account
                      </button>
-                     {/* REMOVED THE SAVE PROGRESS MESSAGE HERE */}
                    </>
                  ) : (
                    // USER -> STRIPE TRIAL
                    <>
                      <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-3 mb-4 text-center animate-pulse relative shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                          <span className="absolute -top-2 -right-2 text-xl drop-shadow">⚡</span>
-                         <p className="text-xs font-black text-blue-300 uppercase tracking-wider">Ready? Activate Your 3-Day Free Trial.</p>
+                         <p className="text-xs font-black text-blue-300 uppercase tracking-wider">
+                             Ready? Activate Your 3-Day Free Trial.
+                         </p>
                      </div>
                      <a href={finalStripeUrl} className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-blue-500/25">
                         Start 3-Day Free Trial
