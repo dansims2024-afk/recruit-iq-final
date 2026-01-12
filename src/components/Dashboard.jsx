@@ -53,7 +53,7 @@ export default function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   
-  // TOAST STATE (Notification System)
+  // TOAST STATE
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const isPro = user?.publicMetadata?.isPro === true;
@@ -65,7 +65,6 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // Helper to show smooth notifications
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ ...toast, show: false }), 4000);
@@ -125,7 +124,6 @@ export default function Dashboard() {
     const { jsPDF } = window.jspdf; 
     const doc = new jsPDF();
     
-    // Header
     doc.setFillColor(79, 70, 229); 
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -136,7 +134,6 @@ export default function Dashboard() {
     doc.setFont("helvetica", "normal");
     doc.text(`Candidate Match Analysis & Interview Guide`, 20, 30);
 
-    // Score & Name
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
@@ -145,7 +142,6 @@ export default function Dashboard() {
     doc.setTextColor(79, 70, 229);
     doc.text(`Match Score: ${analysis.score}%`, 140, 55);
     
-    // Summary
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -153,7 +149,6 @@ export default function Dashboard() {
     doc.text(summaryLines, 20, 70);
     let currentY = 70 + (summaryLines.length * 6) + 15;
 
-    // Strengths
     doc.setFont("helvetica", "bold");
     doc.setTextColor(16, 185, 129); 
     doc.text("Key Strengths", 20, currentY);
@@ -168,7 +163,6 @@ export default function Dashboard() {
     });
     currentY += 10;
 
-    // Gaps
     doc.setFont("helvetica", "bold");
     doc.setTextColor(244, 63, 94); 
     doc.text("Critical Gaps", 20, currentY);
@@ -242,10 +236,8 @@ export default function Dashboard() {
 
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
-      
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No JSON found");
-      
       const result = JSON.parse(jsonMatch[0]);
 
       setAnalysis({
@@ -276,7 +268,7 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
-      {/* --- TOAST NOTIFICATION --- */}
+      {/* TOAST */}
       {toast.show && (
         <div className={`fixed top-5 right-5 z-[60] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 border ${
           toast.type === 'error' ? 'bg-rose-950/90 border-rose-500 text-white' : 
@@ -288,7 +280,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- UPGRADE MODAL --- */}
+      {/* UPGRADE MODAL */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -320,22 +312,30 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START */}
+      {/* INTERACTIVE QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div 
+             onClick={() => { setActiveTab('jd'); showToast("Switched to Job Description Input", "info"); }}
+             className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}
+          >
              <div className="flex justify-between items-center mb-2">
                 <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
                 {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
              </div>
-             <p className="text-[11px] text-slate-300">Upload or Paste the Job Description.</p>
+             <p className="text-[11px] text-slate-300">Click here to upload or paste the Job Description.</p>
           </div>
-          <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+          
+          <div 
+             onClick={() => { setActiveTab('resume'); showToast("Switched to Resume Input", "info"); }}
+             className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}
+          >
              <div className="flex justify-between items-center mb-2">
                 <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
                 {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
              </div>
-             <p className="text-[11px] text-slate-300">Upload or Paste Resume.</p>
+             <p className="text-[11px] text-slate-300">Click here to upload or paste the Resume.</p>
           </div>
+          
           <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
              <p className="text-[11px] text-slate-300">Get match score, interview guide, and outreach email.</p>
@@ -359,7 +359,6 @@ export default function Dashboard() {
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
               
-              {/* NEW: CLEAR BUTTON */}
               <button onClick={handleClear} className="flex-none bg-rose-500/10 border border-rose-500/50 py-3 px-4 rounded-xl text-[10px] font-bold uppercase text-rose-400 hover:bg-rose-500 hover:text-white transition-colors">
                 New Search
               </button>
@@ -369,9 +368,7 @@ export default function Dashboard() {
               className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6 focus:border-indigo-500/50 transition-colors placeholder-slate-600"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder={activeTab === 'jd' 
-                ? "Paste the Job Description here (Title, Responsibilities, Requirements)..." 
-                : "Paste the Resume here or Upload a PDF/DOCX file..."}
+              placeholder={activeTab === 'jd' ? "Paste the Job Description here..." : "Paste the Resume here or Upload a PDF/DOCX file..."}
             />
             <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xl hover:shadow-indigo-500/25 transition-all">
               {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Free Left`}) →`}
