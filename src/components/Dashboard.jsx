@@ -62,19 +62,23 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- NEW: PDF & DOCX READER ---
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    let text = "";
     try {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-        text = result.value;
+        activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
       } else if (file.name.endsWith('.pdf')) {
-        // PDF Parsing using the script from index.html
+        // Safe PDF Loading
         const pdfjs = window.pdfjsLib;
+        if (!pdfjs) {
+            alert("PDF Reader loading... please try again in 5 seconds.");
+            return;
+        }
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
         const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
         const pdf = await loadingTask.promise;
         let fullText = "";
@@ -84,18 +88,14 @@ export default function Dashboard() {
           const pageText = textContent.items.map(item => item.str).join(' ');
           fullText += pageText + "\n";
         }
-        text = fullText;
+        activeTab === 'jd' ? setJdText(fullText) : setResumeText(fullText);
       } else {
-        text = await file.text();
+        const text = await file.text();
+        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
       }
-      
-      // Set text to active tab
-      if (activeTab === 'jd') setJdText(text);
-      else setResumeText(text);
-
     } catch (err) { 
       console.error(err);
-      alert("Could not read file. Please copy and paste the text instead."); 
+      alert("Error reading file. Please copy and paste the text instead."); 
     }
   };
 
@@ -104,7 +104,6 @@ export default function Dashboard() {
     const { jsPDF } = window.jspdf; 
     const doc = new jsPDF();
     
-    // Header
     doc.setFillColor(79, 70, 229); 
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -115,7 +114,6 @@ export default function Dashboard() {
     doc.setFont("helvetica", "normal");
     doc.text(`Candidate Match Analysis & Interview Guide`, 20, 30);
 
-    // Score & Name
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
@@ -124,15 +122,13 @@ export default function Dashboard() {
     doc.setTextColor(79, 70, 229);
     doc.text(`Match Score: ${analysis.score}%`, 140, 55);
     
-    // Summary
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    const summaryLines = doc.splitTextToSize(analysis.summary || "No summary generated.", 170);
+    const summaryLines = doc.splitTextToSize(analysis.summary || "No summary available.", 170);
     doc.text(summaryLines, 20, 70);
     let currentY = 70 + (summaryLines.length * 6) + 15;
 
-    // Strengths
     doc.setFont("helvetica", "bold");
     doc.setTextColor(16, 185, 129); 
     doc.text("Key Strengths", 20, currentY);
@@ -147,7 +143,6 @@ export default function Dashboard() {
     });
     currentY += 10;
 
-    // Gaps
     doc.setFont("helvetica", "bold");
     doc.setTextColor(244, 63, 94); 
     doc.text("Critical Gaps", 20, currentY);
@@ -161,7 +156,6 @@ export default function Dashboard() {
       currentY += (gLines.length * 6) + 2;
     });
 
-    // Interview Guide
     doc.addPage();
     doc.setFillColor(243, 244, 246); 
     doc.rect(0, 0, 210, 300, 'F');
@@ -217,15 +211,23 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      let result = JSON.parse(data.candidates[0].content.parts[0].text);
+      let rawText = data.candidates[0].content.parts[0].text;
       
-      // --- CRASH PREVENTION: SANITIZE DATA ---
-      // This ensures 'forEach' never crashes the app if AI returns null
-      result.strengths = Array.isArray(result.strengths) ? result.strengths : [];
-      result.gaps = Array.isArray(result.gaps) ? result.gaps : [];
-      result.questions = Array.isArray(result.questions) ? result.questions : [];
+      // --- IMPORTANT: STRIP MARKDOWN TO PREVENT BLANK SCREENS ---
+      rawText = rawText.replace(/```json|```/g, '').trim(); 
       
-      setAnalysis(result);
+      let result = JSON.parse(rawText);
+
+      // Apply defaults to prevent crashes
+      setAnalysis({
+        candidate_name: result.candidate_name || "Candidate",
+        score: result.score || 0,
+        summary: result.summary || "No summary provided.",
+        strengths: Array.isArray(result.strengths) ? result.strengths : [],
+        gaps: Array.isArray(result.gaps) ? result.gaps : [],
+        questions: Array.isArray(result.questions) ? result.questions : [],
+        outreach_email: result.outreach_email || "No email generated."
+      });
       
       if (!isPro) {
         const newCount = scanCount + 1;
@@ -234,7 +236,7 @@ export default function Dashboard() {
       }
     } catch (err) { 
       console.error(err);
-      alert("Analysis failed. Please check your API key or try again."); 
+      alert("Analysis failed. Please check your API key."); 
     } finally { setLoading(false); }
   };
 
