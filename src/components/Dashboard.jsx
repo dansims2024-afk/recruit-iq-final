@@ -57,7 +57,7 @@ export default function Dashboard() {
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false); // New state for manual verification
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -68,13 +68,13 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
     : STRIPE_URL;
 
-  // --- 1. LOAD LOCAL SCAN COUNTS ---
+  // --- 1. LOAD COUNTS ---
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
-  // --- 2. AUTO-REDIRECT LOGIC (Guest Sign-up -> Stripe) ---
+  // --- 2. AUTO-REDIRECT (Guest -> Stripe) ---
   useEffect(() => {
     if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
       setIsRedirecting(true);
@@ -83,74 +83,41 @@ export default function Dashboard() {
     }
   }, [isSignedIn, finalStripeUrl]);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ ...toast, show: false }), 5000);
-  };
-
-  // --- 3. FIXED AGGRESSIVE POLLING ---
+  // --- 3. ROBUST VERIFICATION (The Fix for "Stuck" State) ---
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const isCheckoutSuccess = urlParams.get('checkout_success');
 
     if (isSignedIn && !isPro && isCheckoutSuccess) {
-        console.log("Starting Stripe verification...");
-        showToast("Activating Elite Membership... please wait.", "info");
         setIsVerifying(true);
         
-        let attempts = 0;
+        // Attempt 1: Poll Clerk silently every 1.5s
         const interval = setInterval(async () => {
-            attempts++;
-            console.log(`Verification attempt ${attempts}...`);
-            
-            try {
-                // IMPORTANT: We use the response from reload(), not the state variable
-                const refreshedUser = await user.reload(); 
-                
-                if (refreshedUser.publicMetadata?.isPro === true) {
-                    clearInterval(interval);
-                    setIsVerifying(false);
-                    showToast("Elite Membership Active!", "success");
-                    // Remove query param to clean URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    // Force a UI refresh just in case
-                    window.location.reload(); 
-                }
-            } catch (e) {
-                console.error("Polling error", e);
-            }
-        }, 2000); // Check every 2 seconds
+            await user.reload();
+        }, 1500);
 
-        // Stop after 60 seconds
+        // Attempt 2: FAILSAFE HARD RELOAD after 6 seconds
+        // If Zapier is slow, this forces the browser to get fresh data
         const timeout = setTimeout(() => {
-             clearInterval(interval);
-             setIsVerifying(false);
-             if (!user.publicMetadata?.isPro) {
-                 showToast("Activation is taking longer than usual. Click 'Verify Status' in the header.", "error");
-             }
-        }, 60000);
+             window.location.href = window.location.pathname; // Hard refresh clearing query params
+        }, 6000);
 
         return () => { clearInterval(interval); clearTimeout(timeout); };
     }
-  }, [isSignedIn, isPro]);
+    
+    // Stop verifying if we become Pro
+    if (isPro) setIsVerifying(false);
 
-  // --- MANUAL VERIFY FUNCTION ---
-  const handleManualVerify = async () => {
-      setIsVerifying(true);
-      showToast("Checking payment status...", "info");
-      await user.reload();
-      if (user.publicMetadata?.isPro) {
-          showToast("Confirmed! You are Pro.", "success");
-          window.location.reload();
-      } else {
-          showToast("Still processing. Please wait a moment.", "error");
-      }
-      setIsVerifying(false);
-  };
+  }, [isSignedIn, isPro, user]);
 
   const handleGuestSignup = () => {
     localStorage.setItem('recruit_iq_pending_upgrade', 'true');
     clerk.openSignUp();
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ ...toast, show: false }), 4000);
   };
 
   const handleClear = () => {
@@ -290,11 +257,11 @@ export default function Dashboard() {
             </div>
         </div>
         <div className="flex gap-3">
-            {/* MANUAL VERIFY BUTTON FOR STUCK USERS */}
-            {isSignedIn && !isPro && (
-                <button onClick={handleManualVerify} className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-slate-600 transition-colors">
-                    {isVerifying ? "Verifying..." : "Verify Status"}
-                </button>
+            {/* Show verifying status if stuck */}
+            {isVerifying && (
+                <div className="bg-slate-800 border border-slate-600 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-300 animate-pulse">
+                    Activating Membership...
+                </div>
             )}
             <div className={`bg-indigo-500/10 border px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg transition-all duration-500 ${isPro ? 'border-emerald-500/50 text-emerald-400 shadow-emerald-500/20' : 'border-indigo-500/50 text-indigo-400 shadow-indigo-500/10'}`}>
                <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
@@ -311,7 +278,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* --- SALES MODAL --- */}
+      {/* --- SALES MODAL (UPDATED) --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
