@@ -5,8 +5,8 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`; // Keep your full sample JD here
-const SAMPLE_RESUME = `MARCUS VANDELAY...`; // Keep your full sample Resume here
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`; // Paste full JD sample here
+const SAMPLE_RESUME = `MARCUS VANDELAY...`; // Paste full Resume sample here
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -49,12 +49,11 @@ export default function Dashboard() {
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. 
-      Return JSON exactly: {
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Return JSON ONLY: {
         "score": 0-100,
         "summary": "...",
-        "strengths": ["..."],
-        "gaps": ["..."],
+        "strengths": ["...", "..."],
+        "gaps": ["...", "..."],
         "interview_strategy": "...",
         "market_intelligence": "...",
         "industry_outlook": "..."
@@ -69,10 +68,10 @@ export default function Dashboard() {
         })
       });
 
-      if (response.status === 429) throw new Error("Rate limit hit. Wait 60s.");
+      if (response.status === 429) throw new Error("Rate limit hit. Please wait 60 seconds.");
       const data = await response.json();
       setAnalysis(JSON.parse(data.candidates[0].content.parts[0].text));
-    } catch (err) { alert(err.message || "Analysis failed."); } finally { setLoading(false); }
+    } catch (err) { alert("Analysis failed. Try again in 60 seconds."); } finally { setLoading(false); }
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
@@ -80,25 +79,75 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
-      {/* HEADER & 1-2-3 STEPS (Keep your current header/steps UI here) */}
+      {/* HEADER SECTION */}
+      <div className="flex justify-between items-center">
+        <img src={logo} alt="Recruit-IQ" className="h-10 w-auto" />
+        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+            {isPro ? "PRO ACCESS ACTIVE" : "MAINTENANCE MODE"}
+        </div>
+      </div>
 
+      {/* 1-2-3 QUICK START */}
+      <div className="grid md:grid-cols-3 gap-6">
+          <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-lg' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2">
+                <h4 className="font-bold text-[10px] uppercase tracking-widest">1. Define Role</h4>
+                {jdReady && <span className="text-emerald-400 text-lg font-bold">✓</span>}
+             </div>
+             <p className="text-[11px] text-slate-400">Paste the job description.</p>
+          </div>
+          <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-indigo-900/20 border-indigo-500/50 shadow-lg' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2">
+                <h4 className="font-bold text-[10px] uppercase tracking-widest">2. Load Candidate</h4>
+                {resumeReady && <span className="text-emerald-400 text-lg font-bold">✓</span>}
+             </div>
+             <p className="text-[11px] text-slate-400">Upload or paste the resume.</p>
+          </div>
+          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-emerald-900/20 border-emerald-500/50 shadow-lg' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2">
+                <h4 className="font-bold text-[10px] uppercase tracking-widest">3. Unlock Intel</h4>
+                {analysis && <span className="text-emerald-400 text-lg font-bold">✓</span>}
+             </div>
+             <p className="text-[11px] text-slate-400">Run the AI screening.</p>
+          </div>
+      </div>
+
+      {/* MAIN INTERFACE */}
       <div className="grid md:grid-cols-2 gap-8">
-        {/* INPUT PANEL (Keep your current input panel UI here) */}
+        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative">
+            <div className="flex gap-3 mb-6">
+               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider ${activeTab === 'jd' ? 'bg-indigo-600' : 'bg-slate-800'}`}>Job Description</button>
+               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800'}`}>Resume</button>
+            </div>
+            <div className="flex gap-3 mb-4">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 hover:text-white transition-colors">
+                Upload File <input type="file" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
+            </div>
+            <textarea 
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6"
+              value={activeTab === 'jd' ? jdText : resumeText} 
+              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
+              placeholder="Paste content here..."
+            />
+            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xl">
+              {loading ? "Analyzing..." : "Screen Candidate →"}
+            </button>
+        </div>
 
         {/* PRO RESULTS PANEL */}
         <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                {/* MATCH SCORE */}
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
+              <div className="space-y-6 animate-in fade-in">
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
                   <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Match Confidence</h3>
                 </div>
 
-                {/* STRENGTHS & GAPS */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl">
-                    <h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Key Strengths</h4>
+                    <h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Strengths</h4>
                     <ul className="text-[11px] text-slate-300 space-y-2">
                       {analysis.strengths?.map((s, i) => <li key={i}>• {s}</li>)}
                     </ul>
@@ -111,17 +160,9 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* INTERVIEW STRATEGY */}
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-indigo-400 font-bold uppercase text-[10px] mb-2">Interview Strategy</h4>
-                  <p className="text-[11px] text-slate-300 italic">"{analysis.interview_strategy}"</p>
-                </div>
-
-                {/* MARKET & INDUSTRY INTEL */}
-                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-2">Market Intelligence</h4>
+                  <h4 className="text-indigo-400 font-bold uppercase text-[10px] mb-2">Market & Industry Outlook</h4>
                   <p className="text-[11px] text-slate-300 mb-4">{analysis.market_intelligence}</p>
-                  <h4 className="text-purple-400 font-bold uppercase text-[10px] mb-2">Industry Outlook</h4>
                   <p className="text-[11px] text-slate-300">{analysis.industry_outlook}</p>
                 </div>
               </div>
