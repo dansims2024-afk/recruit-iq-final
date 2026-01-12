@@ -60,6 +60,13 @@ export default function Dashboard() {
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
 
+  // --- NEW: DYNAMIC STRIPE URL ---
+  // This grabs the user's email and attaches it to the link so Stripe knows who they are.
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const finalStripeUrl = userEmail 
+    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
+    : STRIPE_URL;
+
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
@@ -321,7 +328,7 @@ export default function Dashboard() {
                  </div>
 
                  {/* CTA + Risk Reversal */}
-                 <a href={STRIPE_URL} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
+                 <a href={finalStripeUrl} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all text-xs">
                     Start My 3-Day Free Trial
                  </a>
                  <div className="text-center mt-3 space-y-1">
