@@ -65,38 +65,28 @@ export default function Dashboard() {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
     try {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
       } else if (file.name.endsWith('.pdf')) {
-        // Safe PDF Loading
         const pdfjs = window.pdfjsLib;
-        if (!pdfjs) {
-            alert("PDF Reader loading... please try again in 5 seconds.");
-            return;
-        }
+        if (!pdfjs) { alert("PDF Reader loading... try again in 5s."); return; }
         pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
         const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
         const pdf = await loadingTask.promise;
         let fullText = "";
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          fullText += pageText + "\n";
+          fullText += textContent.items.map(item => item.str).join(' ') + "\n";
         }
         activeTab === 'jd' ? setJdText(fullText) : setResumeText(fullText);
       } else {
         const text = await file.text();
         activeTab === 'jd' ? setJdText(text) : setResumeText(text);
       }
-    } catch (err) { 
-      console.error(err);
-      alert("Error reading file. Please copy and paste the text instead."); 
-    }
+    } catch (err) { console.error(err); alert("Error reading file."); }
   };
 
   const downloadPDF = () => {
@@ -125,7 +115,7 @@ export default function Dashboard() {
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    const summaryLines = doc.splitTextToSize(analysis.summary || "No summary available.", 170);
+    const summaryLines = doc.splitTextToSize(analysis.summary || "Summary unavailable", 170);
     doc.text(summaryLines, 20, 70);
     let currentY = 70 + (summaryLines.length * 6) + 15;
 
@@ -211,22 +201,25 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      let rawText = data.candidates[0].content.parts[0].text;
+      const rawText = data.candidates[0].content.parts[0].text;
       
-      // --- IMPORTANT: STRIP MARKDOWN TO PREVENT BLANK SCREENS ---
-      rawText = rawText.replace(/```json|```/g, '').trim(); 
-      
-      let result = JSON.parse(rawText);
+      console.log("AI RAW RESPONSE:", rawText); // FOR DEBUGGING
 
-      // Apply defaults to prevent crashes
+      // --- SMART JSON EXTRACTOR ---
+      // Finds the first '{' and last '}' to ignore markdown wrapper text
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No JSON found in response");
+      
+      const result = JSON.parse(jsonMatch[0]);
+
       setAnalysis({
         candidate_name: result.candidate_name || "Candidate",
         score: result.score || 0,
-        summary: result.summary || "No summary provided.",
+        summary: result.summary || "Analysis complete.",
         strengths: Array.isArray(result.strengths) ? result.strengths : [],
         gaps: Array.isArray(result.gaps) ? result.gaps : [],
         questions: Array.isArray(result.questions) ? result.questions : [],
-        outreach_email: result.outreach_email || "No email generated."
+        outreach_email: result.outreach_email || ""
       });
       
       if (!isPro) {
@@ -235,8 +228,8 @@ export default function Dashboard() {
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
     } catch (err) { 
-      console.error(err);
-      alert("Analysis failed. Please check your API key."); 
+      console.error("ANALYSIS ERROR:", err);
+      alert("Analysis failed. See console for details."); 
     } finally { setLoading(false); }
   };
 
@@ -245,7 +238,6 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
-      {/* UPGRADE MODAL */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -270,14 +262,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* HEADER */}
       <div className="flex justify-end items-center">
         <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
            {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
         </div>
       </div>
 
-      {/* QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
              <div className="flex justify-between items-center mb-2">
