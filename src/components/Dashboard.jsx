@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser } from "@clerk/clerk-react";
+import logo from '../logo.png';
+
 // Note: Ensure jspdf is loaded in index.html via CDN
 // <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
@@ -258,4 +258,124 @@ export default function Dashboard() {
                  <div className="text-center relative z-10">
                     <div className="text-6xl mb-4">💎</div>
                     <h3 className="font-bold text-white text-lg">Pro Access</h3>
-                    <p className="text-xs text-slate-
+                    <p className="text-xs text-slate-400 mt-2">Join elite recruiters automating their workflow.</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
+      <div className="flex justify-end items-center">
+        <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+           {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
+        </div>
+      </div>
+
+      {/* QUICK START */}
+      <div className="grid md:grid-cols-3 gap-6">
+          <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2">
+                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
+                {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
+             </div>
+             <p className="text-[11px] text-slate-300">Upload or Paste the Job Description.</p>
+          </div>
+          <div className={`p-6 rounded-3xl border transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+             <div className="flex justify-between items-center mb-2">
+                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
+                {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
+             </div>
+             <p className="text-[11px] text-slate-300">Upload or Paste Resume to analyze skills.</p>
+          </div>
+          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
+             <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
+             <p className="text-[11px] text-slate-300">Get match score, interview guide, and outreach email.</p>
+          </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* INPUT COLUMN */}
+        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
+            {/* NUMBERED TABS WITH CHECKMARKS */}
+            <div className="flex gap-3 mb-6">
+               <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
+                 1. Job Description {jdReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
+               </button>
+               <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
+                 2. Resume {resumeReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
+               </button>
+            </div>
+            
+            <div className="flex gap-3 mb-4">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 hover:text-white transition-colors">
+                Upload or Paste File <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
+            </div>
+            <textarea 
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6"
+              value={activeTab === 'jd' ? jdText : resumeText} 
+              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
+              placeholder="Paste content here..."
+            />
+            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xl hover:shadow-indigo-500/25 transition-all">
+              {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Free Left`}) →`}
+            </button>
+        </div>
+
+        {/* RESULTS COLUMN */}
+        <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+            {analysis ? (
+              <div className="space-y-6 animate-in fade-in">
+                {/* 1. MATCH SCORE */}
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
+                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">Match Confidence</h3>
+                  <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-2 mx-auto border border-slate-700">
+                    <span>📄</span> Download Report & Guide
+                  </button>
+                </div>
+
+                {/* 2. STRENGTHS & GAPS */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl">
+                    <h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Strengths</h4>
+                    <ul className="text-[11px] text-slate-300 space-y-2">{analysis.strengths?.map((s, i) => <li key={i}>• {s}</li>)}</ul>
+                  </div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl">
+                    <h4 className="text-rose-400 font-bold uppercase text-[10px] mb-3">Gaps</h4>
+                    <ul className="text-[11px] text-slate-300 space-y-2">{analysis.gaps?.map((g, i) => <li key={i}>• {g}</li>)}</ul>
+                  </div>
+                </div>
+
+                {/* 3. INTERVIEW QUESTIONS */}
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-indigo-400 font-bold uppercase text-[10px]">Targeted Interview Questions</h4>
+                    <button onClick={downloadPDF} className="text-slate-400 hover:text-white text-[10px] underline">Download Guide</button>
+                  </div>
+                  <ul className="text-[11px] text-slate-300 space-y-3">
+                    {analysis.questions?.map((q, i) => <li key={i} className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">"{q}"</li>)}
+                  </ul>
+                </div>
+
+                {/* 4. OUTREACH EMAIL */}
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
+                  <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
+                  <button onClick={() => navigator.clipboard.writeText(analysis.outreach_email)} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-colors">Copy to Clipboard</button>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] gap-4 uppercase tracking-widest">
+                 Waiting for screening data...
+              </div>
+            )}
+        </div>
+      </div>
+    </div>
+  );
+}
