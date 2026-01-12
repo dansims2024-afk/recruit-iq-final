@@ -52,6 +52,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [scanCount, setScanCount] = useState(0);
+  
+  // TOAST STATE (Notification System)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const isPro = user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -62,17 +65,37 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
+  // Helper to show smooth notifications
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ ...toast, show: false }), 4000);
+  };
+
+  const handleClear = () => {
+    setJdText('');
+    setResumeText('');
+    setAnalysis(null);
+    setActiveTab('jd');
+    showToast("Dashboard cleared for new search", "info");
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     try {
+      let text = "";
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-        activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
+        text = result.value;
       } else if (file.name.endsWith('.pdf')) {
         const pdfjs = window.pdfjsLib;
-        if (!pdfjs) { alert("PDF Reader loading... try again in 5s."); return; }
+        if (!pdfjs) {
+            showToast("PDF Reader loading... try again in 5s.", "error");
+            return;
+        }
         pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
         const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
         const pdf = await loadingTask.promise;
         let fullText = "";
@@ -81,12 +104,20 @@ export default function Dashboard() {
           const textContent = await page.getTextContent();
           fullText += textContent.items.map(item => item.str).join(' ') + "\n";
         }
-        activeTab === 'jd' ? setJdText(fullText) : setResumeText(fullText);
+        text = fullText;
       } else {
-        const text = await file.text();
-        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+        text = await file.text();
       }
-    } catch (err) { console.error(err); alert("Error reading file."); }
+      
+      if (activeTab === 'jd') setJdText(text);
+      else setResumeText(text);
+      
+      showToast(`${file.name} uploaded successfully!`, "success");
+
+    } catch (err) { 
+      console.error(err);
+      showToast("Could not read file. Please copy/paste text.", "error"); 
+    }
   };
 
   const downloadPDF = () => {
@@ -94,6 +125,7 @@ export default function Dashboard() {
     const { jsPDF } = window.jspdf; 
     const doc = new jsPDF();
     
+    // Header
     doc.setFillColor(79, 70, 229); 
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
@@ -104,6 +136,7 @@ export default function Dashboard() {
     doc.setFont("helvetica", "normal");
     doc.text(`Candidate Match Analysis & Interview Guide`, 20, 30);
 
+    // Score & Name
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
@@ -112,6 +145,7 @@ export default function Dashboard() {
     doc.setTextColor(79, 70, 229);
     doc.text(`Match Score: ${analysis.score}%`, 140, 55);
     
+    // Summary
     doc.setTextColor(60, 60, 60);
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -119,6 +153,7 @@ export default function Dashboard() {
     doc.text(summaryLines, 20, 70);
     let currentY = 70 + (summaryLines.length * 6) + 15;
 
+    // Strengths
     doc.setFont("helvetica", "bold");
     doc.setTextColor(16, 185, 129); 
     doc.text("Key Strengths", 20, currentY);
@@ -133,6 +168,7 @@ export default function Dashboard() {
     });
     currentY += 10;
 
+    // Gaps
     doc.setFont("helvetica", "bold");
     doc.setTextColor(244, 63, 94); 
     doc.text("Critical Gaps", 20, currentY);
@@ -166,6 +202,7 @@ export default function Dashboard() {
     });
 
     doc.save(`${cName.replace(/\s+/g, '_')}_Report.pdf`);
+    showToast("PDF Report downloaded!", "success");
   };
 
   const handleScreen = async () => {
@@ -173,7 +210,10 @@ export default function Dashboard() {
       setShowUpgradeModal(true);
       return;
     }
-    if (!jdReady || !resumeReady) return alert("Please complete Step 1 and 2.");
+    if (!jdReady || !resumeReady) {
+        showToast("Please complete Step 1 (JD) and Step 2 (Resume) first.", "error");
+        return;
+    }
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -203,12 +243,8 @@ export default function Dashboard() {
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
       
-      console.log("AI RAW RESPONSE:", rawText); // FOR DEBUGGING
-
-      // --- SMART JSON EXTRACTOR ---
-      // Finds the first '{' and last '}' to ignore markdown wrapper text
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON found in response");
+      if (!jsonMatch) throw new Error("No JSON found");
       
       const result = JSON.parse(jsonMatch[0]);
 
@@ -227,9 +263,11 @@ export default function Dashboard() {
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
+      showToast("Analysis complete!", "success");
+
     } catch (err) { 
-      console.error("ANALYSIS ERROR:", err);
-      alert("Analysis failed. See console for details."); 
+      console.error(err);
+      showToast("Analysis failed. Please try again.", "error"); 
     } finally { setLoading(false); }
   };
 
@@ -238,6 +276,19 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen font-sans">
       
+      {/* --- TOAST NOTIFICATION --- */}
+      {toast.show && (
+        <div className={`fixed top-5 right-5 z-[60] px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 border ${
+          toast.type === 'error' ? 'bg-rose-950/90 border-rose-500 text-white' : 
+          toast.type === 'info' ? 'bg-slate-800/90 border-slate-500 text-white' :
+          'bg-emerald-950/90 border-emerald-500 text-white'
+        }`}>
+           <span className="text-xl">{toast.type === 'error' ? '⚠️' : toast.type === 'info' ? 'ℹ️' : '✅'}</span>
+           <p className="text-sm font-bold tracking-wide">{toast.message}</p>
+        </div>
+      )}
+
+      {/* --- UPGRADE MODAL --- */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/60 animate-in fade-in duration-300">
           <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
@@ -262,12 +313,14 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* HEADER */}
       <div className="flex justify-end items-center">
         <div className="bg-indigo-500/10 border border-indigo-500/50 px-4 py-2 rounded-full text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
            {isPro ? "PRO INTEL ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
         </div>
       </div>
 
+      {/* QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-3xl border transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
              <div className="flex justify-between items-center mb-2">
@@ -305,12 +358,20 @@ export default function Dashboard() {
                 Upload or Paste File <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
+              
+              {/* NEW: CLEAR BUTTON */}
+              <button onClick={handleClear} className="flex-none bg-rose-500/10 border border-rose-500/50 py-3 px-4 rounded-xl text-[10px] font-bold uppercase text-rose-400 hover:bg-rose-500 hover:text-white transition-colors">
+                New Search
+              </button>
             </div>
+
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6 focus:border-indigo-500/50 transition-colors placeholder-slate-600"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder="Paste content here..."
+              placeholder={activeTab === 'jd' 
+                ? "Paste the Job Description here (Title, Responsibilities, Requirements)..." 
+                : "Paste the Resume here or Upload a PDF/DOCX file..."}
             />
             <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-gradient-to-r from-indigo-600 to-blue-600 shadow-xl hover:shadow-indigo-500/25 transition-all">
               {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Free Left`}) →`}
@@ -353,7 +414,10 @@ export default function Dashboard() {
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
                   <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
                   <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
-                  <button onClick={() => navigator.clipboard.writeText(analysis.outreach_email)} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-colors">Copy to Clipboard</button>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(analysis.outreach_email);
+                    showToast("Email copied to clipboard!", "success");
+                  }} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-colors">Copy to Clipboard</button>
                 </div>
               </div>
             ) : (
