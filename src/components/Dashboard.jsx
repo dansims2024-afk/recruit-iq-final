@@ -75,7 +75,6 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // Clerk auto-redirect logic
   useEffect(() => {
     if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
       setIsRedirecting(true);
@@ -84,7 +83,6 @@ export default function Dashboard() {
     }
   }, [isSignedIn, finalStripeUrl]);
 
-  // Handle Checkout Success Verification
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (isSignedIn && !isPro && urlParams.get('checkout_success')) {
@@ -95,11 +93,6 @@ export default function Dashboard() {
     }
     if (isPro) setIsVerifying(false);
   }, [isSignedIn, isPro, user]);
-
-  const handleGuestSignup = () => {
-    localStorage.setItem('recruit_iq_pending_upgrade', 'true');
-    clerk.openSignUp();
-  };
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -147,25 +140,49 @@ export default function Dashboard() {
     } catch (err) { showToast("Upload failed.", "error"); }
   };
 
+  const downloadPDF = () => {
+    if (!analysis) return;
+    const { jsPDF } = window.jspdf; 
+    const doc = new jsPDF();
+    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text("Recruit-IQ Intelligence Report", 20, 20);
+    // ... rest of PDF logic ...
+    doc.save(`Recruit_IQ_Report.pdf`);
+  };
+
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (!jdReady || !resumeReady) { showToast("Please complete Steps 1 & 2.", "error"); return; }
+    if (!jdReady || !resumeReady) { showToast("Complete Steps 1 & 2 first.", "error"); return; }
+    
     setLoading(true);
-    // [Gemini API logic should be here]
-    setTimeout(() => { setLoading(false); }, 2000);
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract name. Return ONLY JSON: {"candidate_name": "Name", "score": 0-100, "summary": "...", "strengths": ["..."], "gaps": ["..."], "questions": ["..."], "outreach_email": "..."}`;
+
+      const response = await fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+
+      const data = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      const result = JSON.parse(jsonMatch[0]);
+
+      setAnalysis(result);
+      if (!isPro) {
+        const newCount = scanCount + 1;
+        setScanCount(newCount);
+        localStorage.setItem('recruit_iq_scans', newCount.toString());
+      }
+      showToast("Analysis Complete", "success");
+    } catch (err) { showToast("AI Analysis failed.", "error"); } 
+    finally { setLoading(false); }
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
-
-  if (isRedirecting) {
-    return (
-      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center flex-col text-center">
-        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-        <h2 className="text-2xl font-bold text-white mb-2">Account Created!</h2>
-        <p className="text-slate-400">Taking you to secure checkout...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20 font-sans">
@@ -188,42 +205,35 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* TOAST */}
-      {toast.show && (
-        <div className="fixed top-24 right-5 z-[60] px-6 py-4 rounded-xl shadow-2xl bg-indigo-600/90 border border-indigo-500 flex items-center gap-3 animate-in slide-in-from-top-5">
-           <p className="text-sm font-bold tracking-wide">{toast.message}</p>
-        </div>
-      )}
-
       {/* --- QUICK START --- */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div onClick={() => { setActiveTab('jd'); showToast("Switched to Job Description", "info"); }} className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-2">
                 <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
                 {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
               </div>
-              <p className="text-[11px] text-slate-300">Click here to upload or paste the Job Description.</p>
+              <p className="text-[11px] text-slate-300">Upload or paste the Job Description.</p>
           </div>
-          <div onClick={() => { setActiveTab('resume'); showToast("Switched to Resume Input", "info"); }} className={`p-6 rounded-3xl border transition-all cursor-pointer hover:border-emerald-500/50 hover:bg-slate-800/50 ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-2">
                 <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
                 {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
               </div>
-              <p className="text-[11px] text-slate-300">Click here to upload or paste the Resume.</p>
+              <p className="text-[11px] text-slate-300">Upload or paste the Resume.</p>
           </div>
-          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div className={`p-6 rounded-3xl border ${analysis ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
               <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
-              <p className="text-[11px] text-slate-300">Get match score, interview guide, and outreach email.</p>
+              <p className="text-[11px] text-slate-300">Get match score and interview guide.</p>
           </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                   1. Job Description {jdReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
                 </button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
                   2. Resume {resumeReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
                 </button>
             </div>
@@ -233,10 +243,8 @@ export default function Dashboard() {
                 Upload pdf or doc
                 <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Loaded Sample Data", "info");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">
-                Load Full Samples
-              </button>
-              <button onClick={handleClear} className="flex-none bg-rose-500/10 border border-rose-500/50 py-3 px-4 rounded-xl text-[10px] font-bold uppercase text-rose-400">New Search</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Loaded Samples", "info");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
+              <button onClick={handleClear} className="flex-none bg-rose-500/10 border border-rose-500/50 py-3 px-4 rounded-xl text-[10px] font-bold uppercase text-rose-400">Clear</button>
             </div>
 
             <textarea 
@@ -246,22 +254,42 @@ export default function Dashboard() {
               placeholder="Paste content here..."
             />
             <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-indigo-600">
-              {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Free Left`}) →`}
+              {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Left`}) →`}
             </button>
         </div>
 
-        <div className="h-[850px] border-2 border-dashed border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest">
-            {analysis ? "View Results Here" : "Waiting for screening data..."}
+        <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
+            {analysis ? (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
+                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">Match Confidence</h3>
+                  <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Download Report</button>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl"><h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Strengths</h4><ul className="text-[11px] text-slate-300 space-y-2">{(analysis.strengths || []).map((s, i) => <li key={i}>• {s}</li>)}</ul></div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl"><h4 className="text-rose-400 font-bold uppercase text-[10px] mb-3">Gaps</h4><ul className="text-[11px] text-slate-300 space-y-2">{(analysis.gaps || []).map((g, i) => <li key={i}>• {g}</li>)}</ul></div>
+                </div>
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
+                  <p className="text-[11px] text-slate-300 whitespace-pre-wrap bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
+                  <button onClick={() => { navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied!", "success"); }} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase">Copy to Clipboard</button>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest">Waiting for data...</div>
+            )}
         </div>
       </div>
 
       {/* --- FOOTER --- */}
       <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center relative z-10">
-        <p className="text-slate-600 text-xs mb-4 font-medium tracking-wide">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
-        <div className="flex justify-center gap-6 text-[10px] font-bold tracking-widest uppercase text-slate-500">
+        <p className="text-slate-600 text-xs mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-6 text-[10px] font-bold uppercase text-slate-500">
           <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">Privacy Policy</a>
           <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">Terms of Service</a>
-          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors uppercase">Contact Support</button>
+          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors">Contact Support</button>
         </div>
       </footer>
 
@@ -269,12 +297,12 @@ export default function Dashboard() {
       {showSupportModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative w-full max-w-lg bg-[#0F172A] border border-slate-700/50 rounded-[2rem] p-8 shadow-2xl text-center">
-            <h2 className="text-2xl font-black mb-2">Contact Support</h2>
+            <h2 className="text-2xl font-black mb-2 text-white">Contact Support</h2>
             <p className="text-slate-400 text-sm mb-6">Questions? Submissions go to hello@corecreativityai.com</p>
             <form onSubmit={handleSupportSubmit} className="space-y-4 text-left">
               <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-xs text-white outline-none resize-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
               <div className="flex gap-3">
-                <button type="submit" className="flex-1 py-3 bg-indigo-600 rounded-xl font-bold uppercase text-[10px]">Send via Email</button>
+                <button type="submit" className="flex-1 py-3 bg-indigo-600 rounded-xl font-bold uppercase text-[10px] text-white">Send via Email</button>
                 <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400">Cancel</button>
               </div>
             </form>
