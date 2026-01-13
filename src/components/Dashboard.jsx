@@ -5,7 +5,7 @@ import logo from '../logo.png';
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- FULL SAMPLES ---
+// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -58,41 +58,16 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const finalStripeUrl = userEmail 
-    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
-    : STRIPE_URL;
-
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
-
-  useEffect(() => {
-    if (isSignedIn && localStorage.getItem('recruit_iq_pending_upgrade') === 'true') {
-      setIsRedirecting(true);
-      localStorage.removeItem('recruit_iq_pending_upgrade');
-      setTimeout(() => { window.location.href = finalStripeUrl; }, 1500);
-    }
-  }, [isSignedIn, finalStripeUrl]);
-
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (isSignedIn && !isPro && urlParams.get('checkout_success')) {
-        setIsVerifying(true);
-        const interval = setInterval(async () => { await user.reload(); }, 1500);
-        const timeout = setTimeout(() => { window.location.href = window.location.pathname; }, 6000);
-        return () => { clearInterval(interval); clearTimeout(timeout); };
-    }
-    if (isPro) setIsVerifying(false);
-  }, [isSignedIn, isPro, user]);
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -101,17 +76,10 @@ export default function Dashboard() {
 
   const handleSupportSubmit = (e) => {
     e.preventDefault();
-    const subject = encodeURIComponent("Recruit-IQ Support Request");
-    const body = encodeURIComponent(supportMessage);
-    window.location.href = `mailto:hello@corecreativityai.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:hello@corecreativityai.com?subject=Support&body=${encodeURIComponent(supportMessage)}`;
     setShowSupportModal(false);
     setSupportMessage('');
     showToast("Email client opened!", "info");
-  };
-
-  const handleClear = () => {
-    setJdText(''); setResumeText(''); setAnalysis(null); setActiveTab('jd');
-    showToast("Dashboard cleared", "info");
   };
 
   const handleFileUpload = async (e) => {
@@ -123,43 +91,84 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        const pdfjs = window.pdfjsLib;
-        if (!pdfjs) { showToast("PDF Reader loading...", "error"); return; }
-        const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
+        const loadingTask = window.pdfjsLib.getDocument(URL.createObjectURL(file));
         const pdf = await loadingTask.promise;
-        let fullText = "";
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          fullText += textContent.items.map(item => item.str).join(' ') + "\n";
+          const content = await page.getTextContent();
+          text += content.items.map(item => item.str).join(' ') + "\n";
         }
-        text = fullText;
       } else { text = await file.text(); }
-      if (activeTab === 'jd') setJdText(text); else setResumeText(text);
+      activeTab === 'jd' ? setJdText(text) : setResumeText(text);
       showToast(`${file.name} uploaded!`, "success");
     } catch (err) { showToast("Upload failed.", "error"); }
   };
 
   const downloadPDF = () => {
     if (!analysis) return;
-    const { jsPDF } = window.jspdf; 
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    const cName = analysis.candidate_name || "Candidate";
+
+    // Header
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text("Recruit-IQ Intelligence Report", 20, 20);
-    // ... rest of PDF logic ...
-    doc.save(`Recruit_IQ_Report.pdf`);
+    doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont("helvetica", "bold");
+    doc.text("RECRUIT-IQ INTELLIGENCE REPORT", 20, 25);
+    
+    // Summary Section
+    doc.setTextColor(0, 0, 0); doc.setFontSize(16); doc.text(cName.toUpperCase(), 20, 55);
+    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 140, 55);
+    
+    doc.setTextColor(60, 60, 60); doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
+    doc.text(summaryLines, 20, 65);
+
+    let y = 65 + (summaryLines.length * 5) + 10;
+
+    // Strengths
+    doc.setFont("helvetica", "bold"); doc.setTextColor(16, 185, 129); doc.text("TOP STRENGTHS", 20, y); y += 7;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(40, 40, 40);
+    analysis.strengths.forEach(s => { doc.text(`• ${s}`, 25, y); y += 6; });
+
+    y += 5;
+    // Gaps
+    doc.setFont("helvetica", "bold"); doc.setTextColor(244, 63, 94); doc.text("CRITICAL GAPS", 20, y); y += 7;
+    doc.setFont("helvetica", "normal"); doc.setTextColor(40, 40, 40);
+    analysis.gaps.forEach(g => { doc.text(`• ${g}`, 25, y); y += 6; });
+
+    // New Page for Questions
+    doc.addPage();
+    doc.setFont("helvetica", "bold"); doc.setTextColor(79, 70, 229); doc.setFontSize(16);
+    doc.text("STRATEGIC INTERVIEW GUIDE", 20, 25); y = 40;
+    doc.setFontSize(10); doc.setTextColor(40, 40, 40); doc.setFont("helvetica", "normal");
+    
+    analysis.questions.forEach((q, i) => {
+      const qLines = doc.splitTextToSize(`${i + 1}. ${q}`, 170);
+      doc.text(qLines, 20, y);
+      y += (qLines.length * 5) + 5;
+    });
+
+    doc.save(`RecruitIQ_${cName.replace(/\s+/g, '_')}.pdf`);
+    showToast("PDF Downloaded", "success");
   };
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (!jdReady || !resumeReady) { showToast("Complete Steps 1 & 2 first.", "error"); return; }
+    if (!jdReady || !resumeReady) { showToast("Complete Steps 1 & 2.", "error"); return; }
     
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract name. Return ONLY JSON: {"candidate_name": "Name", "score": 0-100, "summary": "...", "strengths": ["..."], "gaps": ["..."], "questions": ["..."], "outreach_email": "..."}`;
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. 
+      1. Extract candidate name. 
+      2. Score match 0-100. 
+      3. Write a brief executive summary. 
+      4. List 3 strengths and 3 gaps. 
+      5. Provide 5 tough interview questions specific to the gaps found. 
+      6. Write a highly personalized outreach email that references a specific achievement from their resume.
+      Return ONLY JSON: {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
 
       const response = await fetch(url, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -167,9 +176,7 @@ export default function Dashboard() {
       });
 
       const data = await response.json();
-      const rawText = data.candidates[0].content.parts[0].text;
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      const result = JSON.parse(jsonMatch[0]);
+      const result = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/)[0]);
 
       setAnalysis(result);
       if (!isPro) {
@@ -178,103 +185,104 @@ export default function Dashboard() {
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
       showToast("Analysis Complete", "success");
-    } catch (err) { showToast("AI Analysis failed.", "error"); } 
+    } catch (err) { showToast("AI Error. Check inputs.", "error"); } 
     finally { setLoading(false); }
   };
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
-
   return (
-    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20 font-sans">
+    <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            <img src={logo} alt="Recruit-IQ" className="h-12 w-auto drop-shadow-[0_0_15px_rgba(79,70,229,0.5)]" />
+            <img src={logo} alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
-                <h1 className="text-2xl font-black tracking-tighter">Recruit-IQ</h1>
-                <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase mt-1">By Core Creativity AI</p>
+                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
             </div>
         </div>
-        <div className="flex gap-3">
-            {isVerifying && <div className="bg-slate-800 border border-slate-600 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-300 animate-pulse">Activating Membership...</div>}
-            <div className={`bg-indigo-500/10 border px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg ${isPro ? 'border-emerald-500/50 text-emerald-400 shadow-emerald-500/20' : 'border-indigo-500/50 text-indigo-400 shadow-indigo-500/10'}`}>
-                <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-400' : 'bg-indigo-400 animate-pulse'}`}></span>
-                {isPro ? "ELITE MEMBERSHIP ACTIVE" : `FREE TRIAL: ${3 - scanCount} SCANS LEFT`}
-            </div>
+        <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
+            {isPro ? "ELITE ACTIVE" : `TRIAL: ${3 - scanCount} LEFT`}
         </div>
       </div>
 
-      {/* --- QUICK START --- */}
+      {/* QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
-              <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${jdReady ? 'text-emerald-400' : 'text-slate-400'}`}>1. Define Requirements</h4>
-                {jdReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
+          <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <div className="flex justify-between items-center mb-2 uppercase text-[10px] font-bold tracking-widest">
+                <span>1. Job Description</span>
+                {jdReady && <span className="text-emerald-400">✓</span>}
               </div>
-              <p className="text-[11px] text-slate-300">Upload or paste the Job Description.</p>
+              <p className="text-[11px] text-slate-400">Click to paste or upload requirements.</p>
           </div>
-          <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
-              <div className="flex justify-between items-center mb-2">
-                <h4 className={`font-bold text-[10px] uppercase tracking-widest ${resumeReady ? 'text-emerald-400' : 'text-slate-400'}`}>2. Input Candidate</h4>
-                {resumeReady && <span className="bg-emerald-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">✓</span>}
+          <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <div className="flex justify-between items-center mb-2 uppercase text-[10px] font-bold tracking-widest">
+                <span>2. Candidate Resume</span>
+                {resumeReady && <span className="text-emerald-400">✓</span>}
               </div>
-              <p className="text-[11px] text-slate-300">Upload or paste the Resume.</p>
+              <p className="text-[11px] text-slate-400">Click to paste or upload candidate file.</p>
           </div>
-          <div className={`p-6 rounded-3xl border ${analysis ? 'bg-indigo-900/20 border-indigo-500/50 shadow-[0_0_20px_rgba(79,70,229,0.2)]' : 'bg-slate-800/30 border-slate-700'}`}>
-              <h4 className="font-bold text-[10px] uppercase tracking-widest mb-2 text-indigo-400">3. Analyze & Act</h4>
-              <p className="text-[11px] text-slate-300">Get match score and interview guide.</p>
+          <div className={`p-6 rounded-3xl border ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <span className="uppercase text-[10px] font-bold tracking-widest text-indigo-400">3. Results Ready</span>
+              <p className="text-[11px] text-slate-400">Match score and interview guide.</p>
           </div>
       </div>
 
+      {/* WORKSPACE */}
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
+        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px]">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase flex items-center justify-center gap-2 ${activeTab === 'jd' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                  1. Job Description {jdReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
-                </button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[11px] font-black uppercase flex items-center justify-center gap-2 ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>
-                  2. Resume {resumeReady && <span className="text-emerald-300 font-bold text-sm">✓</span>}
-                </button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase ${activeTab === 'jd' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>Job Description</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>Resume</button>
             </div>
             
             <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400 hover:text-white transition-colors">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700">
                 Upload pdf or doc
-                <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+                <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Loaded Samples", "info");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 text-slate-400">Load Full Samples</button>
-              <button onClick={handleClear} className="flex-none bg-rose-500/10 border border-rose-500/50 py-3 px-4 rounded-xl text-[10px] font-bold uppercase text-rose-400">Clear</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700">Load Samples</button>
             </div>
 
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed mb-6"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
-            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs tracking-widest text-white bg-indigo-600">
-              {loading ? "Analyzing..." : `3. Screen Candidate (${isPro ? 'Unlimited' : `${3 - scanCount} Left`}) →`}
+            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 tracking-widest shadow-xl">
+              {loading ? "Analyzing..." : "Screen Candidate →"}
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in">
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
-                  <h3 className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">Match Confidence</h3>
                   <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
-                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Download Report</button>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Download Full Report</button>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl"><h4 className="text-emerald-400 font-bold uppercase text-[10px] mb-3">Strengths</h4><ul className="text-[11px] text-slate-300 space-y-2">{(analysis.strengths || []).map((s, i) => <li key={i}>• {s}</li>)}</ul></div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl"><h4 className="text-rose-400 font-bold uppercase text-[10px] mb-3">Gaps</h4><ul className="text-[11px] text-slate-300 space-y-2">{(analysis.gaps || []).map((g, i) => <li key={i}>• {g}</li>)}</ul></div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px]">Strengths</h4>{analysis.strengths.map((s, i) => <p key={i}>• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px]">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i}>• {g}</p>)}</div>
                 </div>
+
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-blue-400 font-bold uppercase text-[10px] mb-3">AI Outreach Email</h4>
-                  <p className="text-[11px] text-slate-300 whitespace-pre-wrap bg-[#0B1120] p-5 rounded-xl border border-slate-800">{analysis.outreach_email}</p>
-                  <button onClick={() => { navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied!", "success"); }} className="mt-4 w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase">Copy to Clipboard</button>
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4">Strategic Interview Guide</h4>
+                  <div className="space-y-3 text-[11px] text-slate-300">
+                    {analysis.questions.map((q, i) => <p key={i} className="p-3 bg-slate-800/40 rounded-xl border border-slate-700">"{q}"</p>)}
+                  </div>
+                </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4 text-center">AI Outreach Generator</h4>
+                  <div className="bg-[#0B1120] p-6 rounded-2xl border border-slate-800 mb-4">
+                    <p className="text-[11px] text-slate-300 whitespace-pre-wrap">{analysis.outreach_email}</p>
+                  </div>
+                  <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white">Copy to Clipboard</button>
                 </div>
               </div>
             ) : (
@@ -283,29 +291,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- FOOTER --- */}
-      <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center relative z-10">
-        <p className="text-slate-600 text-xs mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
-        <div className="flex justify-center gap-6 text-[10px] font-bold uppercase text-slate-500">
-          <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">Privacy Policy</a>
-          <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400 transition-colors">Terms of Service</a>
-          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors">Contact Support</button>
+      {/* FOOTER */}
+      <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
+        <p className="mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-6">
+          <a href="https://www.corecreativityai.com/blank" className="hover:text-indigo-400">Privacy Policy</a>
+          <a href="https://www.corecreativityai.com/blank-2" className="hover:text-indigo-400">Terms of Service</a>
+          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400">Contact Support</button>
         </div>
       </footer>
 
-      {/* --- SUPPORT MODAL --- */}
+      {/* SUPPORT MODAL */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
-          <div className="relative w-full max-w-lg bg-[#0F172A] border border-slate-700/50 rounded-[2rem] p-8 shadow-2xl text-center">
-            <h2 className="text-2xl font-black mb-2 text-white">Contact Support</h2>
-            <p className="text-slate-400 text-sm mb-6">Questions? Submissions go to hello@corecreativityai.com</p>
-            <form onSubmit={handleSupportSubmit} className="space-y-4 text-left">
-              <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-xs text-white outline-none resize-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
-              <div className="flex gap-3">
-                <button type="submit" className="flex-1 py-3 bg-indigo-600 rounded-xl font-bold uppercase text-[10px] text-white">Send via Email</button>
-                <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400">Cancel</button>
-              </div>
-            </form>
+          <div className="bg-[#0F172A] border border-slate-700 p-8 rounded-[2rem] max-w-lg w-full">
+            <h2 className="text-xl font-black mb-4">Support Request</h2>
+            <textarea className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-xs text-white outline-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            <div className="flex gap-3 mt-4">
+              <button onClick={handleSupportSubmit} className="flex-1 py-3 bg-indigo-600 rounded-xl font-bold uppercase text-[10px]">Send Email</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-6 py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px]">Cancel</button>
+            </div>
           </div>
         </div>
       )}
