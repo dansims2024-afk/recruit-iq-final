@@ -225,7 +225,7 @@ export default function Dashboard() {
           <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
-                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest">Validated</span>}
+                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Set Expectations</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">Upload or Paste the Job Description to establish requirements.</p>
@@ -233,7 +233,7 @@ export default function Dashboard() {
           <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">2</span>
-                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest">Validated</span>}
+                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Input Candidate</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">Upload a PDF/DOCX or paste the resume to compare profiles.</p>
@@ -264,7 +264,7 @@ export default function Dashboard() {
                 Upload pdf or doc
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Full Samples</button>
             </div>
 
             <textarea 
@@ -273,9 +273,9 @@ export default function Dashboard() {
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
-            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
+            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
               <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">3</span>
-              {loading ? "Analyzing..." : "Execute AI Screen →"}
+              {loading ? "Analyzing Candidate..." : "Execute AI Screen →"}
             </button>
         </div>
 
@@ -287,22 +287,32 @@ export default function Dashboard() {
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
                   <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Match Score</h3>
                   <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
-                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 transition-all">Download Elite Report</button>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 transition-all">Download Intelligence Report</button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
                 </div>
 
-                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl text-center">
-                    <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4">Outreach Email</h4>
-                    <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase">Copy to Clipboard</button>
+                {/* INTERVIEW QUESTIONS BROUGHT BACK HERE */}
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Strategic Interview Questions</h4>
+                  <div className="space-y-3 text-[11px] text-slate-300">
+                    {analysis.questions.map((q, i) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
+                  </div>
+                </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
+                  <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4 text-center tracking-widest">AI Outreach Generator</h4>
+                  <div className="bg-[#0B1120] p-6 rounded-2xl border border-slate-800 mb-4">
+                    <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
+                  </div>
+                  <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied to Clipboard", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white transition-all">Copy Outreach Email</button>
                 </div>
               </div>
             ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest gap-4 text-center p-10">
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest gap-4 text-center p-10">
                 <span className="text-4xl opacity-20">📊</span>
                 Waiting for Candidate Data...
               </div>
@@ -312,7 +322,7 @@ export default function Dashboard() {
 
       {/* FOOTER */}
       <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
-        <p className="mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <p className="mb-4 text-[9px]">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
         <div className="flex justify-center gap-6">
           <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400">Privacy Policy</a>
           <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-400">Terms of Service</a>
@@ -324,12 +334,15 @@ export default function Dashboard() {
       {showSupportModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl">
-            <h2 className="text-2xl font-black mb-4 uppercase">Support</h2>
-            <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
-            <div className="flex gap-3 mt-4">
-              <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send Email</button>
-              <button onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Cancel</button>
-            </div>
+            <h2 className="text-2xl font-black mb-2 text-white uppercase tracking-tighter">Support Request</h2>
+            <p className="text-slate-400 text-[11px] mb-6 uppercase tracking-widest">Sent to hello@corecreativityai.com</p>
+            <form onSubmit={handleSupportSubmit} className="space-y-4 text-left">
+              <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none resize-none focus:border-indigo-500 transition-all" placeholder="Describe your issue or question..." value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px] tracking-widest text-white shadow-lg">Send Intelligence Request</button>
+                <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-white transition-all">Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
