@@ -6,8 +6,8 @@ import logo from '../logo.png';
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
 // --- FULL SAMPLES ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`; // [Omitted for brevity, keep your full text here]
-const SAMPLE_RESUME = `MARCUS VANDELAY...`; // [Omitted for brevity, keep your full text here]
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`; 
+const SAMPLE_RESUME = `MARCUS VANDELAY...`; 
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -68,20 +68,65 @@ export default function Dashboard() {
     } catch (err) { showToast("Upload failed.", "error"); }
   };
 
+  // --- IMPROVED PDF GENERATOR ---
   const downloadPDF = () => {
     if (!analysis) return;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const cName = analysis.candidate_name || "Candidate";
-    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont("helvetica", "bold");
+
+    // Branding Header
+    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("RECRUIT-IQ INTELLIGENCE REPORT", 20, 25);
-    doc.setTextColor(0, 0, 0); doc.setFontSize(16); doc.text(cName.toUpperCase(), 20, 55);
-    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 140, 55);
-    doc.setTextColor(60, 60, 60); doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    doc.setFontSize(10); doc.setFont("helvetica", "normal");
+    doc.text("POWERED BY CORE CREATIVITY AI", 20, 32);
+    
+    // Main Score Card
+    doc.setTextColor(0, 0, 0); doc.setFontSize(18); doc.setFont("helvetica", "bold");
+    doc.text(cName.toUpperCase(), 20, 60);
+    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
+    
+    // Summary
+    doc.setTextColor(100, 100, 100); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 70);
+    doc.setTextColor(40, 40, 40); doc.setFontSize(11); doc.setFont("helvetica", "normal");
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
-    doc.text(summaryLines, 20, 65);
-    doc.save(`RecruitIQ_${cName.replace(/\s+/g, '_')}.pdf`);
+    doc.text(summaryLines, 20, 77);
+
+    let y = 77 + (summaryLines.length * 6) + 10;
+
+    // Strengths & Gaps Row
+    doc.setFont("helvetica", "bold"); doc.setTextColor(16, 185, 129); doc.text("TOP STRENGTHS", 20, y); 
+    doc.setTextColor(244, 63, 94); doc.text("CRITICAL GAPS", 110, y); y += 8;
+    
+    doc.setFont("helvetica", "normal"); doc.setTextColor(60, 60, 60); doc.setFontSize(10);
+    const maxLength = Math.max(analysis.strengths.length, analysis.gaps.length);
+    for(let i=0; i<maxLength; i++) {
+        if (analysis.strengths[i]) doc.text(`• ${analysis.strengths[i]}`, 20, y);
+        if (analysis.gaps[i]) doc.text(`• ${analysis.gaps[i]}`, 110, y);
+        y += 6;
+    }
+
+    // New Page: Interview Guide
+    doc.addPage();
+    doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
+    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
+    
+    doc.setTextColor(79, 70, 229); doc.setFontSize(16); doc.setFont("helvetica", "bold");
+    doc.text("STRATEGIC INTERVIEW GUIDE", 20, 35);
+    doc.setTextColor(100, 100, 100); doc.setFontSize(9); doc.text(`TARGETED QUESTIONS FOR ${cName.toUpperCase()}`, 20, 42);
+    
+    y = 55;
+    doc.setFontSize(11); doc.setTextColor(40, 40, 40); doc.setFont("helvetica", "normal");
+    analysis.questions.forEach((q, i) => {
+      const qLines = doc.splitTextToSize(`${i + 1}. ${q}`, 170);
+      doc.setFillColor(255, 255, 255); doc.roundedRect(15, y-5, 180, (qLines.length * 6) + 6, 3, 3, 'F');
+      doc.text(qLines, 20, y+2);
+      y += (qLines.length * 6) + 12;
+    });
+
+    doc.save(`RecruitIQ_Intelligence_${cName.replace(/\s+/g, '_')}.pdf`);
+    showToast("Elite Report Downloaded", "success");
   };
 
   const handleScreen = async () => {
@@ -101,11 +146,9 @@ export default function Dashboard() {
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Analysis Complete", "success");
-    } catch (err) { showToast("AI Error.", "error"); } finally { setLoading(false); }
+      showToast("Intelligence Generated", "success");
+    } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
   };
-
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
@@ -124,28 +167,27 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START WITH DETAILED INSTRUCTIONS */}
+      {/* QUICK START */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
-                {jdReady && <span className="text-emerald-400 font-bold text-xs">READY</span>}
+                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Set Expectations</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">Paste the Job Description to establish the target skills and experience requirements for the role.</p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Upload or Paste the Job Description to establish the target skills and experience requirements for the role.</p>
           </div>
           <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">2</span>
-                {resumeReady && <span className="text-emerald-400 font-bold text-xs">READY</span>}
+                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Input Candidate</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">Upload a PDF/DOCX or paste the candidate's resume to compare their profile against your defined requirements.</p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Upload a PDF/DOCX or paste the candidate's resume to compare their profile against requirements.</p>
           </div>
           <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">3</span>
-                {analysis && <span className="text-indigo-400 font-bold text-xs">COMPLETE</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Generate Intelligence</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">Execute the AI screen to uncover match scores, gap analysis, and personalized interview questions.</p>
@@ -156,11 +198,13 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 ${activeTab === 'jd' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
                   <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">1</span> Job Description
+                  {jdReady && <span className="text-emerald-400 text-lg">✓</span>}
                 </button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 ${activeTab === 'resume' ? 'bg-indigo-600' : 'bg-slate-800 text-slate-500'}`}>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
                   <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">2</span> Candidate Resume
+                  {resumeReady && <span className="text-emerald-400 text-lg">✓</span>}
                 </button>
             </div>
             
@@ -176,7 +220,7 @@ export default function Dashboard() {
               className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder={activeTab === 'jd' ? "Paste Role Requirements here..." : "Paste Resume text here..."}
+              placeholder="Paste content here..."
             />
             <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
               <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">3</span>
@@ -196,14 +240,14 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2">• {s}</p>)}</div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2">• {g}</p>)}</div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
                   <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Strategic Interview Questions</h4>
                   <div className="space-y-3 text-[11px] text-slate-300">
-                    {analysis.questions.map((q, i) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700">"{q}"</p>)}
+                    {analysis.questions.map((q, i) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
                   </div>
                 </div>
 
@@ -240,7 +284,7 @@ export default function Dashboard() {
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl">
             <h2 className="text-2xl font-black mb-2 text-white uppercase tracking-tighter">Support Request</h2>
             <p className="text-slate-400 text-[11px] mb-6 uppercase tracking-widest">Sent to hello@corecreativityai.com</p>
-            <form onSubmit={handleSupportSubmit} className="space-y-4">
+            <form onSubmit={handleSupportSubmit} className="space-y-4 text-left">
               <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none resize-none focus:border-indigo-500 transition-all" placeholder="Describe your issue or question..." value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
               <div className="flex gap-3">
                 <button type="submit" className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px] tracking-widest text-white shadow-lg">Send Intelligence Request</button>
