@@ -1,39 +1,55 @@
-import React from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
+import React, { useEffect, useState } from 'react';
 import Dashboard from './components/Dashboard';
-import logo from './logo.png'; 
 
 export default function App() {
+  const [kindeClient, setKindeClient] = useState(null);
+
+  // --- INITIALIZE KINDE (No Terminal Method) ---
+  useEffect(() => {
+    const initKinde = async () => {
+      try {
+        // window.createKindeClient is provided by the script tag in index.html
+        const client = await window.createKindeClient({
+          client_id: "af5b33a2a81b41669ecc12860d1f7471",
+          domain: "https://ccai1.kinde.com",
+          redirect_uri: "http://www.recruit-iq.com",
+          is_dangerously_use_local_storage: true
+        });
+        setKindeClient(client);
+      } catch (err) {
+        console.error("Kinde failed to load:", err);
+      }
+    };
+    initKinde();
+  }, []);
+
+  // Show a dark background while Kinde initializes
+  if (!kindeClient) {
+    return <div className="min-h-screen bg-[#0B1120]" />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0B1120] text-white font-sans selection:bg-indigo-500/30">
       
-      {/* HEADER - Visible to everyone */}
+      {/* HEADER - Consistent with your original design */}
       <header className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50">
         <div className="flex items-center gap-2">
-           {/* Optional: Add a small logo here if you want */}
+           {/* Logo placeholder if needed */}
         </div>
 
         <div>
-          {/* If Signed In: Show User Avatar */}
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" appearance={{
-                elements: { avatarBox: "w-10 h-10 border-2 border-indigo-500" }
-            }}/>
-          </SignedIn>
-
-          {/* If Signed Out: Show Login Button */}
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button className="text-sm font-bold text-slate-400 hover:text-white transition-colors uppercase tracking-widest">
-                Member Login
-              </button>
-            </SignInButton>
-          </SignedOut>
+          {/* Note: User avatar logic moved inside Dashboard for better state handling with Kinde */}
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+            Recruit-IQ Secure Session
+          </p>
         </div>
       </header>
 
-      {/* DASHBOARD - Now accessible to everyone (Guest & User) */}
-      <Dashboard />
+      {/* Pass the kinde client to the Dashboard. 
+          The Dashboard now handles the Login/Logout buttons 
+          to keep the UI in sync with the user data.
+      */}
+      <Dashboard kinde={kindeClient} />
       
     </div>
   );
