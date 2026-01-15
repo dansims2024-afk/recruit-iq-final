@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk } from "@clerk/clerk-react";
-import logo from '../logo.png'; 
+import logo from './logo.png'; // FIXED PATH: Changed from ../logo.png to ./logo.png
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
@@ -59,15 +59,9 @@ export default function Dashboard() {
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // MASTER PRO CHECK
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
-
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
-  const finalStripeUrl = userEmail 
-    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
-    : STRIPE_URL;
 
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
@@ -96,14 +90,13 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        const pdfjs = window.pdfjsLib;
-        const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
+        const loadingTask = window.pdfjsLib.getDocument(URL.createObjectURL(file));
         const pdf = await loadingTask.promise;
         let fullText = "";
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          fullText += textContent.items.map(item => item.str).join(' ') + "\n";
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(' ') + "\n";
         }
         text = fullText;
       } else { text = await file.text(); }
@@ -112,6 +105,7 @@ export default function Dashboard() {
     } catch (err) { showToast("Upload failed.", "error"); }
   };
 
+  // --- ELITE PDF GENERATOR (Fixes Overlapping in Image_8b542a.png) ---
   const downloadPDF = () => {
     if (!analysis) return;
     const { jsPDF } = window.jspdf;
@@ -127,18 +121,18 @@ export default function Dashboard() {
 
     doc.setTextColor(30, 41, 59); doc.setFontSize(20); doc.setFont("helvetica", "bold");
     doc.text(cName, 20, 60);
-    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
+    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 135, 60);
 
-    doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 72);
-    doc.setTextColor(51, 65, 85); doc.setFontSize(11); doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 75);
+    doc.setTextColor(51, 65, 85); doc.setFontSize(10); doc.setFont("helvetica", "normal");
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
-    doc.text(summaryLines, 20, 79);
+    doc.text(summaryLines, 20, 82);
 
-    let y = 79 + (summaryLines.length * 6) + 15;
+    let y = 82 + (summaryLines.length * 5) + 15;
 
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.setTextColor(16, 185, 129); doc.text("TOP STRENGTHS", 20, y);
-    doc.setTextColor(244, 63, 94); doc.text("CRITICAL GAPS", 110, y);
+    // --- FIX FOR OVERLAPPING COLUMNS ---
+    doc.setFont("helvetica", "bold"); doc.setTextColor(16, 185, 129); doc.text("TOP STRENGTHS", 20, y);
+    doc.setTextColor(244, 63, 94); doc.text("CRITICAL GAPS", 115, y);
     
     y += 8;
     doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(71, 85, 105);
@@ -149,20 +143,20 @@ export default function Dashboard() {
     for (let i = 0; i < maxItems; i++) {
         let currentY = y;
         if (strengths[i]) {
-            const sLines = doc.splitTextToSize(`• ${strengths[i]}`, 85);
+            const sLines = doc.splitTextToSize(`• ${strengths[i]}`, 85); // Column width restricted
             doc.text(sLines, 20, currentY);
             currentY += (sLines.length * 5);
         }
         let gapY = y;
         if (gaps[i]) {
-            const gLines = doc.splitTextToSize(`• ${gaps[i]}`, 85);
-            doc.text(gLines, 110, gapY);
+            const gLines = doc.splitTextToSize(`• ${gaps[i]}`, 85); // Column width restricted
+            doc.text(gLines, 115, gapY);
             gapY += (gLines.length * 5);
         }
         y = Math.max(currentY, gapY) + 4;
     }
 
-    // PAGE 2: STRATEGIC GUIDE
+    // PAGE 2: STRATEGIC INTERVIEW GUIDE
     doc.addPage();
     doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
@@ -179,23 +173,12 @@ export default function Dashboard() {
       y += (qLines.length * 5) + 16;
     });
 
-    doc.save(`RecruitIQ_Report_${cName.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`RecruitIQ_Intelligence_Report.pdf`);
   };
 
-  // CORRECTED ACTION LOGIC
   const handleScreen = async () => {
-    // 1. LIMIT CHECK FIRST
-    if (!isPro && scanCount >= 3) {
-      setShowLimitModal(true);
-      return;
-    }
-
-    // 2. VALIDATION SECOND
-    if (!jdReady || !resumeReady) {
-        showToast("Please complete Step 1 (JD) and Step 2 (Resume) first.", "error");
-        return;
-    }
-
+    if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
+    if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     setLoading(true);
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     try {
@@ -205,13 +188,12 @@ export default function Dashboard() {
       const data = await response.json();
       const result = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/)[0]);
       setAnalysis(result);
-
       if (!isPro) {
         const newCount = scanCount + 1;
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Intelligence Generated", "success");
+      showToast("Analysis Complete", "success");
     } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
   };
 
@@ -234,12 +216,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START */}
+      {/* QUICK START SECTION */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-emerald-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
-                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
+                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Set Expectations</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">Upload or Paste the Job Description to establish requirements.</p>
@@ -247,7 +229,7 @@ export default function Dashboard() {
           <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">2</span>
-                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
+                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Input Candidate</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">Upload a PDF/DOCX or paste the resume to compare profiles.</p>
@@ -274,11 +256,11 @@ export default function Dashboard() {
             </div>
             
             <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700">
                 Upload pdf or doc
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700">Samples</button>
             </div>
 
             <textarea 
@@ -287,9 +269,9 @@ export default function Dashboard() {
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
-            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
+            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500">
               <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">3</span>
-              {loading ? "Analyzing Candidate..." : "Execute AI Screen →"}
+              {loading ? "Analyzing..." : "Execute AI Screen →"}
             </button>
         </div>
 
@@ -305,21 +287,21 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Strategic Interview Questions</h4>
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4">Strategic Interview Questions</h4>
                   <div className="space-y-3 text-[11px] text-slate-300">
-                    {analysis.questions.map((q, i) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
+                    {analysis.questions.map((q, i) => <p key={i} className="p-3 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
                   </div>
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl text-center">
                     <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4">Outreach Email</h4>
                     <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase">Copy to Clipboard</button>
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Copy Outreach Email</button>
                 </div>
               </div>
             ) : (
@@ -341,37 +323,29 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* SALES/LIMIT MODAL */}
-      {showLimitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
-          <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
-            <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row p-10">
-              <div className="md:w-full flex flex-col justify-center text-center">
-                 <h2 className="text-3xl font-black text-white mb-2 leading-tight">Elite Screening Required</h2>
-                 <p className="text-slate-400 text-sm mb-6 leading-relaxed">You have reached your 3 free scan limit. Start your 3-day free trial to unlock unlimited analysis and reports.</p>
-                 <a href={finalStripeUrl} className="block w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-bold rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-lg shadow-blue-500/25">Start 3-Day Free Trial</a>
-                 <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-600 mt-4 hover:text-white underline decoration-slate-700 w-full uppercase font-black">Close</button>
-              </div>
+      {/* SUPPORT MODAL */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
+          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
+            <h2 className="text-2xl font-black mb-4 uppercase">Support</h2>
+            <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            <div className="flex gap-3 mt-4">
+              <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send Email</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* SUPPORT MODAL */}
-      {showSupportModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
-          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl">
-            <h2 className="text-2xl font-black mb-2 text-white uppercase tracking-tighter">Support Request</h2>
-            <p className="text-slate-400 text-[11px] mb-6 uppercase tracking-widest">Sent to hello@corecreativityai.com</p>
-            <form onSubmit={handleSupportSubmit} className="space-y-4 text-left">
-              <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none resize-none focus:border-indigo-500 transition-all" placeholder="Describe your issue or question..." value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
-              <div className="flex gap-3">
-                <button type="submit" className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px] tracking-widest text-white shadow-lg">Send Intelligence Request</button>
-                <button type="button" onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-white transition-all">Cancel</button>
-              </div>
-            </form>
-          </div>
+      {/* SALES MODAL */}
+      {showLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
+            <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center">
+                <h2 className="text-3xl font-black text-white mb-2 uppercase">Elite Required</h2>
+                <p className="text-slate-400 text-sm mb-6">You've reached your free scan limit. Start your 3-day free trial to unlock unlimited analysis.</p>
+                <a href={STRIPE_URL} className="block w-full py-4 bg-indigo-600 text-white font-bold rounded-xl uppercase tracking-wider shadow-lg">Start Free Trial</a>
+                <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-600 mt-4 uppercase underline">Maybe Later</button>
+            </div>
         </div>
       )}
     </div>
