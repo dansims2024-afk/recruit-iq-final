@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton } from "@clerk/clerk-react";
-import logo from './logo.png'; // Ensure logo.png is in src/components/
+// FIXED PATH: This looks for logo.png in the 'src' folder
+import logo from '../logo.png'; 
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
@@ -191,12 +192,10 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
-    // 1. LIMIT CHECK
     if (!isPro && scanCount >= 3) {
       setShowLimitModal(true);
       return;
     }
-    // 2. VALIDATION
     if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     
     setLoading(true);
@@ -358,7 +357,7 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* HIGH-LEVEL SALES MODAL (Restored) */}
+      {/* HIGH-LEVEL SALES MODAL (Restored - The "Good" Version) */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-3xl group animate-in zoom-in-95 duration-300">
