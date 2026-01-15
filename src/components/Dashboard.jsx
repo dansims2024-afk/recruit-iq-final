@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignUpButton, UserButton, SignInButton } from "@clerk/clerk-react";
-import logo from './logo.png'; 
+import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
+// FIXED PATH: This looks for logo.png in the 'src' folder
+import logo from '../logo.png'; 
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- FULL SAMPLES ---
+// --- FULL EXTENDED SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -18,34 +19,44 @@ KEY RESPONSIBILITIES:
 - Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
 - Optimize C++ and Go-based trading engines for sub-millisecond latency.
 - Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
+- Collaborate with quantitative researchers to implement complex trading algorithms.
+- Ensure strict compliance with financial regulations and data security standards (SOC2, ISO 27001).
 
 REQUIREMENTS:
 - 12+ years of software engineering experience in FinTech or Capital Markets.
 - Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
 - Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
-- Strong proficiency in Go (Golang), C++, Python, and TypeScript.`;
+- Strong proficiency in Go (Golang), C++, Python, and TypeScript.
+- Experience designing low-latency, high-throughput systems.
+- Bachelor’s or Master’s degree in Computer Science or related field.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY | m.vandelay@email.com
+Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers and successfully delivered multi-million dollar platform overhauls.
 
 PROFESSIONAL EXPERIENCE:
 Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
-- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda.
-- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration.
+- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda and Kinesis.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration and spot instance orchestration.
+- Led a team of 15 engineers in re-writing the core risk engine, improving calculation speed by 400%.
+- Implemented a zero-trust security model across the entire engineering organization.
 
 InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
-- Built the core execution engine in Go, achieving a 50% reduction in order latency.
-- Implemented automated failover protocols that prevented over $10M in potential slippage.
+- Built the core execution engine in Go, achieving a 50% reduction in order latency (sub-50 microseconds).
+- Implemented automated failover protocols that prevented over $10M in potential slippage during market volatility.
+- Mentored junior developers and established the company's first formal code review process.
 
 TECHNICAL SKILLS:
-- Languages: Go, C++, Python, TypeScript, Java.
-- Cloud: AWS (EKS, Lambda, Aurora, SQS), Terraform, Docker, Kubernetes.`;
+- Languages: Go, C++, Python, TypeScript, Java, Rust.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS, DynamoDB), Terraform, Docker, Kubernetes.
+- Architecture: Microservices, Event-Driven Design, Serverless, CQRS.
+- Tools: GitLab CI, Prometheus, Grafana, Splunk, Jira.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const clerk = useClerk();
   
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
@@ -61,6 +72,11 @@ export default function Dashboard() {
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
+  
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const finalStripeUrl = userEmail 
+    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
+    : STRIPE_URL;
 
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
@@ -122,12 +138,12 @@ export default function Dashboard() {
     doc.text(cName, 20, 60);
     doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
 
-    doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 75);
+    doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 72);
     doc.setTextColor(51, 65, 85); doc.setFontSize(11); doc.setFont("helvetica", "normal");
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
-    doc.text(summaryLines, 20, 82);
+    doc.text(summaryLines, 20, 79);
 
-    let y = 82 + (summaryLines.length * 6) + 15;
+    let y = 79 + (summaryLines.length * 6) + 15;
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(10);
     doc.setTextColor(16, 185, 129); doc.text("TOP STRENGTHS", 20, y);
@@ -166,13 +182,13 @@ export default function Dashboard() {
     doc.setFontSize(10); doc.setTextColor(51, 65, 85); doc.setFont("helvetica", "normal");
     (analysis.questions || []).forEach((q, i) => {
       const qLines = doc.splitTextToSize(`${i + 1}. ${q}`, 170);
-      doc.setFillColor(255, 255, 255); doc.roundedRect(15, y-5, 180, (qLines.length * 5) + 10, 2, 2, 'F');
-      doc.text(qLines, 20, y+2);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(15, y - 5, 180, (qLines.length * 5) + 10, 2, 2, 'F');
+      doc.text(qLines, 20, y + 2);
       y += (qLines.length * 5) + 16;
     });
 
-    doc.save(`RecruitIQ_Report_${cName.replace(/\s+/g, '_')}.pdf`);
-    showToast("Elite Report Downloaded", "success");
+    doc.save(`RecruitIQ_Report_${cName}.pdf`);
   };
 
   const handleScreen = async () => {
@@ -209,7 +225,7 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HEADER */}
+      {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <img src={logo} alt="Logo" className="h-12 w-auto" />
@@ -278,9 +294,9 @@ export default function Dashboard() {
             <div className="flex gap-3 mb-4">
               <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
                 Upload pdf or doc
-                <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
+                <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Full Samples</button>
             </div>
 
             <textarea 
@@ -289,7 +305,7 @@ export default function Dashboard() {
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
-            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 tracking-widest shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
+            <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
               <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">3</span>
               {loading ? "Analyzing Candidate..." : "Execute AI Screen →"}
             </button>
@@ -299,7 +315,7 @@ export default function Dashboard() {
         <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in">
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative">
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
                   <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Match Score</h3>
                   <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
@@ -307,21 +323,21 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i}>• {s}</p>)}</div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i}>• {g}</p>)}</div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Key Strengths</h4>{analysis.strengths.map((s, i) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>{analysis.gaps.map((g, i) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
                   <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Strategic Interview Questions</h4>
                   <div className="space-y-3 text-[11px] text-slate-300">
-                    {analysis.questions.map((q, i) => <p key={i} className="p-3 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
+                    {analysis.questions.map((q, i) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
                   </div>
                 </div>
 
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl text-center">
                     <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4">Outreach Email</h4>
                     <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase">Copy to Clipboard</button>
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Copy Outreach Email</button>
                 </div>
               </div>
             ) : (
@@ -343,10 +359,10 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* SALES MODAL */}
+      {/* HIGH-LEVEL SALES MODAL (Restored) */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
-          <div className="relative w-full max-w-2xl group animate-in zoom-in-95 duration-300">
+          <div className="relative w-full max-w-3xl group animate-in zoom-in-95 duration-300">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               {/* Left Column: Pitch */}
