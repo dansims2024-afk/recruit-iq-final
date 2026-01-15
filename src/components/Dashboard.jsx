@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton } from "@clerk/clerk-react";
-// FIXED IMPORT: Ensure logo.png is in the same folder as this file (src/components/)
-// If your logo is in the 'src' folder, change this to: import logo from '../logo.png';
 import logo from './logo.png'; 
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- FULL EXTENDED SAMPLES ---
+// --- FULL EXTENDED SAMPLES (VERIFIED LONG) ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -193,10 +191,12 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
+    // 1. LIMIT CHECK
     if (!isPro && scanCount >= 3) {
       setShowLimitModal(true);
       return;
     }
+    // 2. VALIDATION
     if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     
     setLoading(true);
@@ -223,21 +223,23 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HEADER WITH LOGIN BUTTON */}
+      {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <img src={logo} alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
-                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+                {/* VISUAL MARKER: "V2.0" to prove deployment updated */}
+                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ <span className="text-indigo-500 text-xs align-top">V2.0</span></h1>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
             </div>
         </div>
         <div className="flex items-center gap-4">
+            <button onClick={() => setShowLimitModal(true)} className="text-[10px] text-slate-500 hover:text-white underline uppercase">Test Upgrade</button>
             <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             
-            {/* --- LOG IN BUTTON --- */}
+            {/* LOG IN BUTTON (Shows if NOT signed in) */}
             {!isSignedIn && (
                 <SignInButton mode="modal">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
@@ -402,7 +404,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
             <h2 className="text-2xl font-black mb-4 uppercase">Support</h2>
-            <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none resize-none" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
             <div className="flex gap-3 mt-4">
               <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send Email</button>
               <button onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Cancel</button>
