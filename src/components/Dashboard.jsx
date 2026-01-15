@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton } from "@clerk/clerk-react";
-import logo from './logo.png'; 
+import logo from './logo.png'; // Ensure logo.png is in src/components/
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- FULL EXTENDED SAMPLES (VERIFIED LONG) ---
+// --- FULL EXTENDED SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -228,8 +228,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
             <img src={logo} alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
-                {/* VISUAL MARKER: "V2.0" to prove deployment updated */}
-                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ <span className="text-indigo-500 text-xs align-top">V2.0</span></h1>
+                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
             </div>
         </div>
