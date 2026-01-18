@@ -11,9 +11,7 @@ export default function RootLayout({
         <head>
           <title>Recruit IQ Elite</title>
         </head>
-        <body>
-          {children}
-        </body>
+        <body>{children}</body>
       </html>
     </ClerkProvider>
   )
