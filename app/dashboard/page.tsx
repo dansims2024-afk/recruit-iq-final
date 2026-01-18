@@ -2,49 +2,27 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  // Use auth() to get the 'has' helper
   const { has, userId } = await auth();
 
-  // If they aren't even logged in, send to sign-in
-  if (!userId) redirect("/sign-in");
+  // 1. Check if the user is even logged in
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
-  // This is the magic line that checks for your 'pro_access' slugimport { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-
-export default async function DashboardPage() {
-  const { has } = await auth();
-
+  // 2. Check if the user has the specific feature 'pro_access'
+  // Clerk Billing handles this automatically once they pay via Stripe
   const isElite = has({ feature: "pro_access" });
 
-  // ADD THIS LINE: It will print the result directly in your Vercel logs!
-  console.log(`DEBUG: Checking Elite status for user. Result: ${isElite}`);
-
   if (!isElite) {
+    // If they aren't Elite, redirect them to the pricing page
     redirect("/upgrade");
   }
 
   return (
-    <div>
-       <h1>Elite Dashboard Unlocked!</h1>
+    <div className="p-10">
+      <h1 className="text-3xl font-bold">Elite Dashboard Unlocked 🚀</h1>
+      <p className="mt-4">Welcome! Your AI tools are ready to use.</p>
+      {/* Insert your Search Components here */}
     </div>
-  );
-}
-  const isElite = has({ feature: "pro_access" });
-
-  if (!isElite) {
-    // No subscription? Send them to pay
-    redirect("/upgrade");
-  }
-
-  return (
-    <main className="p-10 max-w-6xl mx-auto">
-      <h1 className="text-4xl font-bold mb-4">Elite Dashboard 🚀</h1>
-      <p className="text-gray-600 mb-8">Welcome back! Your premium AI tools are unlocked.</p>
-      
-      {/* --- INSERT YOUR SEARCH COMPONENT OR TOOLS HERE --- */}
-      <div className="bg-white p-6 rounded-xl shadow-lg border">
-         <p>Your AI Search Engine is Ready.</p>
-      </div>
-    </main>
   );
 }
