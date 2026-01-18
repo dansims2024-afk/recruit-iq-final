@@ -1,31 +1,31 @@
 "use client";
+
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
 
 export default function SearchButton() {
   const { has, isLoaded } = useAuth();
 
-  // Don't show anything until Clerk is ready
-  if (!isLoaded) return <div className="animate-pulse bg-gray-200 h-10 w-32 rounded"></div>;
+  if (!isLoaded) {
+    return <div className="animate-pulse bg-gray-200 h-10 w-32 rounded"></div>;
+  }
 
-  const isElite = has({ feature: "pro_access" });
+  // THE FIX: Change 'feature' to 'permission'
+  const isElite = has({ permission: "pro_access" });
+
+  if (!isElite) {
+    return (
+      <button 
+        disabled 
+        className="px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+      >
+        Upgrade to Search
+      </button>
+    );
+  }
 
   return (
-    <div>
-      {isElite ? (
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-          Run AI Search
-        </button>
-      ) : (
-        <div className="flex flex-col items-start gap-2">
-          <button disabled className="bg-gray-300 text-gray-500 px-6 py-2 rounded-lg cursor-not-allowed">
-            AI Search (Locked)
-          </button>
-          <Link href="/upgrade" className="text-blue-600 text-sm hover:underline">
-            Upgrade to Elite to unlock
-          </Link>
-        </div>
-      )}
-    </div>
+    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Start AI Search
+    </button>
   );
 }
