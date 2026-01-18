@@ -1,14 +1,20 @@
 import React from 'react';
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
-
-// This file simply loads the Dashboard. 
-// All logo/UI logic is handled inside Dashboard.jsx now.
+import UpgradeRedirect from './components/UpgradeRedirect';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#0B1120] text-white">
-      <Dashboard />
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-[#0B1120] text-white">
+        <Routes>
+          {/* Main Dashboard */}
+          <Route path="/" element={<Dashboard />} />
+          
+          {/* The bridge page Clerk will redirect to after verification */}
+          <Route path="/upgrade" element={<UpgradeRedirect />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
