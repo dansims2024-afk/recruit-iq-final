@@ -1,5 +1,5 @@
 import { ClerkProvider } from '@clerk/nextjs'
-import "@/app/globals.css"; // Change ./ to "@/app/" to help Next.js find it
+import "./globals.css"; 
 
 export default function RootLayout({
   children,
@@ -9,7 +9,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="bg-[#0B1120] text-white">
+        <body style={{ backgroundColor: '#0B1120', color: 'white' }}>
           {children}
         </body>
       </html>
