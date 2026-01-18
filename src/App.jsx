@@ -6,10 +6,12 @@ import UpgradeRedirect from './components/UpgradeRedirect';
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/upgrade" element={<UpgradeRedirect />} />
-      </Routes>
+      <div className="min-h-screen bg-[#0B1120] text-white">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/upgrade" element={<UpgradeRedirect />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
