@@ -1,5 +1,5 @@
 import { ClerkProvider } from '@clerk/nextjs'
-import "./globals.css"; 
+import "@/app/globals.css"; // Change ./ to "@/app/" to help Next.js find it
 
 export default function RootLayout({
   children,
