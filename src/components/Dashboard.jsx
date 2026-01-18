@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
-// FIXED PATH: This looks for logo.png in the 'src' folder
 import logo from '../logo.png'; 
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
@@ -127,7 +126,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // PAGE 1: EXECUTIVE SUMMARY
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -171,7 +169,6 @@ export default function Dashboard() {
         y = Math.max(currentY, gapY) + 4;
     }
 
-    // PAGE 2: INTERVIEW GUIDE
     doc.addPage();
     doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
@@ -192,13 +189,10 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
-    // 1. LIMIT CHECK: Show Modal if Guest (>3) OR Signed In but Not Pro
     if ((!isSignedIn && scanCount >= 3) || (isSignedIn && !isPro)) {
       setShowLimitModal(true);
       return;
     }
-
-    // 2. VALIDATION
     if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     
     setLoading(true);
@@ -238,8 +232,6 @@ export default function Dashboard() {
             <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
-            
-            {/* LOG IN BUTTON (Shows if NOT signed in) */}
             {!isSignedIn && (
                 <SignInButton mode="modal">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
@@ -247,7 +239,6 @@ export default function Dashboard() {
                     </button>
                 </SignInButton>
             )}
-            
             <UserButton afterSignOutUrl="/"/>
         </div>
       </div>
@@ -337,7 +328,7 @@ export default function Dashboard() {
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl text-center">
                     <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4">Outreach Email</h4>
                     <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Copy Outreach Email</button>
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest">Copy Outreach Email</button>
                 </div>
               </div>
             ) : (
@@ -359,14 +350,13 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* HIGH-LEVEL SALES MODAL (Restored) */}
+      {/* HIGH-LEVEL SALES MODAL WITH REDIRECT FIX */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80 animate-in fade-in duration-300">
           <div className="relative w-full max-w-3xl group animate-in zoom-in-95 duration-300">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              {/* Left Column: Pitch */}
-              <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
+              <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10 text-left">
                  <div className="mb-6"><img src={logo} alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
                  <h2 className="text-4xl font-black text-white mb-3 leading-none">Hire Your Next Star <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
@@ -376,15 +366,18 @@ export default function Dashboard() {
                      <p className="text-xs font-black text-blue-300 uppercase tracking-widest">Special Offer: 3 Days Free Access</p>
                  </div>
                  
-                 {/* DYNAMIC BUTTON LOGIC FOR MODAL */}
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <SignUpButton 
+                      mode="modal" 
+                      forceRedirectUrl={STRIPE_URL}
+                      signInForceRedirectUrl={STRIPE_URL}
+                    >
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
                         </button>
                     </SignUpButton>
                  ) : (
-                    <a href={STRIPE_URL} className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
+                    <a href={finalStripeUrl} className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                         Start 3-Day Free Trial
                     </a>
                  )}
@@ -392,10 +385,8 @@ export default function Dashboard() {
                  <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-500 mt-5 hover:text-white underline decoration-slate-700 w-full uppercase font-bold tracking-widest">No thanks, I'll screen manually</button>
               </div>
               
-              {/* Right Column: Visuals */}
               <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-8 relative overflow-hidden">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl -ml-10 -mb-10"></div>
                  <div className="text-center relative z-10 space-y-8">
                     <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto border border-indigo-500/30 shadow-[0_0_40px_rgba(79,70,229,0.4)] animate-pulse">
                         <span className="text-5xl">💎</span>
