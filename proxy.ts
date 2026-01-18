@@ -1,5 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
+// In Next.js 16, this function name must be 'proxy'
 export default clerkMiddleware();
 
 export const config = {
