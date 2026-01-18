@@ -6,15 +6,10 @@ import UpgradeRedirect from './components/UpgradeRedirect';
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#0B1120] text-white">
-        <Routes>
-          {/* Main Dashboard */}
-          <Route path="/" element={<Dashboard />} />
-          
-          {/* The bridge page Clerk will redirect to after verification */}
-          <Route path="/upgrade" element={<UpgradeRedirect />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/upgrade" element={<UpgradeRedirect />} />
+      </Routes>
     </BrowserRouter>
   );
 }
