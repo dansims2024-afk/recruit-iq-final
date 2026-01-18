@@ -14,7 +14,10 @@
     "@clerk/nextjs": "6.0.2",
     "mammoth": "latest",
     "jspdf": "latest",
-    "lucide-react": "latest"
+    "lucide-react": "latest",
+    "tailwindcss": "latest",
+    "postcss": "latest",
+    "autoprefixer": "latest"
   },
   "devDependencies": {
     "typescript": "latest",
