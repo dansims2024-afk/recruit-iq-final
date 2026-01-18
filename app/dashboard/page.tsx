@@ -2,21 +2,29 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  const { has } = await auth();
+  // Use auth() to get the 'has' helper
+  const { has, userId } = await auth();
 
-  // "pro_access" is the feature slug you set up in the Clerk Dashboard
+  // If they aren't even logged in, send to sign-in
+  if (!userId) redirect("/sign-in");
+
+  // This is the magic line that checks for your 'pro_access' slug
   const isElite = has({ feature: "pro_access" });
 
   if (!isElite) {
-    // If they aren't subscribed, send them to the pricing page
+    // No subscription? Send them to pay
     redirect("/upgrade");
   }
 
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Elite Member Dashboard</h1>
-      <p>Your AI Search tools are unlocked below.</p>
-      {/* Your AI Search components go here */}
+    <main className="p-10 max-w-6xl mx-auto">
+      <h1 className="text-4xl font-bold mb-4">Elite Dashboard 🚀</h1>
+      <p className="text-gray-600 mb-8">Welcome back! Your premium AI tools are unlocked.</p>
+      
+      {/* --- INSERT YOUR SEARCH COMPONENT OR TOOLS HERE --- */}
+      <div className="bg-white p-6 rounded-xl shadow-lg border">
+         <p>Your AI Search Engine is Ready.</p>
+      </div>
     </main>
   );
 }
