@@ -9,7 +9,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <head>
-          <title>Recruit IQ</title>
+          <title>Recruit IQ Elite</title>
         </head>
         <body>
           {children}
