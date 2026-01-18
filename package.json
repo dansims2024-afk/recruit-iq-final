@@ -12,6 +12,7 @@
     "react": "latest",
     "react-dom": "latest",
     "@clerk/nextjs": "6.0.2",
+    "mammoth": "latest",
     "jspdf": "latest",
     "lucide-react": "latest"
   },
