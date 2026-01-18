@@ -8,10 +8,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "latest",
+    "next": "15.1.3",
     "react": "latest",
     "react-dom": "latest",
     "@clerk/nextjs": "latest",
     "lucide-react": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/react": "latest",
+    "@types/node": "latest",
+    "@types/react-dom": "latest"
   }
 }
