@@ -8,9 +8,6 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <head>
-          <title>Recruit IQ Elite</title>
-        </head>
         <body>{children}</body>
       </html>
     </ClerkProvider>
