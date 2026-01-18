@@ -6,7 +6,7 @@ export default async function DashboardPage() {
 
   if (!userId) redirect("/sign-in");
 
-  // This matches your 'pro_access' slug in the Clerk Dashboard
+  // This check is instant and secure through Clerk Billing
   const isElite = has({ feature: "pro_access" });
 
   if (!isElite) {
@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   return (
     <div style={{ padding: "50px", fontFamily: "sans-serif" }}>
       <h1>Elite Dashboard Unlocked! 🚀</h1>
-      <p>Welcome to Recruit IQ Elite.</p>
+      <p>Welcome back! Your AI Search tools are now live.</p>
     </div>
   );
 }
