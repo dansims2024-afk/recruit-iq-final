@@ -8,7 +8,27 @@ export default async function DashboardPage() {
   // If they aren't even logged in, send to sign-in
   if (!userId) redirect("/sign-in");
 
-  // This is the magic line that checks for your 'pro_access' slug
+  // This is the magic line that checks for your 'pro_access' slugimport { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+
+export default async function DashboardPage() {
+  const { has } = await auth();
+
+  const isElite = has({ feature: "pro_access" });
+
+  // ADD THIS LINE: It will print the result directly in your Vercel logs!
+  console.log(`DEBUG: Checking Elite status for user. Result: ${isElite}`);
+
+  if (!isElite) {
+    redirect("/upgrade");
+  }
+
+  return (
+    <div>
+       <h1>Elite Dashboard Unlocked!</h1>
+    </div>
+  );
+}
   const isElite = has({ feature: "pro_access" });
 
   if (!isElite) {
