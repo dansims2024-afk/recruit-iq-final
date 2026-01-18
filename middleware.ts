@@ -1,6 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Next.js 16 convention: export default function proxy
 export default clerkMiddleware();
 
 export const config = {
