@@ -4,19 +4,25 @@ import { redirect } from "next/navigation";
 export default async function DashboardPage() {
   const { has, userId } = await auth();
 
-  if (!userId) redirect("/sign-in");
+  // 1. Force login if session is missing
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
-  // This check relies on the Clerk Billing 'pro_access' feature slug
-  const isElite = has({ feature: "pro_access" });
+  // 2. Check for the 'pro_access' entitlement
+  // If 'feature' throws a type error, use 'permission' as shown below
+  const isElite = has({ permission: "pro_access" });
 
   if (!isElite) {
+    // Redirect unpaid users to the pricing table
     redirect("/upgrade");
   }
 
   return (
     <div style={{ padding: "50px", fontFamily: "sans-serif" }}>
-      <h1>Elite Dashboard Unlocked! 🚀</h1>
-      <p>Welcome to Recruit IQ Elite. Your subscription is verified.</p>
+      <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>Elite Dashboard Unlocked! 🚀</h1>
+      <p style={{ marginTop: "20px" }}>Welcome back. Your subscription is verified.</p>
+      {/* Insert your search tools here */}
     </div>
   );
 }
