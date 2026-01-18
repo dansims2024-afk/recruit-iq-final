@@ -4,11 +4,9 @@ import { redirect } from "next/navigation";
 export default async function DashboardPage() {
   const { has, userId } = await auth();
 
-  if (!userId) {
-    redirect("/sign-in");
-  }
+  if (!userId) redirect("/sign-in");
 
-  // Use 'permission' instead of 'feature' to fix the TypeScript error
+  // We use 'permission' because it is stable and TypeScript loves it
   const isElite = has({ permission: "pro_access" });
 
   if (!isElite) {
@@ -18,7 +16,7 @@ export default async function DashboardPage() {
   return (
     <div style={{ padding: "50px", fontFamily: "sans-serif" }}>
       <h1>Elite Dashboard Unlocked! 🚀</h1>
-      <p>Your subscription is active. Welcome back.</p>
+      <p>Welcome back! Your AI Search tools are ready.</p>
     </div>
   );
 }
