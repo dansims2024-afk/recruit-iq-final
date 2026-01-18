@@ -2,11 +2,10 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-  const { has, userId } = await auth();
+  // This line automatically sends non-logged-in users to Clerk's hosted login
+  const { has } = await auth.protect();
 
-  if (!userId) redirect("/sign-in");
-
-  // We use 'permission' because it is stable and TypeScript loves it
+  // Check for the Elite permission
   const isElite = has({ permission: "pro_access" });
 
   if (!isElite) {
