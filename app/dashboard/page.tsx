@@ -6,7 +6,7 @@ export default async function DashboardPage() {
 
   if (!userId) redirect("/sign-in");
 
-  // This slug MUST match exactly what you named the 'Feature' in Clerk
+  // This matches your 'pro_access' slug in the Clerk Dashboard
   const isElite = has({ feature: "pro_access" });
 
   if (!isElite) {
@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   return (
     <div style={{ padding: "50px", fontFamily: "sans-serif" }}>
       <h1>Elite Dashboard Unlocked! 🚀</h1>
-      <p>Your subscription is active. Welcome back.</p>
+      <p>Welcome to Recruit IQ Elite.</p>
     </div>
   );
 }
