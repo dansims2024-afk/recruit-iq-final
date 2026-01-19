@@ -1,21 +1,14 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
+import Dashboard from "@/components/Dashboard";
 
 export default async function DashboardPage() {
-  // This line automatically sends non-logged-in users to Clerk's hosted login
-  const { has } = await auth.protect();
+  const { userId, sessionClaims } = auth();
 
-  // Check for the Elite permission
-  const isElite = has({ permission: "pro_access" });
-
-  if (!isElite) {
-    redirect("/upgrade");
+  // Redirect to login if not signed in
+  if (!userId) {
+    redirect("/sign-in");
   }
 
-  return (
-    <div style={{ padding: "50px", fontFamily: "sans-serif" }}>
-      <h1>Elite Dashboard Unlocked! 🚀</h1>
-      <p>Welcome back! Your AI Search tools are ready.</p>
-    </div>
-  );
+  return <Dashboard />;
 }
