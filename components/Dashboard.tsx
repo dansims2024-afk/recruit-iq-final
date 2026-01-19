@@ -17,13 +17,11 @@ export default function Dashboard() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   const isPro = user?.publicMetadata?.isPro === true;
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
   
   const getStripeUrl = () => {
     if (!user?.id) return STRIPE_URL;
     const url = new URL(STRIPE_URL);
     url.searchParams.set("client_reference_id", user.id); 
-    if (userEmail) url.searchParams.set("prefilled_email", userEmail);
     return url.toString();
   };
 
@@ -59,32 +57,26 @@ export default function Dashboard() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 mb-12">
-        <div className={`p-8 rounded-[2rem] border ${jdReady ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
+        <div className={`p-8 rounded-[2rem] border ${jdReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 {jdReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Info className="text-indigo-400 w-5 h-5" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">1. Job Specs</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-emerald-500 transition-all duration-500 ${jdReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-emerald-500 transition-all duration-500 ${jdReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
-        <div className={`p-8 rounded-[2rem] border ${resumeReady ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
+        <div className={`p-8 rounded-[2rem] border ${resumeReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 {resumeReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Target className="text-indigo-400 w-5 h-5" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">2. Talent Data</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-emerald-500 transition-all duration-500 ${resumeReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-emerald-500 transition-all duration-500 ${resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
-        <div className={`p-8 rounded-[2rem] border ${jdReady && resumeReady ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
+        <div className={`p-8 rounded-[2rem] border ${jdReady && resumeReady ? 'border-indigo-500 bg-indigo-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 <Zap className={jdReady && resumeReady ? "text-indigo-500 w-5 h-5" : "text-slate-600 w-5 h-5"} />
                 <span className="text-[10px] font-black uppercase tracking-widest">3. Elite Report</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-indigo-500 transition-all duration-500 ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-indigo-500 transition-all duration-500 ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
       </div>
 
@@ -108,8 +100,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 z-[400] flex items-center justify-center backdrop-blur-3xl bg-slate-950/90 p-4">
             <div className="p-12 bg-slate-900 border border-slate-800 rounded-3xl text-center max-w-lg">
                 <h2 className="text-4xl font-black mb-6 uppercase">Unlock Elite</h2>
-                <p className="text-slate-400 mb-8 text-sm leading-relaxed">Join 200+ recruiters using AI to save 20 hours a week on screening.</p>
-                <a href={getStripeUrl()} className="inline-block w-full bg-indigo-600 px-10 py-5 rounded-xl font-black uppercase hover:bg-indigo-500 transition-all">Start 3-Day Free Trial</a>
+                <a href={getStripeUrl()} className="inline-block w-full bg-indigo-600 px-10 py-5 rounded-xl font-black uppercase shadow-2xl">Start 3-Day Free Trial</a>
                 <button onClick={() => setShowLimitModal(false)} className="mt-6 block text-[10px] w-full text-slate-500 uppercase font-black">Cancel</button>
             </div>
         </div>
