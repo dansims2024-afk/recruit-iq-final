@@ -50,6 +50,7 @@ export default function Dashboard() {
     return url.toString();
   };
 
+  // REDIRECT LOGIC: Triggers automatically after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
@@ -66,13 +67,6 @@ export default function Dashboard() {
   const showToast = (message: string) => {
     setToast({ show: true, message });
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
-  };
-
-  const copyEmail = () => {
-    if (analysis?.outreach_email) {
-      navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Email Copied!");
-    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +129,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* INPUT SECTION */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -157,7 +150,6 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RESULTS SECTION WITH EMAIL GENERATOR */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -168,10 +160,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="bg-indigo-600/5 border border-indigo-500/20 p-8 rounded-[2.5rem]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><Mail className="w-3 h-3" /> Outreach Email</h4>
-                    <button onClick={copyEmail} className="p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"><Copy className="w-4 h-4 text-indigo-400" /></button>
-                  </div>
+                  <h4 className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest mb-4 flex items-center gap-2"><Mail className="w-3 h-3" /> Outreach Email</h4>
                   <div className="bg-[#0B1120] p-6 rounded-2xl border border-slate-800 text-[11px] leading-relaxed text-slate-300 font-mono whitespace-pre-wrap">{analysis.outreach_email}</div>
                 </div>
 
@@ -204,7 +193,7 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-10 max-w-lg leading-relaxed text-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision, strategic outreach, and unlimited reports.</p>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" afterSignUpUrl="/?signup=true">
+                    <SignUpButton mode="modal">
                         <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-2xl hover:bg-indigo-500 transition-all hover:scale-[1.02]">
                           Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
                         </button>
