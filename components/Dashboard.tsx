@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, useClerk, UserButton } from "@clerk/nextjs";
+import { useUser, SignUpButton, UserButton, SignInButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -33,7 +33,6 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { openSignUp, openSignIn } = useClerk(); 
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -131,16 +130,6 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  const handleStartTrial = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    sessionStorage.setItem('pending_stripe', 'true');
-    openSignUp({
-      afterSignUpUrl: '/?signup=true',
-      redirectUrl: '/?signup=true'
-    });
-  };
-
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
   return (
@@ -160,7 +149,9 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                <button onClick={() => openSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                <SignInButton mode="modal">
+                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -187,6 +178,7 @@ export default function Dashboard() {
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -215,11 +207,6 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
-
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
-                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Strategic Interview Guide</h4>
-                  <div className="space-y-4">{analysis.questions.map((q: string, i: number) => <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300">"{q}"</div>)}</div>
-                </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
@@ -241,14 +228,15 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* FIXED: Enhanced programmatic Clerk trigger */
-                        <button 
-                            type="button"
-                            onClick={handleStartTrial}
-                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                        >
-                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                        </button>
+                        /* FIXED: Wrapping SignUpButton properly to capture click */
+                        <SignUpButton mode="modal">
+                            <div 
+                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
+                                className="cursor-pointer inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                            >
+                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                            </div>
+                        </SignUpButton>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
