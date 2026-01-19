@@ -5,15 +5,21 @@ import mammoth from 'mammoth';
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { Check, CheckCircle, Upload, Zap, Shield, Sparkles, Star, ArrowRight, Info, Target, ListChecks, Loader2, FileText } from "lucide-react";
 
-// FIXED: Clean base URL
+// YOUR REAL STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
-SALARY: $240,000 - $285,000 + Performance Bonus + Equity`;
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+COMPANY OVERVIEW:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform. Required: 12+ years experience and AWS Professional certification.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY | m.vandelay@email.com`;
+Principal Software Architect | New York, NY | m.vandelay@email.com
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers. Expert in Go, Rust, and Kubernetes.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -27,13 +33,13 @@ export default function Dashboard() {
   const isPro = user?.publicMetadata?.isPro === true;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   
-  // FIXED: Cleaner URL construction using URLSearchParams to prevent "Access Denied"
+  // ROBUST URL GENERATOR: Prevents "Access Denied" errors
   const getStripeUrl = () => {
     if (!user?.id) return STRIPE_URL;
     const url = new URL(STRIPE_URL);
-    url.searchParams.append("client_reference_id", user.id);
+    url.searchParams.set("client_reference_id", user.id);
     if (userEmail) {
-        url.searchParams.append("prefilled_email", userEmail);
+        url.searchParams.set("prefilled_email", userEmail);
     }
     return url.toString();
   };
@@ -41,6 +47,7 @@ export default function Dashboard() {
   const jdReady = jdText.length > 50;
   const resumeReady = resumeText.length > 50;
 
+  // AUTO-REDIRECT
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
         const hasTrigger = window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true';
@@ -77,8 +84,6 @@ export default function Dashboard() {
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
-      
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -87,50 +92,41 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
             {!isSignedIn ? (
                 <SignInButton mode="modal">
-                    <button className="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg">
-                        Sign In
-                    </button>
+                    <button className="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all">Sign In</button>
                 </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
 
-      {/* PROGRESS BAR */}
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         <div className={`p-8 rounded-[2rem] border transition-all ${jdReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 {jdReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Info className="text-indigo-400 w-5 h-5" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">1. Job Specs</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-emerald-500 transition-all duration-500 ${jdReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-emerald-500 transition-all duration-500 ${jdReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
         <div className={`p-8 rounded-[2rem] border transition-all ${resumeReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 {resumeReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Target className="text-indigo-400 w-5 h-5" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">2. Talent Data</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-emerald-500 transition-all duration-500 ${resumeReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-emerald-500 transition-all duration-500 ${resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
         <div className={`p-8 rounded-[2rem] border transition-all ${jdReady && resumeReady ? 'border-indigo-500 bg-indigo-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
                 <Zap className={jdReady && resumeReady ? "text-indigo-500 w-5 h-5" : "text-slate-600 w-5 h-5"} />
                 <span className="text-[10px] font-black uppercase tracking-widest">3. Elite Report</span>
             </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full bg-indigo-500 transition-all duration-500 ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div>
-            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden"><div className={`h-full bg-indigo-500 transition-all duration-500 ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 shadow-xl' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 shadow-xl' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
             </div>
             <div className="flex gap-3 mb-4 text-[10px] font-bold uppercase">
               <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl border border-slate-700 hover:text-white transition-all">
@@ -161,7 +157,7 @@ export default function Dashboard() {
                         <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Create Account to Start Trial</button>
                     </SignUpButton>
                 ) : (
-                    <a href={getStripeUrl()} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Start 3-Day Free Trial (FINAL FIX)</a>
+                    <a href={getStripeUrl()} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Start 3-Day Free Trial</a>
                 )}
                 <button onClick={() => setShowLimitModal(false)} className="w-full mt-6 text-[10px] text-slate-600 uppercase font-black tracking-widest">Dismiss</button>
             </div>
