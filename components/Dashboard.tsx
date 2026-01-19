@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { Loader2, Copy, Check, FileText, User } from "lucide-react";
+import { Loader2, Copy, Check, FileText, User, Briefcase } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
@@ -248,7 +248,7 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* RESTORED LOGO IMAGE */}
+            {/* LOGO IMAGE */}
             <img src="/logo.png" alt="Recruit-IQ" className="h-10 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -396,11 +396,12 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
+                    // MODIFIED: UPDATED BUTTON TEXT
                     <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
                             className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
-                            Create Free Account
+                            Start 3-Day Free Trial
                         </button>
                     </SignUpButton>
                  ) : (
