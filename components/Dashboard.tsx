@@ -3,15 +3,24 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-// Loader2 is now correctly imported to fix the build crash
+// FIXED: Loader2 is imported here to resolve the build crash
 import { Check, CheckCircle, Upload, Zap, Shield, Sparkles, Star, ArrowRight, Info, Target, ListChecks, Loader2, FileText } from "lucide-react";
 
-// FIXED: Your actual Stripe Link ID is now hardcoded to prevent "your_id" errors
+// FIXED: Hardcoded your actual Stripe link ID to stop the "your_id" error
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- FULL PAGE VALUE SAMPLES ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect... (12+ years experience required)`;
-const SAMPLE_RESUME = `MARCUS VANDELAY: Principal Software Architect... (14 years leadership)`;
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+COMPANY OVERVIEW:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead our next-generation platform.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY | m.vandelay@email.com
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -26,7 +35,7 @@ export default function Dashboard() {
   const isPro = user?.publicMetadata?.isPro === true;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   
-  // FIXED URL CONSTRUCTION: Injects the real Clerk User ID to prevent AccessDenied
+  // FIXED: This dynamically builds the URL with the real user ID instead of {USER_ID}
   const finalStripeUrl = user?.id 
     ? `${STRIPE_URL}?client_reference_id=${user.id}${userEmail ? `&prefilled_email=${encodeURIComponent(userEmail)}` : ''}` 
     : STRIPE_URL;
@@ -34,7 +43,7 @@ export default function Dashboard() {
   const jdReady = jdText.length > 50;
   const resumeReady = resumeText.length > 50;
 
-  // AUTO-REDIRECT: Detects a new signup and bounces them to Stripe immediately
+  // AUTO-REDIRECT: Sends new signups directly to the valid Stripe page
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro && window.location.search.includes('signup=true')) {
         window.location.href = finalStripeUrl;
@@ -56,7 +65,7 @@ export default function Dashboard() {
         text = result.value;
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      showToast("Document loaded!");
+      showToast("Document Loaded!");
     } catch (err) { showToast("Upload failed", "error"); }
   };
 
@@ -66,7 +75,7 @@ export default function Dashboard() {
       return;
     }
     setLoading(true);
-    // AI logic...
+    // Analysis logic...
     setTimeout(() => setLoading(false), 2000);
   };
 
@@ -75,7 +84,7 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HEADER: Sign In Button is now explicitly visible */}
+      {/* HEADER: Sign In Button is now visible */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -84,7 +93,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
             {!isSignedIn ? (
                 <SignInButton mode="modal">
-                    <button className="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all">
+                    <button className="bg-indigo-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg">
                         Sign In
                     </button>
                 </SignInButton>
@@ -97,9 +106,9 @@ export default function Dashboard() {
         <div className={`p-8 rounded-[2rem] border transition-all ${jdReady ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-2">
                 {jdReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Info className="text-indigo-400 w-5 h-5" />}
-                <span className="text-[10px] font-black uppercase tracking-widest">1. Role Specs</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">1. Job Specs</span>
             </div>
-            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Paste JD or upload DOCX to set benchmark.</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Paste JD or upload DOCX to set the benchmark.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div className={`h-full bg-emerald-500 transition-all duration-500 ${jdReady ? 'w-full' : 'w-0'}`}></div>
             </div>
@@ -109,7 +118,7 @@ export default function Dashboard() {
                 {resumeReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Target className="text-indigo-400 w-5 h-5" />}
                 <span className="text-[10px] font-black uppercase tracking-widest">2. Talent Data</span>
             </div>
-            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Supply resume for deep parsing.</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Supply resume for deep AI parsing.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div className={`h-full bg-emerald-500 transition-all duration-500 ${resumeReady ? 'w-full' : 'w-0'}`}></div>
             </div>
@@ -119,7 +128,7 @@ export default function Dashboard() {
                 <Zap className={jdReady && resumeReady ? "text-indigo-500 w-5 h-5" : "text-slate-600 w-5 h-5"} />
                 <span className="text-[10px] font-black uppercase tracking-widest">3. Elite Report</span>
             </div>
-            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Execute for match scores and guides.</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed mb-4">Execute for scores and interview guides.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div className={`h-full bg-indigo-500 transition-all duration-500 ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div>
             </div>
@@ -129,8 +138,8 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 shadow-xl' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 shadow-xl' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
             </div>
             
             <div className="flex gap-3 mb-4 text-[10px] font-bold uppercase">
@@ -149,7 +158,7 @@ export default function Dashboard() {
             </button>
         </div>
         <div className="h-[750px] bg-[#111827] border border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px] uppercase text-center p-20 tracking-widest">
-            {analysis ? "Results Loaded" : "Waiting for Inputs..."}
+            {analysis ? "Results Loaded" : "Complete Steps 1 & 2 to unlock Elite Analysis"}
         </div>
       </div>
 
@@ -159,13 +168,13 @@ export default function Dashboard() {
           <div className="relative w-full max-w-5xl bg-[#0F172A] border border-slate-700 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
             <div className="p-12 md:w-3/5">
                 <h2 className="text-5xl font-black mb-6 leading-tight">Hire Smarter. <br/><span className="text-indigo-400 italic">Finish First.</span></h2>
-                <p className="text-slate-400 text-sm mb-10 leading-relaxed">Recruit-IQ Elite is the unfair advantage for teams. Stop reading; start screening.</p>
+                <p className="text-slate-400 text-sm mb-10 leading-relaxed font-medium">Recruit-IQ Elite is the unfair advantage for teams. Automate your screening and save 20+ hours every week.</p>
                 {!isSignedIn ? (
                     <SignUpButton mode="modal" forceRedirectUrl="/?signup=true">
-                        <button className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500">Create Account to Start Trial</button>
+                        <button className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Create Account to Start Trial</button>
                     </SignUpButton>
                 ) : (
-                    <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500">Start 3-Day Free Trial</a>
+                    <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Start 3-Day Free Trial</a>
                 )}
                 <button onClick={() => setShowLimitModal(false)} className="w-full mt-6 text-[10px] text-slate-600 uppercase font-black tracking-widest">Dismiss</button>
             </div>
