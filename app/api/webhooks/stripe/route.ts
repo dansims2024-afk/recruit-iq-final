@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clerkClient } from '@clerk/nextjs';
+import { clerkClient } from '@clerk/nextjs/server'; // <--- FIXED IMPORT
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const clerkUserId = session.client_reference_id;
 
     if (clerkUserId) {
-      // THE INSTANT UNLOCK: Direct update to Clerk's database
+      // THE INSTANT UNLOCK
       const client = await clerkClient();
       await client.users.updateUserMetadata(clerkUserId, {
         publicMetadata: {
