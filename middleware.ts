@@ -1,7 +1,7 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Stripe webhooks MUST be public to receive payment signals
+  // Stripe webhooks MUST be public
   publicRoutes: ["/", "/api/webhooks/stripe"],
 });
 
