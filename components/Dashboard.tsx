@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignUpButton, UserButton } from "@clerk/nextjs";
-import { Check, CheckCircle, Upload, Zap, Shield, Sparkles, Star, ArrowRight, Info, Target, ListChecks } from "lucide-react";
+// FIXED: Added Loader2 to the imports to resolve the build error
+import { Check, CheckCircle, Upload, Zap, Shield, Sparkles, Star, ArrowRight, Info, Target, ListChecks, Loader2 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- FULL PAGE VALUE SAMPLES ---
+// --- FULL PAGE SAMPLES (Fills the boxes completely) ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -59,6 +60,7 @@ export default function Dashboard() {
   const isPro = user?.publicMetadata?.isPro === true;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   
+  // Tagging user.id prevents the AccessDenied error by ensuring a valid ID is passed
   const finalStripeUrl = user?.id 
     ? `${STRIPE_URL}?client_reference_id=${user.id}${userEmail ? `&prefilled_email=${encodeURIComponent(userEmail)}` : ''}` 
     : STRIPE_URL;
@@ -80,7 +82,7 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        text = "[PDF Uploaded] Extracting text... For best results, please paste text directly.";
+        text = "[PDF Uploaded] Text extraction in progress... For best AI results, paste text directly.";
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
       showToast("Document loaded!");
@@ -93,11 +95,10 @@ export default function Dashboard() {
       return;
     }
     if (!jdReady || !resumeReady) {
-        showToast("Please fill JD and Resume first", "error");
+        showToast("Fill JD and Resume first", "error");
         return;
     }
     setLoading(true);
-    // ACTIVATE ANALYSIS: This simulates the call to your /api/generate route
     try {
         const response = await fetch('/api/generate', {
             method: 'POST',
@@ -107,7 +108,7 @@ export default function Dashboard() {
         setAnalysis(data);
         showToast("Analysis Complete!");
     } catch (err) {
-        showToast("AI Error. Please try again.", "error");
+        showToast("AI Screen Error", "error");
     } finally {
         setLoading(false);
     }
@@ -127,32 +128,32 @@ export default function Dashboard() {
         <UserButton afterSignOutUrl="/"/>
       </div>
 
-      {/* DETAILED QUICK START BAR */}
+      {/* DETAILED QUICK START BAR (Color coded to actions) */}
       <div className="grid md:grid-cols-3 gap-6 mb-12">
-        <div className={`p-6 rounded-3xl border transition-all duration-500 ${jdReady ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
+        <div className={`p-6 rounded-3xl border transition-all duration-500 ${jdReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-3 mb-3">
                 {jdReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Info className="text-indigo-400 w-5 h-5" />}
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">1. Job Requirements</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">1. Define Requirements</span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Paste the full JD or upload a DOCX. AI uses this to build the ideal candidate profile.</p>
+            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Paste the full Job Description. Recruit-IQ analyzes the seniority, stack, and soft skills required for the role.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full"><div className={`h-full bg-emerald-500 transition-all ${jdReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
 
-        <div className={`p-6 rounded-3xl border transition-all duration-500 ${resumeReady ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
+        <div className={`p-6 rounded-3xl border transition-all duration-500 ${resumeReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-3 mb-3">
                 {resumeReady ? <CheckCircle className="text-emerald-500 w-5 h-5" /> : <Target className="text-indigo-400 w-5 h-5" />}
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">2. Candidate Profile</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">2. Supply Candidate</span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Provide the candidate's professional history. The more detail, the more accurate the screen.</p>
+            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Input the resume or CV. AI parses technical experience against the benchmarks set in Step 1.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full"><div className={`h-full bg-emerald-500 transition-all ${resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
 
         <div className={`p-6 rounded-3xl border transition-all duration-500 ${jdReady && resumeReady ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-3 mb-3">
                 <ListChecks className={jdReady && resumeReady ? "text-indigo-500 w-5 h-5" : "text-slate-600 w-5 h-5"} />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">3. Deep Analysis</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">3. Strategic Insight</span>
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Execute to generate match scores, missing skills, and custom strategic interview guides.</p>
+            <p className="text-[10px] text-slate-400 leading-relaxed mb-4">Execute for a deep-dive match score, red-flag detection, and a customized interview rubric.</p>
             <div className="h-1 w-full bg-slate-800 rounded-full"><div className={`h-full bg-indigo-500 transition-all ${jdReady && resumeReady ? 'w-full' : 'w-0'}`}></div></div>
         </div>
       </div>
@@ -168,7 +169,7 @@ export default function Dashboard() {
                 Upload PDF / DOCX
                 <input type="file" accept=".docx, .pdf" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl border border-slate-700 hover:text-white transition-all">Fill Full Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full Content Loaded");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl border border-slate-700 hover:text-white transition-all">Fill Full Samples</button>
             </div>
             <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
             <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-3">
@@ -176,16 +177,19 @@ export default function Dashboard() {
                 Execute Elite AI Screen
             </button>
         </div>
-        <div className="h-[750px] bg-[#111827] border border-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-600 font-black text-[10px] uppercase text-center p-10">
-            {analysis ? "Analysis Result View Placeholder" : "Input data and execute screen to view AI Intelligence report"}
+        <div className="h-[750px] bg-[#111827] border border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase text-center p-10">
+            {analysis ? (
+                <div className="w-full h-full text-slate-300 overflow-y-auto">
+                    {/* Results would display here */}
+                </div>
+            ) : "Input Job/Resume and execute screen to generate Elite AI Report"}
         </div>
       </div>
 
       <footer className="mt-20 border-t border-slate-800 pt-10 pb-16 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] font-black uppercase tracking-widest text-slate-500">
         <div className="flex gap-8">
-            <a href="#" className="hover:text-indigo-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-indigo-400 transition-colors">Terms of Service</a>
-            <button className="hover:text-indigo-400 transition-colors">Support</button>
+            <a href="#" className="hover:text-indigo-400">Privacy Policy</a>
+            <a href="#" className="hover:text-indigo-400">Terms of Service</a>
         </div>
         <p>&copy; 2026 Core Creativity AI</p>
       </footer>
@@ -207,7 +211,7 @@ export default function Dashboard() {
                 <button onClick={() => setShowLimitModal(false)} className="w-full mt-6 text-[10px] text-slate-600 uppercase font-black">Dismiss</button>
             </div>
             <div className="md:w-2/5 bg-[#111827] border-l border-slate-800 p-12 flex flex-col justify-center gap-8 text-center">
-                <Zap className="w-12 h-12 text-indigo-400 mx-auto" /><h3 className="font-black text-white uppercase text-xl">Elite Access</h3>
+                <Zap className="w-12 h-12 text-indigo-400 mx-auto" /><h3 className="font-black text-white uppercase text-xl text-center">Elite Access</h3>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest leading-relaxed">Unlimited Scans • Deep Gaps Analysis • Strategic Guides</p>
             </div>
           </div>
