@@ -1,8 +1,9 @@
 import { authMiddleware } from "@clerk/nextjs";
 
-// This protects all routes. Stripe webhooks MUST be public
+// "Open the Gates" mode: This makes the site load no matter what
 export default authMiddleware({
-  publicRoutes: ["/", "/api/webhooks/stripe"],
+  publicRoutes: ["/", "/sign-in", "/sign-up", "/dashboard", "/api/webhooks/stripe"],
+  ignoredRoutes: ["/((?!api|trpc))(_next.*|.+\\.[\\w]+$)", "/api/webhooks/stripe"]
 });
 
 export const config = {
