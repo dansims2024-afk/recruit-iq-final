@@ -8,16 +8,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "latest",            // <--- CHANGE THIS to "latest"
+    "next": "latest",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "@clerk/nextjs": "6.9.6",
     "mammoth": "latest",
     "jspdf": "latest",
     "lucide-react": "latest",
-    "tailwindcss": "^3.4.1",     // <--- DO NOT TOUCH (Keeps the build working)
-    "postcss": "^8.4.31",        // <--- DO NOT TOUCH
-    "autoprefixer": "^10.4.16"   // <--- DO NOT TOUCH
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.16"
   },
   "devDependencies": {
     "typescript": "latest",
