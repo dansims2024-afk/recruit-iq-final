@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "latest",
+    "@google/generative-ai": "^0.21.0",
     "mammoth": "latest",
     "jspdf": "latest",
     "lucide-react": "latest",
