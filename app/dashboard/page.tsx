@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
-import Dashboard from "@/components/Dashboard";
+import Dashboard from "../../components/Dashboard"; // FIXED: Correct relative path
 
 export default async function DashboardPage() {
-  const { userId, sessionClaims } = auth();
+  const { userId } = auth();
 
-  // Redirect to login if not signed in
+  // Redirect to login if unauthenticated
   if (!userId) {
     redirect("/sign-in");
   }
