@@ -15,7 +15,7 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 COMPANY OVERVIEW:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead our next-generation platform. Required: 12+ years experience and AWS Professional certification.`;
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform. Required: 12+ years experience and AWS Professional certification.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
@@ -36,7 +36,7 @@ export default function Dashboard() {
   const isPro = user?.publicMetadata?.isPro === true;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   
-  // FIXED: This dynamically builds the URL with the real user ID instead of {USER_ID}
+  // FIXED: Builds the valid URL with the real user ID instead of {USER_ID}
   const finalStripeUrl = user?.id 
     ? `${STRIPE_URL}?client_reference_id=${user.id}${userEmail ? `&prefilled_email=${encodeURIComponent(userEmail)}` : ''}` 
     : STRIPE_URL;
@@ -89,7 +89,7 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HEADER: Sign In Button Visibility Fixed */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -106,7 +106,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* DETAILED QUICK START PROGRESS BAR */}
+      {/* QUICK START PROGRESS BAR */}
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         <div className={`p-8 rounded-[2rem] border transition-all ${jdReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
@@ -166,6 +166,14 @@ export default function Dashboard() {
             {analysis ? "Results Loaded" : "Complete Steps 1 & 2 to unlock Elite Analysis"}
         </div>
       </div>
+
+      <footer className="mt-20 border-t border-slate-800 pt-10 pb-16 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] font-black uppercase tracking-widest text-slate-500">
+        <div className="flex gap-8">
+            <a href="#" className="hover:text-indigo-400">Privacy Policy</a>
+            <a href="#" className="hover:text-indigo-400">Terms of Service</a>
+        </div>
+        <p>&copy; 2026 Core Creativity AI</p>
+      </footer>
 
       {/* SALES MODAL */}
       {showLimitModal && (
