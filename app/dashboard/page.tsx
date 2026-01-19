@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
-import Dashboard from "../../components/Dashboard"; // FIXED: Correct relative path
+// FIXED: Relative path resolution for your Dashboard component
+import Dashboard from "../../components/Dashboard";
 
 export default async function DashboardPage() {
   const { userId } = auth();
