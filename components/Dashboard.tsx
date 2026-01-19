@@ -1,148 +1,140 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Copy, Check, FileText, User } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import mammoth from 'mammoth';
+import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
+import { jsPDF } from "jspdf";
+
+// FIXED PATH: Ensure you put your logo.png inside the 'public' folder of your project!
+const logo = "/logo.png"; 
+
+const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
+
+// --- FULL EXTENDED SAMPLES ---
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+ABOUT THE COMPANY:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
+
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate to ensure 99.999% uptime.
+- Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
+- Collaborate with quantitative researchers to implement complex trading algorithms.
+- Ensure strict compliance with financial regulations and data security standards (SOC2, ISO 27001).
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech or Capital Markets.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
+- Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
+- Strong proficiency in Go (Golang), C++, Python, and TypeScript.
+- Experience designing low-latency, high-throughput systems.
+- Bachelor’s or Master’s degree in Computer Science or related field.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers and successfully delivered multi-million dollar platform overhauls.
+
+PROFESSIONAL EXPERIENCE:
+Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
+- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda and Kinesis.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration and spot instance orchestration.
+- Led a team of 15 engineers in re-writing the core risk engine, improving calculation speed by 400%.
+- Implemented a zero-trust security model across the entire engineering organization.
+
+InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
+- Built the core execution engine in Go, achieving a 50% reduction in order latency (sub-50 microseconds).
+- Implemented automated failover protocols that prevented over $10M in potential slippage during market volatility.
+- Mentored junior developers and established the company's first formal code review process.
+
+TECHNICAL SKILLS:
+- Languages: Go, C++, Python, TypeScript, Java, Rust.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS, DynamoDB), Terraform, Docker, Kubernetes.
+- Architecture: Microservices, Event-Driven Design, Serverless, CQRS.
+- Tools: GitLab CI, Prometheus, Grafana, Splunk, Jira.`;
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"job" | "resume">("job");
-  const [inputText, setInputText] = useState("");
-  const [result, setResult] = useState("");
+  const { isSignedIn, user, isLoaded } = useUser();
+  const clerk = useClerk();
+  
+  const [activeTab, setActiveTab] = useState('jd');
+  const [jdText, setJdText] = useState('');
+  const [resumeText, setResumeText] = useState('');
+  const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportMessage, setSupportMessage] = useState('');
+  const [scanCount, setScanCount] = useState(0);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  const handleGenerate = async () => {
-    if (!inputText.trim()) return;
-    setLoading(true);
-    setResult("");
+  const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
+  const jdReady = jdText.trim().length > 50;
+  const resumeReady = resumeText.trim().length > 50;
+  
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const finalStripeUrl = userEmail 
+    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
+    : STRIPE_URL;
 
+  useEffect(() => {
+    const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
+    setScanCount(savedCount);
+  }, []);
+
+  const showToast = (message: string, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+  };
+
+  const handleSupportSubmit = (e: any) => {
+    e.preventDefault();
+    window.location.href = `mailto:hello@corecreativityai.com?subject=Support&body=${encodeURIComponent(supportMessage)}`;
+    setShowSupportModal(false);
+    setSupportMessage('');
+    showToast("Email client opened!", "info");
+  };
+
+  const handleFileUpload = async (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
     try {
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt: inputText, 
-          type: activeTab 
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to generate");
-
-      const data = await response.json();
-      // Handle potential different response structures (stream vs text)
-      const text = data.result || data.text || JSON.stringify(data);
-      setResult(text);
-    } catch (error) {
-      console.error(error);
-      setResult("Error generating content. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-140px)]">
-        
-        {/* LEFT COLUMN - INPUT */}
-        <div className="flex flex-col gap-4">
-          {/* Tabs */}
-          <div className="flex p-1 bg-slate-800/50 rounded-xl border border-slate-700/50">
-            <button
-              onClick={() => setActiveTab("job")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "job"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              JOB DESCRIPTION
-            </button>
-            <button
-              onClick={() => setActiveTab("resume")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "resume"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
-              }`}
-            >
-              <User className="w-4 h-4" />
-              RESUME
-            </button>
-          </div>
-
-          {/* Text Area */}
-          <div className="flex-1 bg-slate-800/30 rounded-2xl border border-slate-700/50 p-4 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-            <textarea
-              className="w-full h-full bg-transparent border-none focus:ring-0 text-slate-200 placeholder:text-slate-500 resize-none font-mono text-sm leading-relaxed"
-              placeholder={activeTab === "job" ? "Paste Job Description logic here..." : "Paste Resume text here..."}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-            />
-          </div>
-
-          {/* Generate Button */}
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !inputText}
-            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                ANALYZING...
-              </>
-            ) : (
-              "GENERATE ANALYSIS"
-            )}
-          </button>
-        </div>
-
-        {/* RIGHT COLUMN - OUTPUT */}
-        <div className="flex flex-col h-full bg-slate-900/50 rounded-2xl border border-slate-700/50 overflow-hidden relative group">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-sm">
-            <span className="text-xs font-semibold text-slate-400 tracking-wider">
-              AI ANALYSIS RESULTS
-            </span>
-            {result && (
-              <button
-                onClick={copyToClipboard}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "COPIED" : "COPY"}
-              </button>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
-            {result ? (
-              <div className="prose prose-invert prose-sm max-w-none">
-                <div className="whitespace-pre-wrap text-slate-300 leading-relaxed">
-                  {result}
-                </div>
-              </div>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-600 gap-3">
-                <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 opacity-20" />
-                </div>
-                <p className="text-sm font-medium">Results will appear here</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
+      let text = "";
+      if (file.name.endsWith('.docx')) {
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        text = result.value;
+      } else if (file.name.endsWith('.pdf')) {
+        // NOTE: This assumes pdfjsLib is available globally or imported. 
+        // For Next.js/React standard, we fallback to text for now to prevent crash if lib is missing.
+        try {
+            // @ts-ignore
+            if (window.pdfjsLib) {
+                // @ts-ignore
+                const pdfjs = window.pdfjsLib;
+                const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
+                const pdf = await loadingTask.promise;
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                  const page = await pdf.getPage(i);
+                  const textContent = await page.getTextContent();
+                  // @ts-ignore
+                  fullText += textContent.items.map(item => item.str).join(' ') + "\n";
+                }
+                text = fullText;
+            } else {
+                showToast("PDF Reader not loaded. Copy/Paste text for now.", "error");
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("PDF Read Error. Try pasting text.", "error");
+            return;
+        }
+      } else { text = await file.text(); }
+      activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+      show
