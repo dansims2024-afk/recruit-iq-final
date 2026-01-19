@@ -76,7 +76,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Outreach Email Copied!");
+      showToast("Elite Outreach Email Copied!");
     }
   };
 
@@ -136,7 +136,7 @@ export default function Dashboard() {
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
-      {/* HEADER: LOGO LEFT, BUTTONS RIGHT */}
+      {/* HEADER: LOGO LEFT, PERMANENT BUTTONS RIGHT */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
@@ -223,7 +223,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
+      {/* VALUE-DRIVEN UPGRADE MODAL WITH LOGO */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-950/90 animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
