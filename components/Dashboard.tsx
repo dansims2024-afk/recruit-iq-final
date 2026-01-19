@@ -70,7 +70,6 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [copied, setCopied] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -86,13 +85,10 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- NEW: THE STRIPE TRAP ---
-  // If the user signed in and we have the "trigger_stripe" flag, force them to Stripe.
+  // --- THE STRIPE TRAP (Redirects to Stripe after login) ---
   useEffect(() => {
     if (isSignedIn && sessionStorage.getItem('trigger_stripe') === 'true') {
-        // Clear the flag so it doesn't loop forever
         sessionStorage.removeItem('trigger_stripe');
-        // Force the redirect
         window.location.href = finalStripeUrl;
     }
   }, [isSignedIn, finalStripeUrl]);
@@ -155,7 +151,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // PAGE 1: EXECUTIVE SUMMARY
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -199,7 +194,6 @@ export default function Dashboard() {
         y = Math.max(currentY, gapY) + 4;
     }
 
-    // PAGE 2: INTERVIEW GUIDE
     doc.addPage();
     doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
@@ -220,12 +214,10 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
-    // 1. LIMIT CHECK
     if ((!isSignedIn && scanCount >= 3) || (isSignedIn && !isPro)) {
       setShowLimitModal(true);
       return;
     }
-    // 2. VALIDATION
     if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     
     setLoading(true);
@@ -256,7 +248,7 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* --- FIX 1: CODE-BASED LOGO (No broken images) --- */}
+            {/* FIXED LOGO: USING CODE ICON */}
             <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
                 <Briefcase className="w-5 h-5 text-white" />
             </div>
@@ -270,7 +262,6 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn && (
-                // We add the trap here too, just in case
                 <SignInButton mode="modal">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
@@ -395,7 +386,7 @@ export default function Dashboard() {
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 {/* --- FIX 1B: LOGO ICON IN MODAL (Replaced broken image) --- */}
+                 {/* FIXED LOGO IN MODAL */}
                  <div className="mb-6 flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                         <Briefcase className="w-5 h-5 text-white" />
@@ -412,8 +403,6 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    // --- FIX 2: THE SESSION TRAP ---
-                    // Added onClick to set 'trigger_stripe' flag before opening modal
                     <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
