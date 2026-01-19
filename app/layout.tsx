@@ -1,5 +1,14 @@
-import { ClerkProvider } from '@clerk/nextjs';
-import "./globals.css"; 
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Recruit-IQ | AI Recruiting Assistant",
+  description: "Generate job descriptions and analyze resumes with AI.",
+};
 
 export default function RootLayout({
   children,
@@ -9,7 +18,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body style={{ backgroundColor: '#0B1120', color: 'white', margin: 0 }}>
+        <body className={`${inter.className} bg-[#0B1120] text-white antialiased`}>
           {children}
         </body>
       </html>
