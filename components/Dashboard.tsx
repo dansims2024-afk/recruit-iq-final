@@ -5,8 +5,6 @@ import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 
-// --- FIXED: Removed the broken import line ---
-
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 // --- FULL EXTENDED SAMPLES ---
@@ -245,7 +243,7 @@ export default function Dashboard() {
       {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* FIXED: Using direct path "/logo.png" so it always works if file is in public folder */}
+            {/* FIXED: This path "/logo.png" works ONLY if you upload logo.png to the public folder in GitHub */}
             <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -392,7 +390,7 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL} signInForceRedirectUrl={STRIPE_URL}>
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
                         </button>
