@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -33,6 +33,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const { openSignUp, openSignIn } = useClerk(); // Fixed: Using hook for reliable button rendering
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -54,10 +55,8 @@ export default function Dashboard() {
     return url.toString();
   };
 
-  // REDIRECT LOGIC: Automatically pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
-        // Check if we just signed up OR if the user manually clicked the trial button earlier
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
             sessionStorage.removeItem('pending_stripe');
             window.location.href = getStripeUrl();
@@ -77,7 +76,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Elite Outreach Email Copied!");
+      showToast("Outreach Email Copied!");
     }
   };
 
@@ -145,20 +144,17 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
             {!isPro && (
-                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
             )}
             {!isSignedIn ? (
-              <SignInButton mode="modal">
-                <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
-              </SignInButton>
+                <button onClick={() => openSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -180,7 +176,6 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -235,18 +230,15 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* FIXED: USING SPAN TO AVOID BUTTON-IN-BUTTON CONFLICT */
-                        <SignUpButton mode="modal">
-                            <span 
-                                role="button"
-                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')} 
-                                className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05] cursor-pointer"
-                            >
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </span>
-                        </SignUpButton>
+                        /* FIXED: Standard button with programmatic Clerk trigger */
+                        <button 
+                            onClick={() => { sessionStorage.setItem('pending_stripe', 'true'); openSignUp(); }} 
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
-                        <a href={getStripeUrl()} className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
                         </a>
                     )}
