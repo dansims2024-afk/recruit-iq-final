@@ -103,7 +103,7 @@ export default function Dashboard() {
         text = result.value;
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      showToast("Document Loaded");
+      showToast("Elite Document Loaded");
     } catch (err) { showToast("Error reading file."); } finally { setLoading(false); }
   };
 
@@ -174,7 +174,7 @@ export default function Dashboard() {
 
             <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono mb-6 leading-relaxed" placeholder={activeTab === 'jd' ? "Paste JD..." : "Paste Resume..."} value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
             
-            <button onClick={handleScreen} className="py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 flex items-center justify-center gap-3 shadow-xl hover:bg-indigo-500 transition-all">
+            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 flex items-center justify-center gap-3 shadow-xl hover:bg-indigo-500 transition-all">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-white" />} Execute Elite AI Screen
             </button>
         </div>
