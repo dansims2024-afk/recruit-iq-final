@@ -4,23 +4,57 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { Loader2, Copy, Check, FileText, User, Briefcase } from "lucide-react";
+import { Loader2, Copy, Check, FileText, User } from "lucide-react";
 
-// CHECK: Make sure this is your active Stripe Payment Link
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
+// --- FULL EXTENDED SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 ABOUT THE COMPANY:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.`;
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
+
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate to ensure 99.999% uptime.
+- Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
+- Collaborate with quantitative researchers to implement complex trading algorithms.
+- Ensure strict compliance with financial regulations and data security standards (SOC2, ISO 27001).
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech or Capital Markets.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
+- Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
+- Strong proficiency in Go (Golang), C++, Python, and TypeScript.
+- Experience designing low-latency, high-throughput systems.
+- Bachelor’s or Master’s degree in Computer Science or related field.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers and successfully delivered multi-million dollar platform overhauls.
+
+PROFESSIONAL EXPERIENCE:
+Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
+- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda and Kinesis.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration and spot instance orchestration.
+- Led a team of 15 engineers in re-writing the core risk engine, improving calculation speed by 400%.
+- Implemented a zero-trust security model across the entire engineering organization.
+
+InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
+- Built the core execution engine in Go, achieving a 50% reduction in order latency (sub-50 microseconds).
+- Implemented automated failover protocols that prevented over $10M in potential slippage during market volatility.
+- Mentored junior developers and established the company's first formal code review process.
+
+TECHNICAL SKILLS:
+- Languages: Go, C++, Python, TypeScript, Java, Rust.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS, DynamoDB), Terraform, Docker, Kubernetes.
+- Architecture: Microservices, Event-Driven Design, Serverless, CQRS.
+- Tools: GitLab CI, Prometheus, Grafana, Splunk, Jira.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -51,8 +85,7 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- THE STRIPE TRAP ---
-  // Checks if we need to force-redirect a newly signed-up user to Stripe
+  // THE STRIPE TRAP: Redirects to Stripe after login if triggered
   useEffect(() => {
     if (isSignedIn && sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
@@ -114,9 +147,11 @@ export default function Dashboard() {
 
   const downloadPDF = () => {
     if (!analysis) return;
+    
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
+    // PAGE 1: EXECUTIVE SUMMARY
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -160,6 +195,7 @@ export default function Dashboard() {
         y = Math.max(currentY, gapY) + 4;
     }
 
+    // PAGE 2: INTERVIEW GUIDE
     doc.addPage();
     doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
@@ -214,8 +250,7 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* LOGO: Using Image from Public Folder */}
-            <img src="/logo.png" alt="Recruit-IQ" className="h-10 w-auto" />
+            <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
@@ -227,7 +262,6 @@ export default function Dashboard() {
             </div>
             {!isSignedIn && (
                 <SignInButton mode="modal">
-                    {/* TRIGGER TRAP: Sets flag so when they return signed in, they go to Stripe */}
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
                     </button>
@@ -281,7 +315,8 @@ export default function Dashboard() {
                 Upload pdf or doc
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Full Samples</button>
+              {/* BUTTON RE-ENABLED: Loads Sample JD and Resume */}
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full samples loaded!");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Full Samples</button>
             </div>
 
             <textarea 
@@ -351,9 +386,7 @@ export default function Dashboard() {
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 {/* LOGO IN MODAL */}
-                 <div className="mb-6"><img src="/logo.png" alt="Recruit-IQ" className="h-10 w-auto" /></div>
-                 
+                 <div className="mb-6"><img src="/logo.png" alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
                  <h2 className="text-4xl font-black text-white mb-3 leading-none">Hire Your Next Star <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
                  
@@ -363,7 +396,6 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    // UPDATED: Button text changed to "Start 3-Day Free Trial"
                     <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
