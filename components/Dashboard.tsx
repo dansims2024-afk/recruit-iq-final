@@ -4,13 +4,23 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { Loader2, Copy, Check, FileText, User } from "lucide-react";
+import { Loader2, Briefcase } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- SAMPLES ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`;
-const SAMPLE_RESUME = `MARCUS VANDELAY...`;
+// --- FULL EXTENDED SAMPLES ---
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+ABOUT THE COMPANY:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -39,20 +49,17 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- THE AUTO-UNLOCK LOGIC ---
+  // AUTO-UNLOCK & REDIRECT LOGIC
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
-      // 1. If we just signed up, go to Stripe
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
 
-      // 2. FORCE REFRESH: If they land back here and aren't Pro yet, 
-      // check Clerk one more time to catch the Stripe update.
       if (!isPro) {
         await user?.reload();
         if (user?.publicMetadata?.isPro === true) {
@@ -104,8 +111,6 @@ export default function Dashboard() {
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
-      
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -127,18 +132,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* WORKSPACE */}
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border ${activeTab === 'jd' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>1. Job Description</button>
                 <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-500'}`}>2. Resume</button>
             </div>
+            <div className="flex gap-3 mb-4">
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold text-slate-400 border border-slate-700 hover:text-white">Load Full Samples</button>
+            </div>
             <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} placeholder="Paste content here..." />
             <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl hover:bg-indigo-500 transition-all">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
         </div>
-
-        {/* RESULTS */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
               <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
@@ -151,7 +156,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* SALES MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative w-full max-w-3xl bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
