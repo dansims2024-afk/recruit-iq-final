@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { useUser, useClerk, SignInButton, UserButton } from "@clerk/nextjs"; // Added useClerk
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -12,7 +12,7 @@ import {
 // YOUR VERIFIED STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- THE ELITE VALUE SAMPLES ---
+// --- ELITE VALUE SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -33,6 +33,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const { openSignUp, openSignIn } = useClerk(); // Hook for manual modal control
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -76,7 +77,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Outreach Email Copied!");
+      showToast("Elite Outreach Email Copied!");
     }
   };
 
@@ -149,9 +150,7 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-              <SignInButton mode="modal">
-                <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
-              </SignInButton>
+                <button onClick={() => openSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -234,13 +233,14 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        <SignUpButton mode="modal">
-                            <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400">
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </SignUpButton>
+                        <button 
+                            onClick={() => { sessionStorage.setItem('pending_stripe', 'true'); openSignUp(); }} 
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
-                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400">
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
                         </a>
                     )}
