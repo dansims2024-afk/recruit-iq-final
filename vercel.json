@@ -1,1 +1,8 @@
-f795a74cc4589e1726c2973dccde6c1b2ffb050b
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}b
