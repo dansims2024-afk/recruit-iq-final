@@ -10,21 +10,19 @@ const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
   const [showLimitModal, setShowLimitModal] = useState(false);
-
   const isPro = user?.publicMetadata?.isPro === true;
   
   const getStripeUrl = () => {
     if (!user?.id) return STRIPE_URL;
     const url = new URL(STRIPE_URL);
-    url.searchParams.set("client_reference_id", user.id); // FIXED: No more {USER_ID}
+    // FIXED: Correct ID injection
+    url.searchParams.set("client_reference_id", user.id); 
     return url.toString();
   };
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !isPro) {
-        if (window.location.search.includes('signup=true')) {
-            window.location.href = getStripeUrl();
-        }
+    if (isLoaded && isSignedIn && !isPro && window.location.search.includes('signup=true')) {
+        window.location.href = getStripeUrl();
     }
   }, [isLoaded, isSignedIn, isPro]);
 
@@ -36,14 +34,16 @@ export default function Dashboard() {
         <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         {!isSignedIn ? <SignInButton mode="modal" /> : <UserButton afterSignOutUrl="/"/>}
       </div>
-      <button onClick={() => setShowLimitModal(true)} className="py-5 px-10 rounded-2xl font-black uppercase bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center gap-3">
+      <button onClick={() => setShowLimitModal(true)} className="py-5 px-10 rounded-2xl font-black uppercase bg-indigo-600 hover:bg-indigo-500 flex items-center gap-3 shadow-xl">
         <Zap className="w-4 h-4 fill-current" /> {isPro ? "Access Elite Tools" : "Start Free Trial"}
       </button>
-
       {showLimitModal && !isPro && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center backdrop-blur-3xl bg-slate-950/90">
-            <a href={getStripeUrl()} className="bg-indigo-600 px-10 py-5 rounded-xl font-bold uppercase shadow-2xl">Start 3-Day Trial</a>
-            <button onClick={() => setShowLimitModal(false)} className="mt-4 text-xs block text-center w-full">Cancel</button>
+            <div className="p-12 bg-slate-900 border border-slate-800 rounded-3xl text-center">
+                <h2 className="text-3xl font-bold mb-6">Unlock Elite Access</h2>
+                <a href={getStripeUrl()} className="inline-block bg-indigo-600 px-10 py-5 rounded-xl font-bold uppercase hover:bg-indigo-500 transition-all">Start 3-Day Trial</a>
+                <button onClick={() => setShowLimitModal(false)} className="mt-6 block text-xs w-full text-slate-500 uppercase font-black">Cancel</button>
+            </div>
         </div>
       )}
     </div>
