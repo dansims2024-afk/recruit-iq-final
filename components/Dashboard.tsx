@@ -33,7 +33,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { openSignUp, openSignIn } = useClerk(); // Fixed: Using hook for reliable button rendering
+  const { openSignUp, openSignIn } = useClerk(); 
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -55,6 +55,7 @@ export default function Dashboard() {
     return url.toString();
   };
 
+  // REDIRECT LOGIC: Automatically pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
@@ -76,7 +77,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Outreach Email Copied!");
+      showToast("Elite Outreach Email Copied!");
     }
   };
 
@@ -109,7 +110,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -130,6 +131,16 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
+  const handleStartTrial = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sessionStorage.setItem('pending_stripe', 'true');
+    openSignUp({
+      afterSignUpUrl: '/?signup=true',
+      redirectUrl: '/?signup=true'
+    });
+  };
+
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
   return (
@@ -144,7 +155,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
             {!isPro && (
-                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
             )}
@@ -230,9 +241,10 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* FIXED: Standard button with programmatic Clerk trigger */
+                        /* FIXED: Enhanced programmatic Clerk trigger */
                         <button 
-                            onClick={() => { sessionStorage.setItem('pending_stripe', 'true'); openSignUp(); }} 
+                            type="button"
+                            onClick={handleStartTrial}
                             className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
                         >
                             Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
