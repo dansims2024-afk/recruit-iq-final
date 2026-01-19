@@ -255,7 +255,8 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn && (
-                <SignInButton mode="modal">
+                // FIXED: Added forceRedirectUrl to the header login button too
+                <SignInButton mode="modal" forceRedirectUrl={STRIPE_URL}>
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
                     </button>
@@ -390,6 +391,7 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
+                    // FIXED: Added forceRedirectUrl AND signInForceRedirectUrl to ensure Stripe handoff
                     <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL} signInForceRedirectUrl={STRIPE_URL}>
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
