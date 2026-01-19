@@ -24,12 +24,10 @@ export async function POST(req: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    
-    // This looks for the User ID we tagged in the Dashboard's Stripe URL
     const clerkUserId = session.client_reference_id;
 
     if (clerkUserId) {
-      // THE FIX: Updates the user to Elite status automatically
+      // THE INSTANT UNLOCK: Upgrades the user to Elite status in Clerk
       await clerkClient.users.updateUserMetadata(clerkUserId, {
         publicMetadata: {
           isPro: true
