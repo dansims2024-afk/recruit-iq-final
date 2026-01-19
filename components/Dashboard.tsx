@@ -3,18 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-// FIXED: Loader2 added to imports so the build cannot crash.
 import { Check, CheckCircle, Upload, Zap, Shield, Sparkles, Star, ArrowRight, Info, Target, ListChecks, Loader2, FileText } from "lucide-react";
 
-// FIXED: This is the Real Link. The "your_id" placeholder is gone.
+// 1. HARDCODED REAL LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
-
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
-LOCATION: New York, NY (Hybrid)
-SALARY: $240,000 - $285,000 + Performance Bonus + Equity`;
-
-const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY | m.vandelay@email.com`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -28,7 +20,7 @@ export default function Dashboard() {
   const isPro = user?.publicMetadata?.isPro === true;
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   
-  // LOGIC: Builds the URL. If STRIPE_URL is correct above, this CANNOT produce "your_id".
+  // 2. BUILD THE URL
   const finalStripeUrl = user?.id 
     ? `${STRIPE_URL}?client_reference_id=${user.id}${userEmail ? `&prefilled_email=${encodeURIComponent(userEmail)}` : ''}` 
     : STRIPE_URL;
@@ -41,8 +33,12 @@ export default function Dashboard() {
         const hasTrigger = window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true';
         if (hasTrigger) {
             sessionStorage.removeItem('pending_stripe');
-            // DEBUG: This logs the URL to the console so we can see exactly what it is trying to do.
-            console.log("Redirecting to:", finalStripeUrl);
+            
+            // 3. THE "LOUD DEBUGGER" - This forces you to see the URL before it breaks
+            alert(`DEBUG MODE: Redirecting to ${finalStripeUrl}`);
+            
+            // If the alert above says "your_id", the deployment failed.
+            // If it says "buy.stripe.com/bJe...", this will work.
             window.location.href = finalStripeUrl;
         }
     }
@@ -74,6 +70,7 @@ export default function Dashboard() {
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
+      
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -90,7 +87,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* BODY CONTENT */}
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         <div className={`p-8 rounded-[2rem] border transition-all ${jdReady ? 'border-emerald-500 bg-emerald-500/10 shadow-lg' : 'border-slate-800 bg-slate-900/50'}`}>
             <div className="flex items-center gap-4 mb-3">
@@ -132,7 +128,7 @@ export default function Dashboard() {
                 <Upload className="inline w-3 h-3 mr-2" /> Upload DOCX
                 <input type="file" accept=".docx, .pdf" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME);}} className="flex-1 bg-slate-800/50 py-3 rounded-xl border border-slate-700 hover:text-white transition-all">
+              <button onClick={() => {setJdText("Sample JD"); setResumeText("Sample Resume");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl border border-slate-700 hover:text-white transition-all">
                 <FileText className="inline w-3 h-3 mr-2" /> Fill Samples
               </button>
             </div>
@@ -156,8 +152,8 @@ export default function Dashboard() {
                         <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Create Account to Start Trial</button>
                     </SignUpButton>
                 ) : (
-                    // VISUAL MARKER: If you don't see "(LIVE FIX)", the deployment failed.
-                    <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Start 3-Day Free Trial (LIVE FIX)</a>
+                    // 4. BUTTON WITH VISUAL MARKER
+                    <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl hover:bg-indigo-500 transition-all">Start 3-Day Free Trial (DEBUG)</a>
                 )}
                 <button onClick={() => setShowLimitModal(false)} className="w-full mt-6 text-[10px] text-slate-600 uppercase font-black tracking-widest">Dismiss</button>
             </div>
