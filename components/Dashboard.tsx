@@ -76,7 +76,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Elite Outreach Email Copied!");
+      showToast("Email Copied!");
     }
   };
 
@@ -221,14 +221,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL WITH LOGO AND UPGRADE BUTTON */}
+      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
-        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-950/90 animate-in fade-in">
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
+          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
-                 <img src="/logo.png" alt="Recruit-IQ" className="w-12 h-12 object-contain mb-8" />
+                 <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
-                 <p className="text-slate-400 mb-10 text-sm leading-relaxed">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision, strategic outreach, and unlimited reports.</p>
+                 <p className="text-slate-400 mb-10 text-sm leading-relaxed">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  {!isSignedIn ? (
                     <SignUpButton mode="modal">
@@ -247,15 +247,15 @@ export default function Dashboard() {
               <div className="md:w-2/5 bg-slate-900/50 p-12 border-l border-slate-800 flex flex-col justify-center gap-8">
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px]">Analyze 50 resumes in the time it takes to read one.</p></div>
+                   <div><h4 className="text-white font-bold text-[10px] uppercase">Elite Speed</h4><p className="text-slate-500 text-[10px]">Analyze 50 resumes in the time it takes to read one.</p></div>
                  </div>
                  <div className="flex gap-4 items-start">
                    <Shield className="text-purple-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Precision Match</h4><p className="text-slate-500 text-[10px]">Identify niche skill gaps before the first interview.</p></div>
+                   <div><h4 className="text-white font-bold text-[10px] uppercase">Precision Match</h4><p className="text-slate-500 text-[10px]">Identify niche skill gaps before the first interview.</p></div>
                  </div>
                  <div className="flex gap-4 items-start">
                    <Star className="text-emerald-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Unlimited Reports</h4><p className="text-slate-500 text-[10px]">Strategic interview guides for every candidate.</p></div>
+                   <div><h4 className="text-white font-bold text-[10px] uppercase">Unlimited Reports</h4><p className="text-slate-500 text-[10px]">Strategic interview guides for every candidate.</p></div>
                  </div>
               </div>
           </div>
