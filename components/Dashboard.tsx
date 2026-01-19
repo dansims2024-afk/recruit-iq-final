@@ -76,7 +76,7 @@ export default function Dashboard() {
   const copyEmail = () => {
     if (analysis?.outreach_email) {
       navigator.clipboard.writeText(analysis.outreach_email);
-      showToast("Email Copied!");
+      showToast("Outreach Email Copied!");
     }
   };
 
@@ -109,7 +109,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -157,6 +157,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
+        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -178,6 +179,7 @@ export default function Dashboard() {
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -224,38 +226,42 @@ export default function Dashboard() {
       {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
+          <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
                  <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
-                 <p className="text-slate-400 mb-10 text-sm leading-relaxed">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
+                 <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
-                 {!isSignedIn ? (
-                    <SignUpButton mode="modal">
-                        <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-2xl hover:bg-indigo-500 transition-all hover:scale-[1.02]">
-                          Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </SignUpButton>
-                 ) : (
-                    <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-2xl hover:bg-indigo-500 transition-all hover:scale-[1.02]">
-                      Proceed to Checkout <ArrowRight className="w-4 h-4" />
-                    </a>
-                 )}
+                 <div className="relative z-[1100]">
+                    {!isSignedIn ? (
+                        <SignUpButton mode="modal">
+                            <button onClick={() => sessionStorage.setItem('pending_stripe', 'true')} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400">
+                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </SignUpButton>
+                    ) : (
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400">
+                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                        </a>
+                    )}
+                 </div>
                  
-                 <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-8 transition-colors uppercase">Dismiss</button>
+                 <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
               </div>
-              <div className="md:w-2/5 bg-slate-900/50 p-12 border-l border-slate-800 flex flex-col justify-center gap-8">
+
+              {/* VALUE PROPOSITION SIDEBAR */}
+              <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
                  <div className="flex gap-4 items-start">
-                   <Zap className="text-indigo-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase">Elite Speed</h4><p className="text-slate-500 text-[10px]">Analyze 50 resumes in the time it takes to read one.</p></div>
+                   <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px] mt-1">Analyze 50 resumes in the time it takes to read one.</p></div>
                  </div>
                  <div className="flex gap-4 items-start">
                    <Shield className="text-purple-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase">Precision Match</h4><p className="text-slate-500 text-[10px]">Identify niche skill gaps before the first interview.</p></div>
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Precision Match</h4><p className="text-slate-500 text-[10px] mt-1">Identify niche skill gaps before the first interview.</p></div>
                  </div>
                  <div className="flex gap-4 items-start">
-                   <Star className="text-emerald-400 w-6 h-6 shrink-0" /> 
-                   <div><h4 className="text-white font-bold text-[10px] uppercase">Unlimited Reports</h4><p className="text-slate-500 text-[10px]">Strategic interview guides for every candidate.</p></div>
+                   <Star className="text-emerald-400 w-6 h-6 shrink-0 fill-current" /> 
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Unlimited Reports</h4><p className="text-slate-500 text-[10px] mt-1">Strategic interview guides for every candidate.</p></div>
                  </div>
               </div>
           </div>
