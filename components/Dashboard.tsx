@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { Loader2, Copy, Check, FileText, User, Download, Zap, Shield, HelpCircle, Mail } from "lucide-react";
+import { Loader2, Copy, Check, FileText, User, Download, Zap, Shield, HelpCircle, Mail, Sparkles, Star } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
@@ -19,8 +19,7 @@ Vertex Financial Systems is a global leader in high-frequency trading technology
 KEY RESPONSIBILITIES:
 - Design and implement high-availability microservices using AWS EKS and Fargate.
 - Lead the migration from legacy monolithic structures to modern gRPC architecture.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.
-- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.`;
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
@@ -57,21 +56,24 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- STRIPE TRAP & INSTANT UNLOCK ---
+  // --- THE INSTANT UNLOCK LOGIC ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
+      // 1. If returning from login, check if we need to force Stripe
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
 
+      // 2. FORCE REFRESH: If they land back here and aren't Pro yet, 
+      // check Clerk one more time to catch the Stripe update.
       if (!isPro) {
         await user?.reload();
         if (user?.publicMetadata?.isPro === true) {
-          showToast("Elite Membership Activated!", "success");
+          showToast("Elite Status Activated!", "success");
         }
       }
     };
@@ -83,7 +85,6 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
-  // --- MISSING FUNCTION ADDED HERE ---
   const handleSupportSubmit = (e: any) => {
     e.preventDefault();
     window.location.href = `mailto:hello@corecreativityai.com?subject=Support&body=${encodeURIComponent(supportMessage)}`;
@@ -114,20 +115,9 @@ export default function Dashboard() {
     if (!analysis) return;
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
-
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
-    doc.text("INTELLIGENCE REPORT", 20, 25);
-    doc.setFontSize(10); doc.text("RECRUIT-IQ | ELITE CANDIDATE SCREENING", 20, 32);
-
+    doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text("INTELLIGENCE REPORT", 20, 25);
     doc.setTextColor(30, 41, 59); doc.setFontSize(20); doc.text(cName, 20, 60);
-    doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
-
-    doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 72);
-    doc.setTextColor(51, 65, 85); doc.setFontSize(11);
-    const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
-    doc.text(summaryLines, 20, 79);
-
     doc.save(`RecruitIQ_Report_${cName}.pdf`);
   };
 
@@ -201,8 +191,8 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-6 md:p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
             <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
             </div>
             
             <div className="flex gap-3 mb-4">
@@ -214,7 +204,7 @@ export default function Dashboard() {
             </div>
 
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed focus:border-indigo-500 transition-colors"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
@@ -233,11 +223,14 @@ export default function Dashboard() {
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-emerald-500" />
-                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
-                  <div className="text-white font-bold text-xl mb-6">{analysis.candidate_name}</div>
-                  <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 flex items-center gap-2 mx-auto"><Download className="w-3 h-3" /> Download Report</button>
+                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-indigo-900/40">{analysis.score}%</div>
+                  <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Match Score</h3>
+                  <div className="text-white font-bold text-xl mb-6 tracking-tight">{analysis.candidate_name}</div>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 transition-all flex items-center gap-2 mx-auto">
+                    <Download className="w-3 h-3" /> Download Elite Report
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -246,7 +239,7 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.strengths.map((s: string, i: number) => <p key={i} className="text-slate-200">• {s}</p>)}</div>
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]">
-                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] tracking-widest flex items-center gap-2"><Shield className="w-3 h-3" /> Gaps</h4>
+                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] tracking-widest flex items-center gap-2"><Shield className="w-3 h-3" /> Critical Gaps</h4>
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
@@ -261,7 +254,7 @@ export default function Dashboard() {
                     <div className="bg-slate-900/50 rounded-2xl p-6 mb-6 text-left border border-slate-800">
                         <p className="text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
                     </div>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied!");}} className="w-full py-4 bg-slate-800 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2"><Copy className="w-3 h-3" /> Copy Email</button>
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied!", "success");}} className="w-full py-4 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><Copy className="w-3 h-3" /> Copy Email</button>
                 </div>
               </div>
             ) : (
@@ -280,32 +273,103 @@ export default function Dashboard() {
         <p>&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
       </footer>
 
+      {/* --- ELITE SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90 animate-in fade-in duration-300">
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-            <div className="p-10 md:w-3/5">
-               <div className="mb-8"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
-               <h2 className="text-5xl font-black text-white mb-4 leading-none tracking-tighter">Hire In Seconds.</h2>
-               <p className="text-slate-400 text-sm mb-8">Unlock unlimited resume screening and deep AI analysis.</p>
-               {!isSignedIn ? (
-                  <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
-                      <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase tracking-wider text-xs">Start 3-Day Free Trial</button>
-                  </SignUpButton>
-               ) : (
-                  <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-wider text-xs">Start 3-Day Free Trial</a>
-               )}
-               <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-500 mt-6 uppercase font-bold w-full">No thanks</button>
-            </div>
-            <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-12 text-center">
-                 <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mb-8 border border-indigo-500/30 shadow-[0_0_50px_rgba(79,70,229,0.3)] animate-pulse">
-                    <Zap className="w-10 h-10 text-indigo-400 fill-indigo-400" />
+          <div className="relative w-full max-w-4xl animate-in zoom-in-95 duration-500">
+            {/* Outer Glow Effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[3rem] blur-2xl opacity-40 animate-pulse"></div>
+            
+            <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+              {/* Left Sales Side */}
+              <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
+                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_left,#1e293b_0%,transparent_50%)] opacity-50 pointer-events-none" />
+                 
+                 <div className="mb-8 relative"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
+                 
+                 <h2 className="text-5xl font-black text-white mb-4 leading-[1.1] tracking-tighter relative">
+                   Hire Your Next Star <br/> 
+                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+                    In Seconds.
+                   </span>
+                 </h2>
+                 
+                 <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium relative">
+                   Unlock unlimited resume screening, deep AI personality analysis, and professional outreach tools instantly.
+                 </p>
+                 
+                 <div className="relative">
+                    {!isSignedIn ? (
+                        <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                            <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="group block w-full py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-center text-white font-black rounded-2xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">
+                                <span className="flex items-center justify-center gap-2">
+                                    <Sparkles className="w-4 h-4 fill-white" /> Start 3-Day Free Trial
+                                </span>
+                            </button>
+                        </SignUpButton>
+                    ) : (
+                        <a href={finalStripeUrl} className="group block w-full py-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-center text-white font-black rounded-2xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">
+                             <span className="flex items-center justify-center gap-2">
+                                <Sparkles className="w-4 h-4 fill-white" /> Start 3-Day Free Trial
+                            </span>
+                        </a>
+                    )}
+                    <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-500 mt-6 uppercase font-bold w-full tracking-widest hover:text-white transition-colors">
+                        Continue with Limited Access
+                    </button>
                  </div>
-                 <h3 className="font-black text-white text-2xl uppercase tracking-tighter mb-4">Elite Access</h3>
+              </div>
+              
+              {/* Right Feature Side */}
+              <div className="md:w-2/5 bg-[#111827]/80 backdrop-blur-md border-l border-slate-800 p-12 flex flex-col justify-center relative">
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                 
+                 <div className="relative z-10 space-y-8">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/10">
+                            <Zap className="w-5 h-5 text-indigo-400 fill-indigo-400/20" />
+                        </div>
+                        <div>
+                            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Instant Analysis</h4>
+                            <p className="text-slate-400 text-[10px] leading-relaxed">No more manual reading. Match candidates to JDs in under 10 seconds.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-lg shadow-purple-500/10">
+                            <Shield className="w-5 h-5 text-purple-400 fill-purple-400/20" />
+                        </div>
+                        <div>
+                            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Deep Gaps Check</h4>
+                            <p className="text-slate-400 text-[10px] leading-relaxed">Uncover hidden risks and critical skills gaps that others miss.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                            <Mail className="w-5 h-5 text-blue-400 fill-blue-400/20" />
+                        </div>
+                        <div>
+                            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Smart Outreach</h4>
+                            <p className="text-slate-400 text-[10px] leading-relaxed">AI-written emails personalized to every candidate instantly.</p>
+                        </div>
+                    </div>
+                 </div>
+
+                 <div className="mt-12 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl relative">
+                    <div className="absolute -top-3 -right-3">
+                        <Star className="w-6 h-6 text-amber-400 fill-amber-400 drop-shadow-lg" />
+                    </div>
+                    <p className="text-indigo-300 font-black uppercase text-[9px] tracking-widest mb-1 text-center italic">"The fastest hire I've ever made."</p>
+                    <p className="text-indigo-400/60 text-[8px] text-center font-bold">— Principal Recruiter</p>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* SUPPORT MODAL */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
