@@ -22,12 +22,15 @@ export async function POST(req: Request) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
+  // Handle successful checkout
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+    
+    // Extracts the Clerk User ID we tagged in the Dashboard's finalStripeUrl
     const clerkUserId = session.client_reference_id;
 
     if (clerkUserId) {
-      // THE INSTANT UNLOCK: Upgrades the user to Elite status in Clerk
+      // THE INSTANT UNLOCK: Tells Clerk this user is now "Elite"
       await clerkClient.users.updateUserMetadata(clerkUserId, {
         publicMetadata: {
           isPro: true
