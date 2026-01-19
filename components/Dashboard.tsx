@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
+import { Loader2, Copy, Check, FileText, User, Briefcase } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
@@ -69,6 +70,7 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [copied, setCopied] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -83,6 +85,17 @@ export default function Dashboard() {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
+
+  // --- NEW: THE STRIPE TRAP ---
+  // If the user signed in and we have the "trigger_stripe" flag, force them to Stripe.
+  useEffect(() => {
+    if (isSignedIn && sessionStorage.getItem('trigger_stripe') === 'true') {
+        // Clear the flag so it doesn't loop forever
+        sessionStorage.removeItem('trigger_stripe');
+        // Force the redirect
+        window.location.href = finalStripeUrl;
+    }
+  }, [isSignedIn, finalStripeUrl]);
 
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
@@ -240,11 +253,13 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HEADER WITH LOG IN BUTTON */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* FIXED: This path "/logo.png" works ONLY if you upload logo.png to the public folder in GitHub */}
-            <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
+            {/* --- FIX 1: CODE-BASED LOGO (No broken images) --- */}
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Briefcase className="w-5 h-5 text-white" />
+            </div>
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
@@ -255,9 +270,9 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn && (
-                // FIXED: Added forceRedirectUrl to the header login button too
-                <SignInButton mode="modal" forceRedirectUrl={STRIPE_URL}>
-                    <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
+                // We add the trap here too, just in case
+                <SignInButton mode="modal">
+                    <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
                     </button>
                 </SignInButton>
@@ -380,8 +395,14 @@ export default function Dashboard() {
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 {/* Fixed Image Source */}
-                 <div className="mb-6"><img src="/logo.png" alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
+                 {/* --- FIX 1B: LOGO ICON IN MODAL (Replaced broken image) --- */}
+                 <div className="mb-6 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <Briefcase className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-xl font-black text-white uppercase tracking-tighter">Recruit-IQ</span>
+                 </div>
+                 
                  <h2 className="text-4xl font-black text-white mb-3 leading-none">Hire Your Next Star <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
                  
@@ -391,9 +412,12 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    // FIXED: Added forceRedirectUrl AND signInForceRedirectUrl to ensure Stripe handoff
-                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL} signInForceRedirectUrl={STRIPE_URL}>
-                        <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
+                    // --- FIX 2: THE SESSION TRAP ---
+                    // Added onClick to set 'trigger_stripe' flag before opening modal
+                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                        <button 
+                            onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
+                            className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
                         </button>
                     </SignUpButton>
