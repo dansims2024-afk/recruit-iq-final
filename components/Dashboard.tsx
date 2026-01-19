@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { Loader2, Copy, Check, FileText, User, Download, Zap, Shield, HelpCircle, Mail, Sparkles, Star } from "lucide-react";
+import { Loader2, Copy, Check, FileText, User, Download, Zap, Shield, HelpCircle, Mail, Sparkles } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
@@ -14,18 +14,13 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 ABOUT THE COMPANY:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
-
-KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS and Fargate.
-- Lead the migration from legacy monolithic structures to modern gRPC architecture.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.`;
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.`;
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -56,29 +51,29 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- THE INSTANT UNLOCK LOGIC ---
+  // --- STRENGTHENED AUTO-UNLOCK LOGIC ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
-      // 1. If returning from login, check if we need to force Stripe
+      // Handle the initial signup -> Stripe redirect
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
 
-      // 2. FORCE REFRESH: If they land back here and aren't Pro yet, 
-      // check Clerk one more time to catch the Stripe update.
+      // If they are back from Stripe but not Pro, force an immediate data refresh
       if (!isPro) {
-        await user?.reload();
-        if (user?.publicMetadata?.isPro === true) {
-          showToast("Elite Status Activated!", "success");
+        // We ping Clerk's server to see if Stripe updated the metadata yet
+        const updatedUser = await user?.reload();
+        if (updatedUser?.publicMetadata?.isPro === true) {
+          showToast("Elite Membership Activated!", "success");
         }
       }
     };
     handleReturnFlow();
-  }, [isSignedIn, isPro, isLoaded, user, finalStripeUrl]);
+  }, [isSignedIn, isPro, isLoaded, user]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ show: true, message, type });
@@ -239,7 +234,7 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.strengths.map((s: string, i: number) => <p key={i} className="text-slate-200">• {s}</p>)}</div>
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]">
-                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] tracking-widest flex items-center gap-2"><Shield className="w-3 h-3" /> Critical Gaps</h4>
+                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] tracking-widest flex items-center gap-2"><Shield className="w-3 h-3" /> Gaps</h4>
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
@@ -273,18 +268,14 @@ export default function Dashboard() {
         <p>&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
       </footer>
 
-      {/* --- ELITE SALES MODAL --- */}
+      {/* --- ELITE SALES MODAL (Updated) --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90 animate-in fade-in duration-300">
           <div className="relative w-full max-w-4xl animate-in zoom-in-95 duration-500">
-            {/* Outer Glow Effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[3rem] blur-2xl opacity-40 animate-pulse"></div>
             
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              {/* Left Sales Side */}
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative">
-                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_left,#1e293b_0%,transparent_50%)] opacity-50 pointer-events-none" />
-                 
                  <div className="mb-8 relative"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
                  
                  <h2 className="text-5xl font-black text-white mb-4 leading-[1.1] tracking-tighter relative">
@@ -320,48 +311,37 @@ export default function Dashboard() {
                  </div>
               </div>
               
-              {/* Right Feature Side */}
               <div className="md:w-2/5 bg-[#111827]/80 backdrop-blur-md border-l border-slate-800 p-12 flex flex-col justify-center relative">
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                 
                  <div className="relative z-10 space-y-8">
                     <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/10">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
                             <Zap className="w-5 h-5 text-indigo-400 fill-indigo-400/20" />
                         </div>
                         <div>
                             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Instant Analysis</h4>
-                            <p className="text-slate-400 text-[10px] leading-relaxed">No more manual reading. Match candidates to JDs in under 10 seconds.</p>
+                            <p className="text-slate-400 text-[10px]">Match candidates to JDs in under 10 seconds.</p>
                         </div>
                     </div>
 
                     <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-lg shadow-purple-500/10">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
                             <Shield className="w-5 h-5 text-purple-400 fill-purple-400/20" />
                         </div>
                         <div>
                             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Deep Gaps Check</h4>
-                            <p className="text-slate-400 text-[10px] leading-relaxed">Uncover hidden risks and critical skills gaps that others miss.</p>
+                            <p className="text-slate-400 text-[10px]">Uncover hidden risks and critical skills gaps.</p>
                         </div>
                     </div>
 
                     <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
                             <Mail className="w-5 h-5 text-blue-400 fill-blue-400/20" />
                         </div>
                         <div>
                             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-1">Smart Outreach</h4>
-                            <p className="text-slate-400 text-[10px] leading-relaxed">AI-written emails personalized to every candidate instantly.</p>
+                            <p className="text-slate-400 text-[10px]">AI emails personalized to every candidate.</p>
                         </div>
                     </div>
-                 </div>
-
-                 <div className="mt-12 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl relative">
-                    <div className="absolute -top-3 -right-3">
-                        <Star className="w-6 h-6 text-amber-400 fill-amber-400 drop-shadow-lg" />
-                    </div>
-                    <p className="text-indigo-300 font-black uppercase text-[9px] tracking-widest mb-1 text-center italic">"The fastest hire I've ever made."</p>
-                    <p className="text-indigo-400/60 text-[8px] text-center font-bold">— Principal Recruiter</p>
                  </div>
               </div>
             </div>
@@ -376,7 +356,7 @@ export default function Dashboard() {
             <h2 className="text-2xl font-black mb-6 uppercase tracking-tighter text-white">Support</h2>
             <textarea 
               required 
-              className="w-full h-40 bg-[#0B1120] border border-slate-800 rounded-2xl p-6 text-[12px] text-white outline-none resize-none mb-6 focus:border-indigo-500 transition-colors" 
+              className="w-full h-40 bg-[#0B1120] border border-slate-800 rounded-2xl p-6 text-[12px] text-white outline-none resize-none mb-6 focus:border-indigo-500" 
               placeholder="How can we help?" 
               value={supportMessage} 
               onChange={(e) => setSupportMessage(e.target.value)} 
