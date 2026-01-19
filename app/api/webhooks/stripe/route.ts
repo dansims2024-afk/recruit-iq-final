@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/user';
+import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs';
 import Stripe from 'stripe';
 
@@ -22,13 +22,14 @@ export async function POST(req: Request) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // When a payment is successful
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+    
+    // This looks for the User ID we tagged in the Dashboard's Stripe URL
     const clerkUserId = session.client_reference_id;
 
     if (clerkUserId) {
-      // THE "IS PRO TRUE" MAGIC: This tells Clerk to unlock the account
+      // THE FIX: Updates the user to Elite status automatically
       await clerkClient.users.updateUserMetadata(clerkUserId, {
         publicMetadata: {
           isPro: true
