@@ -85,7 +85,6 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // THE STRIPE TRAP: Redirects to Stripe after login if triggered
   useEffect(() => {
     if (isSignedIn && sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
@@ -147,11 +146,9 @@ export default function Dashboard() {
 
   const downloadPDF = () => {
     if (!analysis) return;
-    
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // PAGE 1: EXECUTIVE SUMMARY
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -195,7 +192,6 @@ export default function Dashboard() {
         y = Math.max(currentY, gapY) + 4;
     }
 
-    // PAGE 2: INTERVIEW GUIDE
     doc.addPage();
     doc.setFillColor(248, 250, 252); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 15, 'F');
@@ -315,7 +311,7 @@ export default function Dashboard() {
                 Upload pdf or doc
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              {/* BUTTON RE-ENABLED: Loads Sample JD and Resume */}
+              {/* BUTTON: Loads extended sample JD and Resume */}
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full samples loaded!");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Full Samples</button>
             </div>
 
@@ -386,7 +382,7 @@ export default function Dashboard() {
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[2.5rem] blur-2xl opacity-40 animate-pulse"></div>
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 <div className="mb-6"><img src="/logo.png" alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
+                 <div className="mb-6"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
                  <h2 className="text-4xl font-black text-white mb-3 leading-none">Hire Your Next Star <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
                  
