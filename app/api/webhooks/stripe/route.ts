@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const clerkUserId = session.client_reference_id;
     if (clerkUserId) {
-      // FIXED: Using clerkClient as an object
+      // clerkClient is an object, not a function
       await clerkClient.users.updateUserMetadata(clerkUserId, {
         publicMetadata: { isPro: true },
       });
