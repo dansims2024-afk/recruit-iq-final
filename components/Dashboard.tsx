@@ -125,11 +125,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // FINAL STABLE REDIRECT: Relative path is the gold standard for reliability
+  // FINAL STABLE REDIRECT: Avoids custom subdomains to bypass DNS issues
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using internal path to avoid DNS errors on accounts.recruit-iq.com
-    window.location.href = '/sign-up';
+    // Forcing an internal route navigation
+    window.location.assign('/sign-up');
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -138,7 +138,6 @@ export default function Dashboard() {
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
-      {/* HEADER: LOGO LEFT, PERMANENT BUTTONS RIGHT */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
@@ -223,7 +222,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
