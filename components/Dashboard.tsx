@@ -130,13 +130,13 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE OPTION 1 FIX: INTERNAL REDIRECT ---
+  // --- THE CRITICAL FIX (OPTION 1) ---
   // This uses window.location.assign to force a reliable navigation to the local sign-up page
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
     window.location.assign('/sign-up');
   };
-  // -------------------------------------------
+  // -----------------------------------
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
