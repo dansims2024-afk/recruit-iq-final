@@ -109,7 +109,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -130,13 +130,14 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE CRITICAL FIX (OPTION 1) ---
+  // --- THE OPTION 1 FIX: INTERNAL REDIRECT ---
   // This uses window.location.assign to force a reliable navigation to the local sign-up page
+  // bypassing the "accounts" subdomain DNS error.
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
     window.location.assign('/sign-up');
   };
-  // -----------------------------------
+  // -------------------------------------------
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
