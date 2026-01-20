@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-// ADDED SignUpButton TO IMPORTS
 import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
@@ -58,7 +57,6 @@ export default function Dashboard() {
   // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
-        // This detects if they just signed up and bounces them to Stripe
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
             sessionStorage.removeItem('pending_stripe');
             window.location.href = getStripeUrl();
@@ -131,8 +129,6 @@ export default function Dashboard() {
       }
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
-
-  // NOTE: handleStartTrial removed. Logic moved directly into the SignUpButton component below.
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -224,7 +220,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
@@ -235,8 +230,8 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* OPTION 5 FIX: CLERK MODAL OVERLAY */
-                        <SignUpButton mode="modal" forceRedirectUrl="/">
+                        /* OPTION 5 FIX: CLERK MODAL OVERLAY (V4 Compatible) */
+                        <SignUpButton mode="modal" afterSignUpUrl="/">
                             <button 
                                 onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
                                 className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
