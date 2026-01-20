@@ -18,12 +18,7 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 ABOUT THE COMPANY:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
-
-KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS and Fargate.
-- Lead the migration from legacy monolithic structures to modern gRPC architecture.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.`;
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
@@ -130,11 +125,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // FAIL-SAFE REDIRECT: Uses local path to bypass custom domain DNS issues
+  // FINAL STABLE REDIRECT: Relative path is the gold standard for reliability
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using a relative path is the most robust way to trigger Clerk signup
-    window.location.assign('/sign-up');
+    // Using internal path to avoid DNS errors on accounts.recruit-iq.com
+    window.location.href = '/sign-up';
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -238,12 +233,18 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  <div className="relative z-[1100]">
-                    <button 
-                        onClick={handleStartTrial}
-                        className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                    >
-                        Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {!isSignedIn ? (
+                        <button 
+                            onClick={handleStartTrial}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
+                    ) : (
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                        </a>
+                    )}
                  </div>
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
