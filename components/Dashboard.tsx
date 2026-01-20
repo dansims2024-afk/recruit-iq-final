@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-// CHANGED: Added ClerkLoaded to prevent premature rendering
-import { useUser, UserButton, SignInButton, SignUp, ClerkLoaded } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton, SignUp, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -132,7 +131,6 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- SAFE TRIGGER ---
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
     setShowSignUp(true);
@@ -239,7 +237,6 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* SAFE EMBED TRIGGER */
                         <button 
                             onClick={handleStartTrial}
                             className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
@@ -257,7 +254,6 @@ export default function Dashboard() {
               </div>
               
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
-                 {/* Feature list */}
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
                    <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px] mt-1">Analyze 50 resumes in the time it takes to read one.</p></div>
@@ -273,12 +269,32 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            /* FIX 1: White background to ensure visibility */
-            /* FIX 2: Virtual routing to avoid DNS checks */
-            <div className="relative bg-white p-8 rounded-3xl border border-slate-700 shadow-2xl flex items-center justify-center min-h-[400px]">
+            /* FIX: Explicit width and loading state to prevent collapse */
+            <div className="relative bg-white p-8 rounded-3xl border border-slate-700 shadow-2xl flex flex-col items-center justify-center min-h-[400px] w-full max-w-[500px]">
                <button onClick={() => setShowSignUp(false)} className="absolute top-4 right-4 text-slate-500 hover:text-black z-50"><X className="w-6 h-6" /></button>
+               <ClerkLoading>
+                 <div className="flex flex-col items-center gap-4 text-slate-900">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                    <p className="font-bold text-xs uppercase tracking-widest">Loading Secure Form...</p>
+                 </div>
+               </ClerkLoading>
                <ClerkLoaded>
-                  <SignUp afterSignUpUrl="/" routing="virtual" />
+                  <SignUp 
+                    afterSignUpUrl="/" 
+                    routing="virtual" 
+                    appearance={{
+                        elements: {
+                            rootBox: "w-full",
+                            card: "w-full shadow-none p-0",
+                            headerTitle: "text-slate-900",
+                            headerSubtitle: "text-slate-600",
+                            socialButtonsBlockButton: "text-slate-900 border-slate-300",
+                            formFieldLabel: "text-slate-900",
+                            formFieldInput: "text-slate-900 border-slate-300 bg-white",
+                            footerActionText: "text-slate-600"
+                        }
+                    }}
+                  />
                </ClerkLoaded>
             </div>
           )}
