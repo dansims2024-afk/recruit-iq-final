@@ -130,10 +130,10 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // FINAL RE-INITIATION LOGIC: Direct redirect to internal path for guaranteed success
+  // FAIL-SAFE REDIRECT: Use internal routing instead of custom subdomains
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using internal Next.js routing instead of hardcoded external subdomain
+    // Using standard internal path that Clerk handles by default
     window.location.href = `/sign-up`;
   };
 
@@ -143,21 +143,18 @@ export default function Dashboard() {
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
+      {/* HEADER: LOGO LEFT, PERMANENT BUTTONS RIGHT */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
             <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
-            {!isPro && (isSignedIn ? (
-                <a href={getStripeUrl()} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
-                    <Zap className="w-3 h-3 fill-current" /> Upgrade
-                </a>
-            ) : (
+            {!isPro && (
                 <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
-            ))}
+            )}
             {!isSignedIn ? (
                 <SignInButton mode="modal">
                     <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
@@ -231,7 +228,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
@@ -241,12 +237,18 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  <div className="relative z-[1100]">
-                    <button 
-                        onClick={handleStartTrial}
-                        className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                    >
-                        Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {!isSignedIn ? (
+                        <button 
+                            onClick={handleStartTrial}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
+                    ) : (
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                        </a>
+                    )}
                  </div>
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
