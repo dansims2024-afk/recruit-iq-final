@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-// CHANGED: Importing the raw SignUp component to embed directly
-import { useUser, UserButton, SignInButton, SignUp } from "@clerk/nextjs";
+// CHANGED: Added ClerkLoaded to prevent premature rendering
+import { useUser, UserButton, SignInButton, SignUp, ClerkLoaded } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -39,7 +39,7 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
-  // NEW STATE: Controls the embedded Sign Up form
+  // CONTROLS THE EMBEDDED VIEW
   const [showSignUp, setShowSignUp] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '' });
@@ -132,13 +132,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE EMBEDDED FIX ---
-  // Simple state toggle. Impossible to fail.
+  // --- SAFE TRIGGER ---
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
     setShowSignUp(true);
   };
-  // ------------------------
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -230,7 +228,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           {!showSignUp ? (
@@ -242,7 +239,7 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* EMBEDDED FIX: Standard HTML button that toggles state */
+                        /* SAFE EMBED TRIGGER */
                         <button 
                             onClick={handleStartTrial}
                             className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
@@ -260,6 +257,7 @@ export default function Dashboard() {
               </div>
               
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
+                 {/* Feature list */}
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
                    <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px] mt-1">Analyze 50 resumes in the time it takes to read one.</p></div>
@@ -275,10 +273,13 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            /* EMBEDDED FORM: This replaces the modal content when clicked */
-            <div className="relative bg-[#111827] p-8 rounded-3xl border border-slate-700 shadow-2xl">
-               <button onClick={() => setShowSignUp(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
-               <SignUp afterSignUpUrl="/" routing="hash" />
+            /* FIX 1: White background to ensure visibility */
+            /* FIX 2: Virtual routing to avoid DNS checks */
+            <div className="relative bg-white p-8 rounded-3xl border border-slate-700 shadow-2xl flex items-center justify-center min-h-[400px]">
+               <button onClick={() => setShowSignUp(false)} className="absolute top-4 right-4 text-slate-500 hover:text-black z-50"><X className="w-6 h-6" /></button>
+               <ClerkLoaded>
+                  <SignUp afterSignUpUrl="/" routing="virtual" />
+               </ClerkLoaded>
             </div>
           )}
         </div>
