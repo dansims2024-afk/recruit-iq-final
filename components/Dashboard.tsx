@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton, SignUp, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -32,14 +32,16 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  
+  // REF TO TRIGGER THE HIDDEN BUTTON
+  const signInButtonRef = useRef<HTMLButtonElement>(null);
+
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
-  // CONTROLS THE EMBEDDED VIEW
-  const [showSignUp, setShowSignUp] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '' });
 
@@ -131,15 +133,29 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
+  // --- THE REMOTE TRIGGER ---
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    setShowSignUp(true);
+    // 1. Close the modal so it doesn't block the popup
+    setShowLimitModal(false);
+    // 2. Click the hidden Clerk button programmatically
+    setTimeout(() => {
+        signInButtonRef.current?.click();
+    }, 100);
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
+      
+      {/* HIDDEN BUTTON - This is the "Engine" we are remote controlling */}
+      <div className="hidden">
+        <SignInButton mode="modal">
+            <button ref={signInButtonRef}>Hidden Trigger</button>
+        </SignInButton>
+      </div>
+
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
@@ -228,8 +244,7 @@ export default function Dashboard() {
 
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
-          {!showSignUp ? (
-            <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
+          <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
                  <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
@@ -237,6 +252,7 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
+                        /* REMOTE CONTROL TRIGGER */
                         <button 
                             onClick={handleStartTrial}
                             className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
@@ -267,37 +283,7 @@ export default function Dashboard() {
                    <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Unlimited Reports</h4><p className="text-slate-500 text-[10px] mt-1">Strategic interview guides for every candidate.</p></div>
                  </div>
               </div>
-            </div>
-          ) : (
-            /* FIX: Explicit width and loading state to prevent collapse */
-            <div className="relative bg-white p-8 rounded-3xl border border-slate-700 shadow-2xl flex flex-col items-center justify-center min-h-[400px] w-full max-w-[500px]">
-               <button onClick={() => setShowSignUp(false)} className="absolute top-4 right-4 text-slate-500 hover:text-black z-50"><X className="w-6 h-6" /></button>
-               <ClerkLoading>
-                 <div className="flex flex-col items-center gap-4 text-slate-900">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                    <p className="font-bold text-xs uppercase tracking-widest">Loading Secure Form...</p>
-                 </div>
-               </ClerkLoading>
-               <ClerkLoaded>
-                  <SignUp 
-                    afterSignUpUrl="/" 
-                    routing="virtual" 
-                    appearance={{
-                        elements: {
-                            rootBox: "w-full",
-                            card: "w-full shadow-none p-0",
-                            headerTitle: "text-slate-900",
-                            headerSubtitle: "text-slate-600",
-                            socialButtonsBlockButton: "text-slate-900 border-slate-300",
-                            formFieldLabel: "text-slate-900",
-                            formFieldInput: "text-slate-900 border-slate-300 bg-white",
-                            footerActionText: "text-slate-600"
-                        }
-                    }}
-                  />
-               </ClerkLoaded>
-            </div>
-          )}
+          </div>
         </div>
       )}
     </div>
