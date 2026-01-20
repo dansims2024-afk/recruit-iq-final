@@ -238,17 +238,24 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  <div className="relative z-[1100]">
-                    <button 
-                        onClick={handleStartTrial}
-                        className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                    >
-                        Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {!isSignedIn ? (
+                        <button 
+                            onClick={handleStartTrial}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
+                    ) : (
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                        </a>
+                    )}
                  </div>
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
               </div>
 
+              {/* VALUE PROPOSITION SIDEBAR */}
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
