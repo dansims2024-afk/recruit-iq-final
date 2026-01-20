@@ -18,12 +18,7 @@ LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
 ABOUT THE COMPANY:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
-
-KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS and Fargate.
-- Lead the migration from legacy monolithic structures to modern gRPC architecture.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.`;
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
@@ -130,11 +125,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // FINAL STABLE REDIRECT: Avoids custom subdomains to bypass DNS issues
+  // FINAL STABLE REDIRECT: Bypass the non-functional accounts subdomain
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using internal path (/sign-up) to avoid DNS errors on accounts.recruit-iq.com
-    window.location.href = '/sign-up';
+    // Forcing an internal route navigation to the local sign-up path
+    window.location.assign('/sign-up');
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
