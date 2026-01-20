@@ -1,12 +1,12 @@
 import { authMiddleware } from "@clerk/nextjs";
 
+// This allows the home page to be accessible to guests
 export default authMiddleware({
-  // Whitelist all critical paths to prevent 500 errors during boot
-  publicRoutes: ["/", "/api/webhooks/stripe"],
-  // This prevents the middleware from running on static files which often causes the crash
-  ignoredRoutes: ["/((?!api|trpc))(_next.*|.+\\.[\\w]+$)", "/api/webhooks/stripe"]
+  publicRoutes: ["/"],
 });
 
 export const config = {
+  // Protects all routes, including api/trpc.
+  // See https://clerk.com/docs/references/nextjs/auth-middleware
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
