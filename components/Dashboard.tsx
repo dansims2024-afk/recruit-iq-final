@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+// CHANGED: Added useClerk hook, removed SignUpButton wrapper
+import { useUser, UserButton, SignInButton, useClerk } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
   Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText 
 } from "lucide-react";
 
-// YOUR VERIFIED STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 // --- THE ELITE VALUE SAMPLES ---
@@ -33,6 +33,9 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  // HOOK INJECTION: This allows us to open the modal manually
+  const { openSignUp } = useClerk();
+  
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -54,7 +57,6 @@ export default function Dashboard() {
     return url.toString();
   };
 
-  // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
@@ -130,6 +132,12 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
+  // MANUAL TRIGGER: Guarantees button visibility and handles the open action
+  const handleSignUpClick = () => {
+    sessionStorage.setItem('pending_stripe', 'true');
+    openSignUp({ afterSignUpUrl: '/' });
+  };
+
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
   return (
@@ -156,6 +164,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
+        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -177,6 +186,7 @@ export default function Dashboard() {
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -230,15 +240,12 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* OPTION 5 FIX: CLERK MODAL OVERLAY (V4 Compatible) */
-                        <SignUpButton mode="modal" afterSignUpUrl="/">
-                            <button 
-                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
-                                className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                            >
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </SignUpButton>
+                        <button 
+                            onClick={handleSignUpClick}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
@@ -248,8 +255,9 @@ export default function Dashboard() {
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
               </div>
-
+              
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
+                 {/* Feature list right side */}
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
                    <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px] mt-1">Analyze 50 resumes in the time it takes to read one.</p></div>
