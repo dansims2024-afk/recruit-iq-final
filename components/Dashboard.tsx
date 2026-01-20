@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignUpButton, UserButton, SignInButton } from "@clerk/nextjs";
+import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -12,7 +12,7 @@ import {
 // YOUR VERIFIED STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- THE ELITE VALUE SAMPLES ---
+// --- ELITE VALUE SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -33,6 +33,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const { openSignUp, openSignIn } = useClerk(); // Fixed: Use direct hook for reliability
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -54,7 +55,6 @@ export default function Dashboard() {
     return url.toString();
   };
 
-  // REDIRECT LOGIC: Automatically pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
@@ -109,7 +109,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -149,9 +149,7 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                <SignInButton mode="modal">
-                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
-                </SignInButton>
+                <button onClick={() => openSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -178,7 +176,6 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -207,6 +204,11 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Strategic Interview Guide</h4>
+                  <div className="space-y-4">{analysis.questions.map((q: string, i: number) => <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300">"{q}"</div>)}</div>
+                </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
@@ -217,7 +219,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VALUE-DRIVEN UPGRADE MODAL */}
+      {/* UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
@@ -226,17 +228,16 @@ export default function Dashboard() {
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
+                 {/* START TRIAL BUTTON: Programmatic Trigger */}
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* FIXED: Wrapping SignUpButton properly to capture click */
-                        <SignUpButton mode="modal">
-                            <div 
-                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
-                                className="cursor-pointer inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                            >
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </div>
-                        </SignUpButton>
+                        <button 
+                            type="button"
+                            onClick={() => { sessionStorage.setItem('pending_stripe', 'true'); openSignUp(); }}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
@@ -247,7 +248,6 @@ export default function Dashboard() {
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
               </div>
 
-              {/* VALUE PROPOSITION SIDEBAR */}
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
