@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton, useClerk, SignOutButton } from "@clerk/nextjs";
+import { useUser, UserButton, useClerk, SignOutButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -32,7 +32,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { session } = useClerk(); 
+  const clerk = useClerk(); // ACCESS CLERK DIRECTLY
   
   // DEBUGGER: CHECK IF KEY IS LOADED
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -103,9 +103,7 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
-    // If not pro and hit limit, show modal
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    
     if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
@@ -127,14 +125,12 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
-
   // --- GATEKEEPER UI (If Signed In + Not Pro) ---
   if (isSignedIn && !isPro) {
     return (
         <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-6 py-2 rounded-full mb-8 font-mono text-xs">
-                 DEBUG: KEY LOADED? {isKeyLoaded ? "YES" : "NO - CHECK ENV VARS"}
+            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-6 py-2 rounded-full mb-8 font-mono text-xs animate-pulse">
+                 STATUS: SIGNED IN | CHECKOUT REQUIRED
             </div>
             <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
@@ -164,9 +160,9 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* --- DEBUG STATUS BAR: FINAL CHECK --- */}
+      {/* --- DEBUG STATUS BAR --- */}
       <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
-         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST"} | KEY: {isKeyLoaded ? "LOADED" : "MISSING"}
+         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"}
       </div>
 
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
@@ -183,10 +179,8 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                // CRITICAL FIX: mode="redirect" forces a full navigation, bypassing popup blockers
-                <SignInButton mode="redirect">
-                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
-                </SignInButton>
+                // MANUAL IGNITION: No wrapper, just function call
+                <button onClick={() => clerk.redirectToSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -266,11 +260,13 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        <SignInButton mode="redirect">
-                            <button className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </SignInButton>
+                        /* MANUAL IGNITION BUTTON */
+                        <button 
+                            onClick={() => clerk.redirectToSignIn()}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
