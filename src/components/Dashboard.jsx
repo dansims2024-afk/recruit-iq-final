@@ -17,7 +17,7 @@ const SAMPLE_RESUME = `MARCUS VANDELAY\nPrincipal Architect | New York | m.vande
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const clerk = useClerk(); // <-- MANUAL IGNITION KEY
+  const clerk = useClerk();
   
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
@@ -30,14 +30,21 @@ export default function Dashboard() {
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   
-  const getStripeUrl = () => {
-    if (!user?.id) return STRIPE_URL;
-    const url = new URL(STRIPE_URL);
-    url.searchParams.set("client_reference_id", user.id);
-    if (user?.primaryEmailAddress?.emailAddress) {
-        url.searchParams.set("prefilled_email", user.primaryEmailAddress.emailAddress);
+  // --- UNIVERSAL ACTION HANDLER ---
+  const handleUniversalAction = () => {
+    if (!isSignedIn) {
+        // If guest, force login
+        clerk.redirectToSignIn();
+    } else {
+        // If signed in, go to Stripe
+        if (!user?.id) window.location.href = STRIPE_URL;
+        const url = new URL(STRIPE_URL);
+        url.searchParams.set("client_reference_id", user.id);
+        if (user?.primaryEmailAddress?.emailAddress) {
+            url.searchParams.set("prefilled_email", user.primaryEmailAddress.emailAddress);
+        }
+        window.location.href = url.toString();
     }
-    return url.toString();
   };
 
   useEffect(() => {
@@ -93,20 +100,19 @@ export default function Dashboard() {
   if (isSignedIn && !isPro) {
     return (
         <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
-             {/* DEBUG BAR */}
-             <div className="bg-yellow-500/10 text-yellow-500 px-4 py-1 rounded-full text-[10px] mb-4 font-mono">
-                DEBUG: MANUAL MODE | STATUS: SIGNED IN
-             </div>
             <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                 <h2 className="text-3xl font-black text-white mb-2 mt-4">Account Ready!</h2>
                 <p className="text-slate-400 text-sm mb-8">One last step to unlock Elite access.</p>
-                <a 
-                    href={getStripeUrl()} 
+                
+                {/* SAFE MODE BUTTON: NO CONDITIONALS */}
+                <button 
+                    onClick={handleUniversalAction}
                     className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all"
                 >
                     Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
-                </a>
+                </button>
+
                 <div className="mt-6">
                     <SignOutButton>
                         <button className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
@@ -124,7 +130,7 @@ export default function Dashboard() {
       
       {/* --- STATUS BAR --- */}
       <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
-         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} (v2.0)
+         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} (SAFE MODE)
       </div>
 
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
@@ -140,7 +146,6 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                // MANUAL IGNITION BUTTON (Navbar)
                 <button onClick={() => clerk.redirectToSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">
                     Sign In
                 </button>
@@ -148,7 +153,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* --- MAIN DASHBOARD GRID --- */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
@@ -178,7 +182,6 @@ export default function Dashboard() {
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl">{analysis.score}%</div>
                   <div className="text-white font-bold text-xl mb-4">{analysis.candidate_name}</div>
                 </div>
-                {/* ... (Shortened for brevity, full analysis UI here) ... */}
                 <div className="bg-indigo-600/5 border border-indigo-500/20 p-8 rounded-[2.5rem]">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><Mail className="w-3 h-3" /> Outreach Email</h4>
@@ -203,28 +206,18 @@ export default function Dashboard() {
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster.</p>
                  
-                 {/* MANUAL IGNITION BUTTON (Modal) - NO WRAPPER */}
-                 {!isSignedIn ? (
-                    <button 
-                        onClick={() => clerk.redirectToSignIn()}
-                        className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-lg hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                    >
-                        Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                    </button>
-                 ) : (
-                    <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-emerald-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-lg hover:bg-emerald-500 transition-all border border-emerald-400 hover:scale-[1.05]">
-                        Proceed to Checkout <ArrowRight className="w-4 h-4" />
-                    </a>
-                 )}
+                 {/* UNIVERSAL BUTTON: ALWAYS VISIBLE */}
+                 <button 
+                    onClick={handleUniversalAction}
+                    className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-lg hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                 >
+                    CONTINUE TO ACCESS <ArrowRight className="w-4 h-4" />
+                 </button>
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase block">Dismiss</button>
-                 
-                 {/* Fallback Link just in case */}
-                 {!isSignedIn && <div className="mt-4 text-[10px] text-slate-600">Button not working? <button onClick={() => clerk.redirectToSignIn()} className="underline text-indigo-400">Click here to login</button></div>}
               </div>
               
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
-                 {/* ... Features ... */}
                  <div className="flex gap-4 items-start"><Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /><div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4></div></div>
                  <div className="flex gap-4 items-start"><Shield className="text-purple-400 w-6 h-6 shrink-0" /><div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Precision Match</h4></div></div>
               </div>
