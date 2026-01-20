@@ -32,8 +32,6 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  
-  // REF TO TRIGGER THE HIDDEN BUTTON
   const signInButtonRef = useRef<HTMLButtonElement>(null);
 
   const [activeTab, setActiveTab] = useState('jd');
@@ -47,25 +45,45 @@ export default function Dashboard() {
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   
+  // ROBUST STRIPE URL GENERATOR
   const getStripeUrl = () => {
-    if (!user?.id) return STRIPE_URL;
+    // Base URL
     const url = new URL(STRIPE_URL);
-    url.searchParams.set("client_reference_id", user.id);
+    
+    // If we have a user ID, attach it for tracking
+    if (user?.id) {
+        url.searchParams.set("client_reference_id", user.id);
+    }
+    
+    // If we have an email, pre-fill it to save the user time
     if (user?.primaryEmailAddress?.emailAddress) {
         url.searchParams.set("prefilled_email", user.primaryEmailAddress.emailAddress);
     }
+    
     return url.toString();
   };
 
-  // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
+  // --- THE TRAFFIC COP (Redirect Logic) ---
   useEffect(() => {
+    // Only run if loaded, user is logged in, and NOT yet a pro member
     if (isLoaded && isSignedIn && !isPro) {
-        if (sessionStorage.getItem('pending_stripe') === 'true') {
+        
+        // Check triggers: 
+        // 1. "pending_stripe" flag in storage (set when clicking the button)
+        // 2. "signup=true" in URL (set by the hidden button after login)
+        const isPending = sessionStorage.getItem('pending_stripe') === 'true';
+        const isSignupRedirect = window.location.search.includes('signup=true');
+        
+        if (isPending || isSignupRedirect) {
+            // Clear triggers to prevent loops
             sessionStorage.removeItem('pending_stripe');
-            window.location.href = getStripeUrl();
+            
+            // GO TO STRIPE
+            const finalUrl = getStripeUrl();
+            window.location.href = finalUrl;
         }
     }
-  }, [isLoaded, isSignedIn, isPro]);
+  }, [isLoaded, isSignedIn, isPro, user]); // Dependent on 'user' so we wait for the ID to load
 
   useEffect(() => {
     setScanCount(parseInt(localStorage.getItem('recruit_iq_scans') || '0'));
@@ -133,14 +151,19 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE REMOTE TRIGGER ---
+  // --- SMART TRIGGER ---
   const handleStartTrial = () => {
+    // Case 1: Already Signed In? -> Go straight to Stripe.
+    if (isSignedIn) {
+        window.location.href = getStripeUrl();
+        return;
+    }
+
+    // Case 2: Not Signed In? -> Open Modal.
     sessionStorage.setItem('pending_stripe', 'true');
-    // 1. Close the modal so it doesn't block the popup
-    setShowLimitModal(false);
-    // 2. Click the hidden Clerk button programmatically
+    setShowLimitModal(false); // Close our custom modal to clear the screen
     setTimeout(() => {
-        signInButtonRef.current?.click();
+        signInButtonRef.current?.click(); // Click the hidden Clerk button
     }, 100);
   };
 
@@ -149,9 +172,13 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HIDDEN BUTTON - This is the "Engine" we are remote controlling */}
+      {/* HIDDEN ENGINE: Now includes explicit redirects to /?signup=true */}
       <div className="hidden">
-        <SignInButton mode="modal">
+        <SignInButton 
+            mode="modal" 
+            afterSignInUrl="/?signup=true" 
+            afterSignUpUrl="/?signup=true"
+        >
             <button ref={signInButtonRef}>Hidden Trigger</button>
         </SignInButton>
       </div>
@@ -170,9 +197,8 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                <SignInButton mode="modal">
-                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
-                </SignInButton>
+                /* Use the same smart handler here too */
+                <button onClick={handleStartTrial} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -252,7 +278,6 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* REMOTE CONTROL TRIGGER */
                         <button 
                             onClick={handleStartTrial}
                             className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
