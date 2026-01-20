@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-// IMPORT useClerk TO FORCE TOKEN REFRESH
 import { useUser, UserButton, SignInButton, useClerk, SignOutButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
@@ -33,8 +32,12 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { session } = useClerk(); // ACCESS SESSION DIRECTLY
+  const { session } = useClerk(); 
   const signInButtonRef = useRef<HTMLButtonElement>(null);
+
+  // DEBUGGER: CHECK IF KEY IS LOADED
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const isKeyLoaded = !!publishableKey;
 
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
@@ -141,6 +144,9 @@ export default function Dashboard() {
   if (isSignedIn && !isPro) {
     return (
         <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-6 py-2 rounded-full mb-8 font-mono text-xs">
+                 DEBUG: KEY LOADED? {isKeyLoaded ? "YES" : "NO - CHECK ENV VARS"}
+            </div>
             <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                 <div className="w-20 h-20 bg-indigo-600/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/20">
@@ -169,9 +175,9 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* --- DEBUG STATUS BAR: IMPROVED --- */}
+      {/* --- DEBUG STATUS BAR: FINAL CHECK --- */}
       <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
-         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} | SESSION: {session ? "ACTIVE" : "NONE"}
+         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST"} | KEY: {isKeyLoaded ? "LOADED" : "MISSING"}
       </div>
 
       <div className="hidden">
@@ -182,7 +188,6 @@ export default function Dashboard() {
 
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
-      {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
@@ -200,7 +205,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* MAIN DASHBOARD CONTENT */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
