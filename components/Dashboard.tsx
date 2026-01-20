@@ -130,10 +130,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // UPDATED FAIL-SAFE REDIRECT: Uses standard path for instant success
+  // FINAL RE-INITIATION LOGIC: Direct redirect to internal path for guaranteed success
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    window.location.href = `/sign-up?redirect_url=${encodeURIComponent(window.location.origin + '/?signup=true')}`;
+    // Using internal Next.js routing instead of hardcoded external subdomain
+    window.location.href = `/sign-up`;
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -148,11 +149,15 @@ export default function Dashboard() {
             <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
-            {!isPro && (
+            {!isPro && (isSignedIn ? (
+                <a href={getStripeUrl()} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                    <Zap className="w-3 h-3 fill-current" /> Upgrade
+                </a>
+            ) : (
                 <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
-            )}
+            ))}
             {!isSignedIn ? (
                 <SignInButton mode="modal">
                     <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
@@ -211,6 +216,11 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Strategic Interview Guide</h4>
+                  <div className="space-y-4">{analysis.questions.map((q: string, i: number) => <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300">"{q}"</div>)}</div>
+                </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
@@ -221,6 +231,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
@@ -230,18 +241,12 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  <div className="relative z-[1100]">
-                    {!isSignedIn ? (
-                        <button 
-                            onClick={handleStartTrial}
-                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                        >
-                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                        </button>
-                    ) : (
-                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
-                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
-                        </a>
-                    )}
+                    <button 
+                        onClick={handleStartTrial}
+                        className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                    >
+                        Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                    </button>
                  </div>
                  
                  <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
