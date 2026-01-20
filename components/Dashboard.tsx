@@ -33,7 +33,9 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
   const { session } = useClerk(); 
-  const signInButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Use a ref to track if we've already tried to auto-redirect
+  const hasRedirected = useRef(false);
 
   // DEBUGGER: CHECK IF KEY IS LOADED
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -104,7 +106,9 @@ export default function Dashboard() {
   };
 
   const handleScreen = async () => {
+    // If not pro and hit limit, show modal
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
+    
     if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
@@ -124,18 +128,6 @@ export default function Dashboard() {
         }
       }
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
-  };
-
-  const handleStartTrial = () => {
-    if (isSignedIn) {
-        window.location.assign(getStripeUrl());
-        return;
-    }
-    sessionStorage.setItem('pending_stripe', 'true');
-    setShowLimitModal(false);
-    setTimeout(() => {
-        signInButtonRef.current?.click();
-    }, 100);
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -180,12 +172,6 @@ export default function Dashboard() {
          STATUS: {isSignedIn ? "SIGNED IN" : "GUEST"} | KEY: {isKeyLoaded ? "LOADED" : "MISSING"}
       </div>
 
-      <div className="hidden">
-        <SignInButton mode="modal" afterSignInUrl="/?signup=true" afterSignUpUrl="/?signup=true">
-            <button ref={signInButtonRef}>Hidden Trigger</button>
-        </SignInButton>
-      </div>
-
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
@@ -200,7 +186,10 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                <button onClick={handleStartTrial} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                // CRITICAL FIX: mode="redirect" forces a full navigation, bypassing popup blockers
+                <SignInButton mode="redirect">
+                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
@@ -280,12 +269,11 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        <button 
-                            onClick={handleStartTrial}
-                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                        >
-                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <SignInButton mode="redirect">
+                            <button className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </SignInButton>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
