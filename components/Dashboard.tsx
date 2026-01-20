@@ -2,15 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-// CHANGED: Using the stable SignInButton which works in your header
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+// CHANGED: Importing the raw SignUp component to embed directly
+import { useUser, UserButton, SignInButton, SignUp } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
-  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText 
+  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X 
 } from "lucide-react";
 
-// YOUR VERIFIED STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 // --- THE ELITE VALUE SAMPLES ---
@@ -40,6 +39,8 @@ export default function Dashboard() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  // NEW STATE: Controls the embedded Sign Up form
+  const [showSignUp, setShowSignUp] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '' });
 
@@ -58,7 +59,7 @@ export default function Dashboard() {
   // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
-        if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
+        if (sessionStorage.getItem('pending_stripe') === 'true') {
             sessionStorage.removeItem('pending_stripe');
             window.location.href = getStripeUrl();
         }
@@ -130,6 +131,14 @@ export default function Dashboard() {
       }
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
+
+  // --- THE EMBEDDED FIX ---
+  // Simple state toggle. Impossible to fail.
+  const handleStartTrial = () => {
+    sessionStorage.setItem('pending_stripe', 'true');
+    setShowSignUp(true);
+  };
+  // ------------------------
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -221,9 +230,11 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
+          {!showSignUp ? (
+            <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
                  <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
                  <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
@@ -231,15 +242,13 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* TROJAN HORSE FIX: Use stable SignInButton */
-                        <SignInButton mode="modal">
-                            <button 
-                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
-                                className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                            >
-                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                            </button>
-                        </SignInButton>
+                        /* EMBEDDED FIX: Standard HTML button that toggles state */
+                        <button 
+                            onClick={handleStartTrial}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                        >
+                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                        </button>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
@@ -264,7 +273,14 @@ export default function Dashboard() {
                    <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Unlimited Reports</h4><p className="text-slate-500 text-[10px] mt-1">Strategic interview guides for every candidate.</p></div>
                  </div>
               </div>
-          </div>
+            </div>
+          ) : (
+            /* EMBEDDED FORM: This replaces the modal content when clicked */
+            <div className="relative bg-[#111827] p-8 rounded-3xl border border-slate-700 shadow-2xl">
+               <button onClick={() => setShowSignUp(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+               <SignUp afterSignUpUrl="/" routing="hash" />
+            </div>
+          )}
         </div>
       )}
     </div>
