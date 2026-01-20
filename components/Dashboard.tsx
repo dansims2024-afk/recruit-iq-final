@@ -199,4 +199,74 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]">
                     <h4 className="text-emerald-400 font-bold uppercase mb-4 text-[9px] flex items-center gap-2"><Check className="w-3 h-3" /> Strengths</h4>
-                    <div className="space-y-3">{analysis.strengths.map((s
+                    <div className="space-y-3">{analysis.strengths.map((s: string, i: number) => <p key={i} className="text-slate-200">• {s}</p>)}</div>
+                  </div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]">
+                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] flex items-center gap-2"><Shield className="w-3 h-3" /> Gaps</h4>
+                    <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
+                  </div>
+                </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Strategic Interview Guide</h4>
+                  <div className="space-y-4">{analysis.questions.map((q: string, i: number) => <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300">"{q}"</div>)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
+                <Sparkles className="w-8 h-8 opacity-20" />
+                <p>Waiting for Elite AI Screen...</p>
+              </div>
+            )}
+        </div>
+      </div>
+
+      {showLimitModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
+          <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
+              <div className="p-12 md:w-3/5 flex flex-col justify-center">
+                 <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
+                 <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
+                 <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
+                 
+                 <div className="relative z-[1100]">
+                    {!isSignedIn ? (
+                        /* TROJAN HORSE FIX: Use stable SignInButton */
+                        <SignInButton mode="modal">
+                            <button 
+                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
+                                className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                            >
+                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </SignInButton>
+                    ) : (
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                            Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                        </a>
+                    )}
+                 </div>
+                 
+                 <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
+              </div>
+              
+              <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
+                 <div className="flex gap-4 items-start">
+                   <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4><p className="text-slate-500 text-[10px] mt-1">Analyze 50 resumes in the time it takes to read one.</p></div>
+                 </div>
+                 <div className="flex gap-4 items-start">
+                   <Shield className="text-purple-400 w-6 h-6 shrink-0" /> 
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Precision Match</h4><p className="text-slate-500 text-[10px] mt-1">Identify niche skill gaps before the first interview.</p></div>
+                 </div>
+                 <div className="flex gap-4 items-start">
+                   <Star className="text-emerald-400 w-6 h-6 shrink-0 fill-current" /> 
+                   <div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Unlimited Reports</h4><p className="text-slate-500 text-[10px] mt-1">Strategic interview guides for every candidate.</p></div>
+                 </div>
+              </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
