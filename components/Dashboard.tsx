@@ -130,11 +130,11 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // FINAL STABLE REDIRECT: Forces the internal sign-up page
+  // FINAL STABLE REDIRECT: Avoids custom subdomains to bypass DNS issues
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using direct string navigation to the internal route Clerk expects
-    window.location.assign('/sign-up');
+    // Using internal path (/sign-up) to avoid DNS errors on accounts.recruit-iq.com
+    window.location.href = '/sign-up';
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -143,6 +143,7 @@ export default function Dashboard() {
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
+      {/* HEADER: LOGO LEFT, PERMANENT BUTTONS RIGHT */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
