@@ -109,7 +109,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -130,13 +130,13 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE CRITICAL FIX (OPTION 1) ---
+  // --- THE OPTION 1 FIX: INTERNAL REDIRECT ---
+  // This uses window.location.assign to force a reliable navigation to the local sign-up page
   const handleStartTrial = () => {
     sessionStorage.setItem('pending_stripe', 'true');
-    // Using INTERNAL navigation to bypass DNS issues
     window.location.assign('/sign-up');
   };
-  // -----------------------------------
+  // -------------------------------------------
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -165,6 +165,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
+        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -186,6 +187,7 @@ export default function Dashboard() {
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
