@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton, SignOutButton } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
-  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X, LogOut 
+  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X, AlertTriangle 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -122,6 +122,10 @@ export default function Dashboard() {
   };
 
   const handleStartTrial = () => {
+    if (isSignedIn) {
+        window.location.assign(getStripeUrl());
+        return;
+    }
     sessionStorage.setItem('pending_stripe', 'true');
     setShowLimitModal(false);
     setTimeout(() => {
@@ -131,50 +135,41 @@ export default function Dashboard() {
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
-  // ---------------------------------------------------------------------------
-  // THE PAYMENT GATEKEEPER
-  // ---------------------------------------------------------------------------
-  // If user is Signed In AND Not Pro -> Show Payment Screen ONLY.
-  // This replaces the entire dashboard view.
+  // --- GATEKEEPER UI (If Signed In + Not Pro) ---
   if (isSignedIn && !isPro) {
     return (
-        <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
+            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-6 py-2 rounded-full mb-8 font-mono text-xs">
+                 DEBUG STATUS: SIGNED IN = TRUE | PRO = FALSE
+            </div>
             <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                
                 <div className="w-20 h-20 bg-indigo-600/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/20">
                     <Check className="w-10 h-10 text-indigo-400" />
                 </div>
-                
-                <h2 className="text-3xl font-black text-white mb-2">Account Created!</h2>
-                <p className="text-slate-400 text-sm mb-8">You are one step away. Complete your secure checkout to unlock Elite access.</p>
-                
-                <div className="space-y-4">
-                    <a 
-                        href={getStripeUrl()} 
-                        className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02]"
-                    >
-                        Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
-                    </a>
-                    
-                    <SignOutButton>
-                        <button className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
-                            <LogOut className="w-3 h-3" /> Sign Out
-                        </button>
-                    </SignOutButton>
-                </div>
+                <h2 className="text-3xl font-black text-white mb-2">Account Ready!</h2>
+                <p className="text-slate-400 text-sm mb-8">One last step to unlock Elite access.</p>
+                <a 
+                    href={getStripeUrl()} 
+                    className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02]"
+                >
+                    Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
+                </a>
             </div>
         </div>
     );
   }
 
-  // --- NORMAL DASHBOARD (FOR GUESTS OR PRO USERS) ---
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HIDDEN ENGINE */}
+      {/* --- DEBUG STATUS BAR (VISIBLE IF GUEST) --- */}
+      <div className="fixed top-0 left-0 w-full bg-yellow-600 text-black font-bold text-center text-xs py-2 z-[9999]">
+         DEBUG: Signed In: {isSignedIn ? "YES" : "NO"} | Loaded: {isLoaded ? "YES" : "NO"}
+      </div>
+
       <div className="hidden">
-        <SignInButton mode="modal">
+        <SignInButton mode="modal" afterSignInUrl="/?signup=true" afterSignUpUrl="/?signup=true">
             <button ref={signInButtonRef}>Hidden Trigger</button>
         </SignInButton>
       </div>
@@ -187,11 +182,19 @@ export default function Dashboard() {
             <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
-            {!isPro && (
+            {/* SAFETY NET: If Signed In but Gatekeeper failed, show button HERE too */}
+            {isSignedIn && !isPro && (
+                <a href={getStripeUrl()} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-600/20 animate-pulse border border-emerald-400">
+                    COMPLETE CHECKOUT
+                </a>
+            )}
+            
+            {!isPro && !isSignedIn && (
                 <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
             )}
+            
             {!isSignedIn ? (
                 <button onClick={handleStartTrial} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
