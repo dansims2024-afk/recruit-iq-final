@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
-  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X 
+  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X, LogOut 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -54,29 +54,6 @@ export default function Dashboard() {
     }
     return url.toString();
   };
-
-  // --- THE FINAL HANDOFF LOGIC ---
-  useEffect(() => {
-    // Check if user is loaded, signed in, but NOT Pro
-    if (isLoaded && isSignedIn && !isPro) {
-        
-        // Did we just try to sign up?
-        const isPending = sessionStorage.getItem('pending_stripe') === 'true';
-        const isSignupRedirect = window.location.search.includes('signup=true');
-        
-        if (isPending || isSignupRedirect) {
-            // 1. Clear flags
-            sessionStorage.removeItem('pending_stripe');
-            
-            // 2. FORCE RE-OPEN THE MODAL (The Visual Safety Net)
-            setShowLimitModal(true);
-
-            // 3. Attempt forceful redirect (The Auto-Pilot)
-            const finalUrl = getStripeUrl();
-            window.location.assign(finalUrl);
-        }
-    }
-  }, [isLoaded, isSignedIn, isPro, user]);
 
   useEffect(() => {
     setScanCount(parseInt(localStorage.getItem('recruit_iq_scans') || '0'));
@@ -144,14 +121,7 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- SMART TRIGGER ---
   const handleStartTrial = () => {
-    if (isSignedIn) {
-        // If already signed in, GO TO STRIPE IMMEDIATELY
-        window.location.assign(getStripeUrl());
-        return;
-    }
-    // If not signed in, trigger the hidden button to open the modal
     sessionStorage.setItem('pending_stripe', 'true');
     setShowLimitModal(false);
     setTimeout(() => {
@@ -161,12 +131,50 @@ export default function Dashboard() {
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
+  // ---------------------------------------------------------------------------
+  // THE PAYMENT GATEKEEPER
+  // ---------------------------------------------------------------------------
+  // If user is Signed In AND Not Pro -> Show Payment Screen ONLY.
+  // This replaces the entire dashboard view.
+  if (isSignedIn && !isPro) {
+    return (
+        <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-6">
+            <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                
+                <div className="w-20 h-20 bg-indigo-600/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/20">
+                    <Check className="w-10 h-10 text-indigo-400" />
+                </div>
+                
+                <h2 className="text-3xl font-black text-white mb-2">Account Created!</h2>
+                <p className="text-slate-400 text-sm mb-8">You are one step away. Complete your secure checkout to unlock Elite access.</p>
+                
+                <div className="space-y-4">
+                    <a 
+                        href={getStripeUrl()} 
+                        className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg shadow-emerald-600/20 transition-all transform hover:scale-[1.02]"
+                    >
+                        Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
+                    </a>
+                    
+                    <SignOutButton>
+                        <button className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
+                            <LogOut className="w-3 h-3" /> Sign Out
+                        </button>
+                    </SignOutButton>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
+  // --- NORMAL DASHBOARD (FOR GUESTS OR PRO USERS) ---
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
       {/* HIDDEN ENGINE */}
       <div className="hidden">
-        <SignInButton mode="modal" afterSignInUrl="/?signup=true" afterSignUpUrl="/?signup=true">
+        <SignInButton mode="modal">
             <button ref={signInButtonRef}>Hidden Trigger</button>
         </SignInButton>
       </div>
@@ -260,20 +268,8 @@ export default function Dashboard() {
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
                  <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
-                 
-                 {/* DYNAMIC WELCOME MESSAGE */}
-                 {isSignedIn ? (
-                    <div className="mb-6">
-                        <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-500/30">Registration Complete</span>
-                        <h2 className="text-4xl font-black text-white mt-4 leading-tight">Welcome, {user?.firstName}!</h2>
-                        <p className="text-slate-400 mt-2 text-sm">Your account is ready. Complete payment to unlock Elite access.</p>
-                    </div>
-                 ) : (
-                    <>
-                        <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
-                        <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
-                    </>
-                 )}
+                 <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
+                 <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
@@ -284,8 +280,7 @@ export default function Dashboard() {
                             Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
                         </button>
                     ) : (
-                        /* THIS IS THE BUTTON YOU WILL SEE NOW */
-                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-emerald-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all border border-emerald-400 hover:scale-[1.05]">
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
                         </a>
                     )}
