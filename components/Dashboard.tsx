@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+// IMPORT useClerk TO FORCE TOKEN REFRESH
+import { useUser, UserButton, SignInButton, useClerk, SignOutButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
-  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X, AlertTriangle 
+  Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, X, LogOut 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -32,6 +33,7 @@ Strategic Technical Leader with 14 years of experience building mission-critical
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const { session } = useClerk(); // ACCESS SESSION DIRECTLY
   const signInButtonRef = useRef<HTMLButtonElement>(null);
 
   const [activeTab, setActiveTab] = useState('jd');
@@ -139,9 +141,6 @@ export default function Dashboard() {
   if (isSignedIn && !isPro) {
     return (
         <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
-            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-6 py-2 rounded-full mb-8 font-mono text-xs">
-                 DEBUG STATUS: SIGNED IN = TRUE | PRO = FALSE
-            </div>
             <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
                 <div className="w-20 h-20 bg-indigo-600/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/20">
@@ -155,6 +154,13 @@ export default function Dashboard() {
                 >
                     Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
                 </a>
+                <div className="mt-6">
+                    <SignOutButton>
+                        <button className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
+                            <LogOut className="w-3 h-3" /> Sign Out
+                        </button>
+                    </SignOutButton>
+                </div>
             </div>
         </div>
     );
@@ -163,9 +169,9 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* --- DEBUG STATUS BAR (VISIBLE IF GUEST) --- */}
-      <div className="fixed top-0 left-0 w-full bg-yellow-600 text-black font-bold text-center text-xs py-2 z-[9999]">
-         DEBUG: Signed In: {isSignedIn ? "YES" : "NO"} | Loaded: {isLoaded ? "YES" : "NO"}
+      {/* --- DEBUG STATUS BAR: IMPROVED --- */}
+      <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
+         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} | SESSION: {session ? "ACTIVE" : "NONE"}
       </div>
 
       <div className="hidden">
@@ -176,31 +182,25 @@ export default function Dashboard() {
 
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
+      {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
             <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
-            {/* SAFETY NET: If Signed In but Gatekeeper failed, show button HERE too */}
-            {isSignedIn && !isPro && (
-                <a href={getStripeUrl()} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-600/20 animate-pulse border border-emerald-400">
-                    COMPLETE CHECKOUT
-                </a>
-            )}
-            
             {!isPro && !isSignedIn && (
                 <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
             )}
-            
             {!isSignedIn ? (
                 <button onClick={handleStartTrial} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
 
+      {/* MAIN DASHBOARD CONTENT */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
