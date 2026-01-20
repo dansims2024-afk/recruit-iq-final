@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
+// ADDED SignUpButton TO IMPORTS
+import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -57,6 +58,7 @@ export default function Dashboard() {
   // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
+        // This detects if they just signed up and bounces them to Stripe
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
             sessionStorage.removeItem('pending_stripe');
             window.location.href = getStripeUrl();
@@ -109,7 +111,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -130,14 +132,7 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  // --- THE OPTION 1 FIX: INTERNAL REDIRECT ---
-  // This uses window.location.assign to force a reliable navigation to the local sign-up page
-  // bypassing the "accounts" subdomain DNS error.
-  const handleStartTrial = () => {
-    sessionStorage.setItem('pending_stripe', 'true');
-    window.location.assign('/sign-up');
-  };
-  // -------------------------------------------
+  // NOTE: handleStartTrial removed. Logic moved directly into the SignUpButton component below.
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
 
@@ -145,7 +140,6 @@ export default function Dashboard() {
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
 
-      {/* HEADER: LOGO LEFT, PERMANENT BUTTONS RIGHT */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Recruit-IQ" className="w-10 h-10 object-contain" />
@@ -166,7 +160,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
@@ -188,7 +181,6 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -243,12 +235,15 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        <button 
-                            onClick={handleStartTrial}
-                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                        >
-                            Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
-                        </button>
+                        /* OPTION 5 FIX: CLERK MODAL OVERLAY */
+                        <SignUpButton mode="modal" forceRedirectUrl="/">
+                            <button 
+                                onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
+                                className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                            >
+                                Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </SignUpButton>
                     ) : (
                         <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
