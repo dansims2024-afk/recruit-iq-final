@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, useClerk, UserButton } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
@@ -15,14 +15,24 @@ const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 // --- THE ELITE VALUE SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
-SALARY: $240,000 - $285,000 + Performance Bonus + Equity...`;
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+ABOUT THE COMPANY:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
+
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate.
+- Lead the migration from legacy monolithic structures to modern gRPC architecture.
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY | m.vandelay@email.com...`;
+Principal Software Architect | New York, NY | m.vandelay@email.com
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { openSignUp, openSignIn } = useClerk(); 
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -63,12 +73,23 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, message: '' }), 3000);
   };
 
-  // FORCED TRIGGER LOGIC
-  const handleEliteTrigger = (e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation(); // Stops the modal from blocking the click
-    sessionStorage.setItem('pending_stripe', 'true');
-    openSignUp({ afterSignUpUrl: '/?signup=true' });
+  const copyEmail = () => {
+    if (analysis?.outreach_email) {
+      navigator.clipboard.writeText(analysis.outreach_email);
+      showToast("Elite Outreach Email Copied!");
+    }
+  };
+
+  const downloadPDF = () => {
+    if (!analysis) return;
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "bold");
+    doc.text(`RECRUIT-IQ ELITE REPORT: ${analysis.candidate_name}`, 10, 20);
+    doc.setFontSize(12);
+    doc.text(`Match Score: ${analysis.score}%`, 10, 30);
+    doc.text("Strengths:", 10, 50);
+    analysis.strengths.forEach((s: string, i: number) => doc.text(`• ${s}`, 15, 60 + (i * 10)));
+    doc.save(`RecruitIQ_${analysis.candidate_name}.pdf`);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,7 +109,7 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required for Elite Screen."); return; }
     setLoading(true);
     try {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -106,7 +127,13 @@ export default function Dashboard() {
           localStorage.setItem('recruit_iq_scans', newCount.toString());
         }
       }
-    } catch (err) { showToast("AI Error."); } finally { setLoading(false); }
+    } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
+  };
+
+  // FAIL-SAFE REDIRECT: Direct link bypasses all modal click conflicts
+  const handleStartTrial = () => {
+    sessionStorage.setItem('pending_stripe', 'true');
+    window.location.href = `https://accounts.recruit-iq.com/sign-up?redirect_url=${encodeURIComponent(window.location.origin + '/?signup=true')}`;
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
@@ -123,21 +150,24 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
             {!isPro && (
-                <button onPointerDown={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20">
                     <Zap className="w-3 h-3 fill-current" /> Upgrade
                 </button>
             )}
             {!isSignedIn ? (
-                <button onPointerDown={() => openSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                <SignInButton mode="modal">
+                    <button className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
+                </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
+        {/* INPUT COLUMN */}
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
-                <button onPointerDown={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
-                <button onPointerDown={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
             </div>
             
             <div className="flex gap-3 mb-4">
@@ -145,16 +175,17 @@ export default function Dashboard() {
                 <Upload className="w-3 h-3 inline mr-2" /> Upload .docx
                 <input type="file" accept=".docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onPointerDown={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Elite Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Elite Samples</button>
             </div>
 
             <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono mb-6 leading-relaxed" placeholder={activeTab === 'jd' ? "Paste JD..." : "Paste Resume..."} value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
             
-            <button onPointerDown={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 flex items-center justify-center gap-3 shadow-xl hover:bg-indigo-500 transition-all">
+            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 flex items-center justify-center gap-3 shadow-xl hover:bg-indigo-500 transition-all">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-white" />} Execute Elite AI Screen
             </button>
         </div>
 
+        {/* RESULTS COLUMN */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -162,12 +193,13 @@ export default function Dashboard() {
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl">{analysis.score}%</div>
                   <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Match Score</h3>
                   <div className="text-white font-bold text-xl mb-4">{analysis.candidate_name}</div>
+                  <button onClick={downloadPDF} className="bg-slate-800 px-6 py-2 rounded-xl text-[10px] font-bold uppercase hover:bg-slate-700 transition-all border border-slate-700"><Download className="w-4 h-4 inline mr-2" /> Download PDF Report</button>
                 </div>
 
                 <div className="bg-indigo-600/5 border border-indigo-500/20 p-8 rounded-[2.5rem]">
                   <div className="flex justify-between items-center mb-4">
                     <h4 className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><Mail className="w-3 h-3" /> Outreach Email</h4>
-                    <button onPointerDown={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied");}} className="p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"><Copy className="w-4 h-4 text-indigo-400" /></button>
+                    <button onClick={copyEmail} className="p-2 hover:bg-indigo-500/20 rounded-lg transition-colors"><Copy className="w-4 h-4 text-indigo-400" /></button>
                   </div>
                   <div className="bg-[#0B1120] p-6 rounded-2xl border border-slate-800 text-[11px] leading-relaxed text-slate-300 font-mono whitespace-pre-wrap">{analysis.outreach_email}</div>
                 </div>
@@ -182,6 +214,11 @@ export default function Dashboard() {
                     <div className="space-y-3">{analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200">• {g}</p>)}</div>
                   </div>
                 </div>
+
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Strategic Interview Guide</h4>
+                  <div className="space-y-4">{analysis.questions.map((q: string, i: number) => <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300">"{q}"</div>)}</div>
+                </div>
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
@@ -192,7 +229,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* UPGRADE MODAL: HIGH-PRIORITY EVENT HANDLING */}
+      {/* VALUE-DRIVEN UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
@@ -203,25 +240,22 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* FIXED: Native Pointer Event avoids modal click blocking */
                         <button 
-                            type="button"
-                            onPointerDown={handleEliteTrigger}
-                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
+                            onClick={handleStartTrial}
+                            className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400"
                         >
                             Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
                         </button>
                     ) : (
-                        <a onPointerDown={() => sessionStorage.setItem('pending_stripe', 'true')} href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
                         </a>
                     )}
                  </div>
                  
-                 <button onPointerDown={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
+                 <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase">Dismiss</button>
               </div>
 
-              {/* VALUE PROPOSITION SIDEBAR */}
               <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
                  <div className="flex gap-4 items-start">
                    <Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /> 
