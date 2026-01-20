@@ -45,45 +45,38 @@ export default function Dashboard() {
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   
-  // ROBUST STRIPE URL GENERATOR
   const getStripeUrl = () => {
-    // Base URL
+    if (!user?.id) return STRIPE_URL;
     const url = new URL(STRIPE_URL);
-    
-    // If we have a user ID, attach it for tracking
-    if (user?.id) {
-        url.searchParams.set("client_reference_id", user.id);
-    }
-    
-    // If we have an email, pre-fill it to save the user time
+    url.searchParams.set("client_reference_id", user.id);
     if (user?.primaryEmailAddress?.emailAddress) {
         url.searchParams.set("prefilled_email", user.primaryEmailAddress.emailAddress);
     }
-    
     return url.toString();
   };
 
-  // --- THE TRAFFIC COP (Redirect Logic) ---
+  // --- THE FINAL HANDOFF LOGIC ---
   useEffect(() => {
-    // Only run if loaded, user is logged in, and NOT yet a pro member
+    // Check if user is loaded, signed in, but NOT Pro
     if (isLoaded && isSignedIn && !isPro) {
         
-        // Check triggers: 
-        // 1. "pending_stripe" flag in storage (set when clicking the button)
-        // 2. "signup=true" in URL (set by the hidden button after login)
+        // Did we just try to sign up?
         const isPending = sessionStorage.getItem('pending_stripe') === 'true';
         const isSignupRedirect = window.location.search.includes('signup=true');
         
         if (isPending || isSignupRedirect) {
-            // Clear triggers to prevent loops
+            // 1. Clear flags
             sessionStorage.removeItem('pending_stripe');
             
-            // GO TO STRIPE
+            // 2. FORCE RE-OPEN THE MODAL (The Visual Safety Net)
+            setShowLimitModal(true);
+
+            // 3. Attempt forceful redirect (The Auto-Pilot)
             const finalUrl = getStripeUrl();
-            window.location.href = finalUrl;
+            window.location.assign(finalUrl);
         }
     }
-  }, [isLoaded, isSignedIn, isPro, user]); // Dependent on 'user' so we wait for the ID to load
+  }, [isLoaded, isSignedIn, isPro, user]);
 
   useEffect(() => {
     setScanCount(parseInt(localStorage.getItem('recruit_iq_scans') || '0'));
@@ -153,17 +146,16 @@ export default function Dashboard() {
 
   // --- SMART TRIGGER ---
   const handleStartTrial = () => {
-    // Case 1: Already Signed In? -> Go straight to Stripe.
     if (isSignedIn) {
-        window.location.href = getStripeUrl();
+        // If already signed in, GO TO STRIPE IMMEDIATELY
+        window.location.assign(getStripeUrl());
         return;
     }
-
-    // Case 2: Not Signed In? -> Open Modal.
+    // If not signed in, trigger the hidden button to open the modal
     sessionStorage.setItem('pending_stripe', 'true');
-    setShowLimitModal(false); // Close our custom modal to clear the screen
+    setShowLimitModal(false);
     setTimeout(() => {
-        signInButtonRef.current?.click(); // Click the hidden Clerk button
+        signInButtonRef.current?.click();
     }, 100);
   };
 
@@ -172,13 +164,9 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* HIDDEN ENGINE: Now includes explicit redirects to /?signup=true */}
+      {/* HIDDEN ENGINE */}
       <div className="hidden">
-        <SignInButton 
-            mode="modal" 
-            afterSignInUrl="/?signup=true" 
-            afterSignUpUrl="/?signup=true"
-        >
+        <SignInButton mode="modal" afterSignInUrl="/?signup=true" afterSignUpUrl="/?signup=true">
             <button ref={signInButtonRef}>Hidden Trigger</button>
         </SignInButton>
       </div>
@@ -197,7 +185,6 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                /* Use the same smart handler here too */
                 <button onClick={handleStartTrial} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">Sign In</button>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
@@ -273,8 +260,20 @@ export default function Dashboard() {
           <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
               <div className="p-12 md:w-3/5 flex flex-col justify-center">
                  <img src="/logo.png" alt="Recruit-IQ" className="w-16 h-16 object-contain mb-8" />
-                 <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
-                 <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
+                 
+                 {/* DYNAMIC WELCOME MESSAGE */}
+                 {isSignedIn ? (
+                    <div className="mb-6">
+                        <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-500/30">Registration Complete</span>
+                        <h2 className="text-4xl font-black text-white mt-4 leading-tight">Welcome, {user?.firstName}!</h2>
+                        <p className="text-slate-400 mt-2 text-sm">Your account is ready. Complete payment to unlock Elite access.</p>
+                    </div>
+                 ) : (
+                    <>
+                        <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
+                        <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster with AI precision.</p>
+                    </>
+                 )}
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
@@ -285,7 +284,8 @@ export default function Dashboard() {
                             Start 3-Day Free Trial <ArrowRight className="w-4 h-4" />
                         </button>
                     ) : (
-                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]">
+                        /* THIS IS THE BUTTON YOU WILL SEE NOW */
+                        <a href={getStripeUrl()} className="inline-flex items-center gap-3 bg-emerald-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:bg-emerald-500 transition-all border border-emerald-400 hover:scale-[1.05]">
                             Proceed to Checkout <ArrowRight className="w-4 h-4" />
                         </a>
                     )}
