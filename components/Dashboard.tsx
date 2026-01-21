@@ -10,8 +10,9 @@ import {
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
+// --- HARD-WIRED LOGIN URL (From your DNS) ---
+const LOGIN_URL = "https://accounts.recruit-iq.com/sign-in";
 
-// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect\nLOCATION: New York, NY\nSALARY: $240k - $285k\n\nWe need a visionary Architect to lead the evolution of our next-gen high-frequency trading platform using AWS EKS and gRPC.`;
 const SAMPLE_RESUME = `MARCUS VANDELAY\nPrincipal Architect | New York | m.vandelay@email.com\n\nStrategic leader with 14 years building low-latency financial systems. Expert in AWS, C++, and Go.`;
 
@@ -30,14 +31,16 @@ export default function Dashboard() {
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   
-  // --- UNIVERSAL ACTION HANDLER ---
-  // This function decides where to go ONLY when you click.
+  // --- HARD-WIRED ACTION HANDLER ---
   const handleUniversalAction = () => {
+    // 1. VISUAL FEEDBACK: Show user something is happening immediately
+    showToast(isSignedIn ? "Redirecting to Stripe..." : "Redirecting to Login...");
+
     if (!isSignedIn) {
-        // If guest, force login window
-        clerk.redirectToSignIn();
+        // HARD-WIRE: Go directly to the verified URL. No SDK software needed.
+        window.location.href = LOGIN_URL;
     } else {
-        // If signed in, build the Stripe URL and go
+        // GO TO STRIPE
         if (!user?.id) {
              window.location.href = STRIPE_URL;
              return;
@@ -98,6 +101,8 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
+  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
+
   // --- GATEKEEPER UI (If Signed In + Not Pro) ---
   if (isSignedIn && !isPro) {
     return (
@@ -107,7 +112,7 @@ export default function Dashboard() {
                 <h2 className="text-3xl font-black text-white mb-2 mt-4">Account Ready!</h2>
                 <p className="text-slate-400 text-sm mb-8">One last step to unlock Elite access.</p>
                 
-                {/* SAFE MODE BUTTON: NO CONDITIONALS */}
+                {/* SAFE MODE BUTTON */}
                 <button 
                     onClick={handleUniversalAction}
                     className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all"
@@ -132,7 +137,7 @@ export default function Dashboard() {
       
       {/* --- STATUS BAR --- */}
       <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
-         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} (SAFE MODE)
+         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} (HARD-WIRED)
       </div>
 
       {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
@@ -148,7 +153,7 @@ export default function Dashboard() {
                 </button>
             )}
             {!isSignedIn ? (
-                // NAVBAR UNIVERSAL BUTTON
+                // NAVBAR BUTTON
                 <button onClick={handleUniversalAction} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">
                     Sign In
                 </button>
