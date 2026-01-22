@@ -1,38 +1,67 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { Webhook } from "svix";
-import Stripe from "stripe";
 import { clerkClient } from "@clerk/nextjs";
+import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2023-10-16",
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16", // Use your active API version
 });
 
 export async function POST(req: Request) {
-  const payload = await req.text();
+  const body = await req.text();
   const signature = headers().get("Stripe-Signature") as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event: Stripe.Event;
 
   try {
-    if (!webhookSecret) return new NextResponse("Missing Webhook Secret", { status: 500 });
-    event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-  } catch (err: any) {
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (error: any) {
+    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
   }
 
-  // LISTENER: If payment is successful, UNLOCK the user
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.client_reference_id;
+  const session = event.data.object as Stripe.Checkout.Session;
 
+  if (event.type === "checkout.session.completed" || event.type === "invoice.paid") {
+    
+    // 1. Try to find the user by the ID passed in the link
+    let userId = session.client_reference_id;
+
+    // 2. If no ID (because they just signed up), find them by EMAIL
+    if (!userId && session.customer_details?.email) {
+      try {
+        const userList = await clerkClient.users.getUserList({
+          emailAddress: [session.customer_details.email],
+          limit: 1,
+        });
+        
+        if (userList.length > 0) {
+          userId = userList[0].id;
+        }
+      } catch (err) {
+        console.error("Error finding user by email:", err);
+      }
+    }
+
+    // 3. Unlock the account if we found a User ID (either way)
     if (userId) {
-      await clerkClient.users.updateUser(userId, {
-        publicMetadata: { isPro: true },
-      });
+      try {
+        await clerkClient.users.updateUserMetadata(userId, {
+          publicMetadata: {
+            isPro: true,
+          },
+        });
+        console.log(`User ${userId} upgraded to Pro.`);
+      } catch (err) {
+        console.error(`Clerk update failed for ${userId}:`, err);
+      }
+    } else {
+      console.error("No User ID found in metadata or by email lookup.");
     }
   }
 
-  return new NextResponse("Success", { status: 200 });
+  return new NextResponse(null, { status: 200 });
 }
