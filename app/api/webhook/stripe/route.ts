@@ -4,7 +4,7 @@ import { clerkClient } from "@clerk/nextjs";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16", // Use your active API version
+  apiVersion: "2023-10-16", 
 });
 
 export async function POST(req: Request) {
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     // 1. Try to find the user by the ID passed in the link
     let userId = session.client_reference_id;
 
-    // 2. If no ID (because they just signed up), find them by EMAIL
+    // 2. CRITICAL FIX: If no ID (Sign Up Flow), find them by EMAIL
     if (!userId && session.customer_details?.email) {
       try {
         const userList = await clerkClient.users.getUserList({
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Unlock the account if we found a User ID (either way)
+    // 3. Unlock the account
     if (userId) {
       try {
         await clerkClient.users.updateUserMetadata(userId, {
@@ -54,12 +54,9 @@ export async function POST(req: Request) {
             isPro: true,
           },
         });
-        console.log(`User ${userId} upgraded to Pro.`);
       } catch (err) {
         console.error(`Clerk update failed for ${userId}:`, err);
       }
-    } else {
-      console.error("No User ID found in metadata or by email lookup.");
     }
   }
 
