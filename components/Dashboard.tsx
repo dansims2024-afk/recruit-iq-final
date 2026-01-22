@@ -5,8 +5,6 @@ import mammoth from 'mammoth';
 import { jsPDF } from "jspdf"; 
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
 
-// REMOVED: import logo from '../logo.png'; (This was causing the build error)
-
 // THE REAL STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
@@ -244,7 +242,7 @@ export default function Dashboard() {
       {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* Logo Check: CHANGED TO USE PUBLIC FOLDER PATH */}
+            {/* Logo Check: Uses PUBLIC FOLDER PATH */}
             <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -393,7 +391,8 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl={finalStripeUrl}>
+                    // FIXED: Changed forceRedirectUrl to afterSignUpUrl for Clerk v4 compatibility
+                    <SignUpButton mode="modal" afterSignUpUrl={finalStripeUrl}>
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
                         </button>
