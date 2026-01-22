@@ -1,9 +1,10 @@
+"use client"; // <--- THIS IS THE MISSING MAGIC LINE
+
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { jsPDF } from "jspdf"; // FIXED: Proper import for the PDF downloader
+import { jsPDF } from "jspdf"; 
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
 // FIXED PATH: This looks for logo.png in the 'src' folder. 
-// If your logo is in 'public', change this to: const logo = "/logo.png";
 import logo from '../logo.png'; 
 
 // THE REAL STRIPE LINK
@@ -64,7 +65,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
-  const [analysis, setAnalysis] = useState<any>(null); // Typed as any to avoid TS strictness for now
+  const [analysis, setAnalysis] = useState<any>(null); 
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -78,7 +79,7 @@ export default function Dashboard() {
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
   
-  // FIXED STRIPE LOGIC: This ensures the Webhook knows exactly WHO paid.
+  // FIXED STRIPE LOGIC
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const userId = user?.id;
 
@@ -133,7 +134,6 @@ export default function Dashboard() {
   const downloadPDF = () => {
     if (!analysis) return;
     
-    // FIXED: Uses the proper import from the top of the file
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
@@ -212,13 +212,13 @@ export default function Dashboard() {
     if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required.", "error"); return; }
     
     setLoading(true);
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY; // FIXED: Use Next.js Env Variable convention
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY; 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 questions, and outreach email. Return ONLY JSON: {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
       const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
       const data = await response.json();
-      // Safe parsing logic
+      
       const textResponse = data.candidates[0].content.parts[0].text;
       const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
       const result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
@@ -256,7 +256,6 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             
-            {/* LOG IN BUTTON (Shows if NOT signed in) */}
             {!isSignedIn && (
                 <SignInButton mode="modal">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
@@ -393,7 +392,6 @@ export default function Dashboard() {
                      <p className="text-xs font-black text-blue-300 uppercase tracking-widest">Special Offer: 3 Days Free Access</p>
                  </div>
                  
-                 {/* DYNAMIC BUTTON LOGIC FOR MODAL - USES FIXED STRIPE LINK */}
                  {!isSignedIn ? (
                     <SignUpButton mode="modal" forceRedirectUrl={finalStripeUrl}>
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
