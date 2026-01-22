@@ -1,11 +1,11 @@
-"use client"; // <--- THIS IS THE MISSING MAGIC LINE
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { jsPDF } from "jspdf"; 
 import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
-// FIXED PATH: This looks for logo.png in the 'src' folder. 
-import logo from '../logo.png'; 
+
+// REMOVED: import logo from '../logo.png'; (This was causing the build error)
 
 // THE REAL STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
@@ -244,8 +244,8 @@ export default function Dashboard() {
       {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* Logo Check */}
-            <img src={logo.src || logo} alt="Logo" className="h-12 w-auto" />
+            {/* Logo Check: CHANGED TO USE PUBLIC FOLDER PATH */}
+            <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
                 <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
@@ -383,7 +383,7 @@ export default function Dashboard() {
             <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
               {/* Left Column: Pitch */}
               <div className="p-10 md:w-3/5 flex flex-col justify-center relative z-10">
-                 <div className="mb-6"><img src={logo.src || logo} alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
+                 <div className="mb-6"><img src="/logo.png" alt="Logo" className="h-10 w-auto opacity-100 drop-shadow-lg" /></div>
                  <h2 className="text-4xl font-black text-white mb-3 leading-none">Hire Your Next Star <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">In Seconds.</span></h2>
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Stop manually screening resumes. Unlock the full power of Recruit-IQ to uncover hidden talent instantly.</p>
                  
