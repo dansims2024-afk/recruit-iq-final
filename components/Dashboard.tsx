@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-// --- ADDED SignUpButton HERE ---
 import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
@@ -10,7 +9,7 @@ import {
   Star, Check, Info, Target, Upload, Mail, Copy, ArrowRight, FileText, LogOut 
 } from "lucide-react";
 
-// --- YOUR REAL STRIPE LINK ---
+// --- CRITICAL FIX: THIS IS YOUR REAL STRIPE LINK ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
@@ -44,6 +43,7 @@ export default function Dashboard() {
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   
+  // URL CONSTRUCTION: Safely adds your User ID to the real Stripe link
   const getStripeUrl = () => {
     if (!user?.id) return STRIPE_URL;
     const url = new URL(STRIPE_URL);
@@ -54,10 +54,9 @@ export default function Dashboard() {
     return url.toString();
   };
 
-  // REDIRECT LOGIC: Watches for the "signup" signal
+  // REDIRECT LOGIC: Pushes to Stripe after Clerk Sign-Up
   useEffect(() => {
     if (isLoaded && isSignedIn && !isPro) {
-        // If they just signed up, send them to Stripe
         if (window.location.search.includes('signup=true') || sessionStorage.getItem('pending_stripe') === 'true') {
             sessionStorage.removeItem('pending_stripe');
             window.location.href = getStripeUrl();
@@ -260,7 +259,6 @@ export default function Dashboard() {
                  
                  <div className="relative z-[1100]">
                     {!isSignedIn ? (
-                        /* --- FIXED: REPLACED DEAD LINK WITH CLERK MODAL --- */
                         <SignUpButton mode="modal" afterSignUpUrl="/?signup=true">
                             <button 
                                 onClick={() => sessionStorage.setItem('pending_stripe', 'true')}
