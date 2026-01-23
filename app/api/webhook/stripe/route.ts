@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs";
 import Stripe from "stripe";
 
+// FIXED: Changed apiVersion to match your installed package (2023-10-16)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia", // Uses latest stable API version
+  apiVersion: "2023-10-16", 
 });
 
 export async function POST(req: Request) {
