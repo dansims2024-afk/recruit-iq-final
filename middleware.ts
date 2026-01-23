@@ -1,11 +1,15 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Routes that anyone can see
+  // Routes that anyone can visit without being logged in
   publicRoutes: ["/", "/api/webhook/stripe"],
 });
 
 export const config = {
-  // This matcher catches the home page AND the hidden Clerk signals
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  // This matcher is optimized for Clerk V4 to catch internal redirect signals
+  matcher: [
+    "/((?!.+\\.[\\w]+$|_next).*)", 
+    "/", 
+    "/(api|trpc)(.*)"
+  ],
 };
