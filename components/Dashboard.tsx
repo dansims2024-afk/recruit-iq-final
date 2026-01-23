@@ -91,8 +91,7 @@ export default function Dashboard() {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
     
-    // Aggressively try to refresh user data on mount if they are signed in
-    // This helps catch the "Just returned from Stripe" state
+    // Attempt silent reload on mount to catch updates
     if (isLoaded && isSignedIn) {
         user.reload().catch(() => null);
     }
@@ -103,20 +102,32 @@ export default function Dashboard() {
     }
   }, [isLoaded, isSignedIn, isPro]);
 
-  // MANUAL VERIFY FUNCTION
+  // --- NEW: ACTIVE VERIFICATION FUNCTION ---
+  // This calls our new API route to "pull" the payment status from Stripe
   const handleVerifySubscription = async () => {
     setVerifying(true);
     try {
-        await user?.reload();
-        // The isPro variable will naturally update if publicMetadata changed
-        if (user?.publicMetadata?.isPro === true) {
+        // 1. Call the manual-check API
+        const response = await fetch('/api/manual-check', { method: 'POST' });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // 2. If backend says "Found it!", reload user to get the 'isPro' tag
+            await user?.reload();
             setShowLimitModal(false);
-            showToast("Subscription Verified! Account Unlocked.", "success");
+            showToast("Payment Confirmed! Account Unlocked.", "success");
         } else {
-            showToast("Pro status not found yet. Please wait a moment.", "error");
+            // 3. Fallback: Try a standard reload just in case
+            await user?.reload();
+            if (user?.publicMetadata?.isPro === true) {
+                setShowLimitModal(false);
+                showToast("Account Unlocked.", "success");
+            } else {
+                showToast("Payment not found yet. It may take 30s.", "error");
+            }
         }
     } catch (error) {
-        showToast("Verification failed. Try again.", "error");
+        showToast("Verification failed. Please try again.", "error");
     } finally {
         setVerifying(false);
     }
@@ -417,13 +428,13 @@ export default function Dashboard() {
                     Start 3-Day Free Trial
                   </a>
                   
-                  {/* 3. NEW: MANUAL REFRESH BUTTON FOR POST-PAYMENT */}
+                  {/* 3. NEW: MANUAL REFRESH BUTTON WITH ACTIVE VERIFICATION */}
                   <button 
                     onClick={handleVerifySubscription}
                     disabled={verifying}
                     className="w-full py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-300 border border-slate-700 hover:text-white transition-all"
                   >
-                    {verifying ? "Verifying..." : "I've Already Paid (Refresh Status)"}
+                    {verifying ? "Checking Stripe..." : "I've Already Paid (Force Unlock)"}
                   </button>
                 </div>
             )}
