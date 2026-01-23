@@ -368,7 +368,7 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* ELITE UPGRADE MODAL - FIXED LOOP & 404 REDIRECT */}
+      {/* ELITE UPGRADE MODAL - FIXED LOOP & BUILD ERROR */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center shadow-2xl">
@@ -376,8 +376,8 @@ export default function Dashboard() {
             <p className="text-slate-400 mb-8 text-sm">You have exhausted your trial scans. Access unlimited intelligence reports and strategic guides now.</p>
             {!isSignedIn ? (
                 // 1. IF NOT LOGGED IN: Use Clerk to Sign In
-                // Added forceRedirectUrl to explicitly handle the return to current page
-                <SignUpButton mode="modal" forceRedirectUrl="/" afterSignUpUrl="/">
+                // Fixed: Removed 'forceRedirectUrl' (build error) and relying on 'afterSignUpUrl'
+                <SignUpButton mode="modal" afterSignUpUrl="/">
                     <button className="w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20">Create Elite Account</button>
                 </SignUpButton>
             ) : (
