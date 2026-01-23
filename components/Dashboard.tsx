@@ -256,7 +256,8 @@ export default function Dashboard() {
             </div>
             
             {!isSignedIn && (
-                <SignInButton>
+                // FIXED: Added afterSignInUrl to prevent 404s for returning users
+                <SignInButton afterSignInUrl="/">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
                     </button>
