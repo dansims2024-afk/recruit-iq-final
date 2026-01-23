@@ -391,6 +391,7 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
+                    // FIXED: Return to "/" to prevent 404 security blocks
                     <SignUpButton afterSignUpUrl="/">
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
