@@ -102,8 +102,8 @@ export default function Dashboard() {
     }
   }, [isLoaded, isSignedIn, isPro]);
 
-  // --- NEW: ACTIVE VERIFICATION FUNCTION ---
-  // This calls our new API route to "pull" the payment status from Stripe
+  // --- ACTIVE VERIFICATION FUNCTION ---
+  // Calls the new API route to "pull" the payment status from Stripe
   const handleVerifySubscription = async () => {
     setVerifying(true);
     try {
@@ -405,10 +405,13 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* ELITE UPGRADE MODAL - FIXED LOOP, BUILD ERROR & POST-PAYMENT REFRESH */}
+      {/* ELITE UPGRADE MODAL - WITH EMERGENCY EXIT */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center shadow-2xl">
+            {/* EMERGENCY EXIT BUTTON: Allows you to close the modal if stuck */}
+            <button onClick={() => setShowLimitModal(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white text-xl font-bold">✕</button>
+            
             <h2 className="text-3xl font-black mb-4 leading-none text-white uppercase tracking-tighter">Upgrade to Elite</h2>
             <p className="text-slate-400 mb-8 text-sm">You have exhausted your trial scans. Access unlimited intelligence reports and strategic guides now.</p>
             {!isSignedIn ? (
