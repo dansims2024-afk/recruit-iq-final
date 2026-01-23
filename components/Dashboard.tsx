@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
 import { jsPDF } from "jspdf"; 
-import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/clerk-react";
+// FIXED: Changed from "@clerk/clerk-react" to "@clerk/nextjs" to fix the spinning wheel
+import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 
 // THE REAL STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
