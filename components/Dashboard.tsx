@@ -243,7 +243,6 @@ export default function Dashboard() {
       {/* HEADER WITH LOG IN BUTTON */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            {/* Logo Check: Uses PUBLIC FOLDER PATH */}
             <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -256,7 +255,6 @@ export default function Dashboard() {
             </div>
             
             {!isSignedIn && (
-                // FIXED: Added afterSignInUrl to prevent 404s for returning users
                 <SignInButton afterSignInUrl="/">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
@@ -393,7 +391,6 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    // FIXED: Redirect to "/" (Home) to prevent 404 security block
                     <SignUpButton afterSignUpUrl="/">
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
