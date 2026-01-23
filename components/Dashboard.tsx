@@ -81,6 +81,7 @@ export default function Dashboard() {
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const userId = user?.id;
 
+  // This link will be used when the user is signed in but not paid yet
   const finalStripeUrl = userId && userEmail
     ? `${STRIPE_URL}?client_reference_id=${userId}&prefilled_email=${encodeURIComponent(userEmail)}`
     : STRIPE_URL;
@@ -255,7 +256,6 @@ export default function Dashboard() {
             </div>
             
             {!isSignedIn && (
-                // FIXED: REMOVED mode="modal" to prevent 422 security errors
                 <SignInButton>
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors shadow-lg shadow-indigo-500/20">
                         Log In
@@ -392,8 +392,8 @@ export default function Dashboard() {
                  </div>
                  
                  {!isSignedIn ? (
-                    // FIXED: REMOVED mode="modal" from SignUpButton too
-                    <SignUpButton afterSignUpUrl={finalStripeUrl}>
+                    // FIXED: Redirect to "/" (Home) to prevent 404 security block
+                    <SignUpButton afterSignUpUrl="/">
                         <button className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-xl shadow-blue-500/30">
                             Create Free Account
                         </button>
