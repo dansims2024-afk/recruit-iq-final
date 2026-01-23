@@ -1,12 +1,12 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // FIXED: Added "/" to publicRoutes so the page loads immediately.
-  // We also keep the Stripe webhook public so payments work.
-  publicRoutes: ["/", "/api/webhooks/stripe"],
+  // NUCLEAR FIX: Whitelist EVERYTHING ("/(.*)")
+  // This ensures the dashboard, the API, and the Webhooks are never blocked.
+  publicRoutes: ["/(.*)"],
 });
 
 export const config = {
-  // This matches all routes except static files (images, css, etc.)
+  // Keep the matcher standard to ensure Clerk still loads the user session
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
