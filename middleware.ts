@@ -1,11 +1,17 @@
 import { authMiddleware } from "@clerk/nextjs";
 
+// This is for Clerk Version 4 (Classic)
 export default authMiddleware({
-  // Routes that anyone can visit without being logged in
+  // Routes anyone can visit without logging in
   publicRoutes: ["/", "/api/webhook/stripe"],
 });
 
 export const config = {
-  // Broad matcher catches home page AND hidden Clerk login signals
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  // This "Broad Matcher" prevents internal Clerk signals like __clerk_db_jwt 
+  // from being treated as missing static pages (404).
+  matcher: [
+    "/((?!.+\\.[\\w]+$|_next).*)", 
+    "/", 
+    "/(api|trpc)(.*)"
+  ],
 };
