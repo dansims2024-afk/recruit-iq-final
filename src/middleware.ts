@@ -1,11 +1,11 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Public routes that don't require login
+  // These routes are safe and don't require login
   publicRoutes: ["/", "/api/webhook/stripe"],
 });
 
 export const config = {
-  // The standard V4 matcher to prevent 404s on internal files
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  // This "Safety Net" matcher ensures the middleware runs on EVERY page load
+  matcher: ["/((?!_next/image|_next/static|favicon.ico).*)", "/"],
 };
