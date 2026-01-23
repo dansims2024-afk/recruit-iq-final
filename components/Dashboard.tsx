@@ -88,7 +88,13 @@ export default function Dashboard() {
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
-  }, []);
+    
+    // AUTO-OPEN MODAL: If user just logged in (or is logged in) but hit limit and isn't pro
+    // This prevents them from being lost after the redirect.
+    if (isLoaded && isSignedIn && !isPro && savedCount >= 3) {
+      setShowLimitModal(true);
+    }
+  }, [isLoaded, isSignedIn, isPro]);
 
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
@@ -362,7 +368,7 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* ELITE UPGRADE MODAL - FIXED LOOP */}
+      {/* ELITE UPGRADE MODAL - FIXED LOOP & 404 REDIRECT */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center shadow-2xl">
@@ -370,13 +376,13 @@ export default function Dashboard() {
             <p className="text-slate-400 mb-8 text-sm">You have exhausted your trial scans. Access unlimited intelligence reports and strategic guides now.</p>
             {!isSignedIn ? (
                 // 1. IF NOT LOGGED IN: Use Clerk to Sign In
-                <SignUpButton afterSignUpUrl="/">
+                // Added forceRedirectUrl to explicitly handle the return to current page
+                <SignUpButton mode="modal" forceRedirectUrl="/" afterSignUpUrl="/">
                     <button className="w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20">Create Elite Account</button>
                 </SignUpButton>
             ) : (
                 // 2. IF LOGGED IN: THIS IS THE FIX
-                // We use a simple <a> tag to prevent React Router from "spooling".
-                // This forces the browser to open a fresh tab, breaking the loop.
+                // Direct link to Stripe, using finalStripeUrl with ID pre-filled
                 <a 
                   href={finalStripeUrl} 
                   target="_blank" 
