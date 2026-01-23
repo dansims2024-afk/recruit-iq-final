@@ -8,7 +8,7 @@ import { useUser, useClerk, SignUpButton, UserButton } from "@clerk/nextjs";
 // THE REAL STRIPE LINK
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- FULL EXTENDED SAMPLES (Restored) ---
+// --- FULL EXTENDED SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -78,6 +78,7 @@ export default function Dashboard() {
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const userId = user?.id;
 
+  // SAFE STRIPE URL GENERATION
   const finalStripeUrl = userId && userEmail
     ? `${STRIPE_URL}?client_reference_id=${userId}&prefilled_email=${encodeURIComponent(userEmail)}`
     : STRIPE_URL;
@@ -109,7 +110,6 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // FIXED TYPE ERROR FOR TYPESCRIPT VERCEL BUILD
         // @ts-ignore
         const pdfjs = window.pdfjsLib;
         const loadingTask = pdfjs.getDocument(URL.createObjectURL(file));
@@ -132,7 +132,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // POLISHED PDF STYLING
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -230,7 +229,7 @@ export default function Dashboard() {
   return (
     <div className="relative p-6 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* ELITE HEADER */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-12 w-auto" />
@@ -247,7 +246,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* WORKSPACE CARDS */}
+      {/* QUICK START CARDS */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
@@ -255,7 +254,7 @@ export default function Dashboard() {
                 {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Set Expectations</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">Establish the benchmark for this elite search.</p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Upload or Paste the Job Description.</p>
           </div>
           <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
@@ -263,26 +262,26 @@ export default function Dashboard() {
                 {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Validated</span>}
               </div>
               <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Input Candidate</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">Import data for the automated intelligence layer.</p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Upload a PDF/DOCX or paste resume.</p>
           </div>
           <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">3</span>
               </div>
-              <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Elite Outcome</h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed">Generate your high-fidelity report instantly.</p>
+              <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Generate Intelligence</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Execute AI screen.</p>
           </div>
       </div>
 
-      {/* CORE WORKFLOW AREA */}
+      {/* WORKSPACE */}
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                  1. Job Description {jdReady && <span className="text-emerald-400 text-lg">✓</span>}
+                  1. JD {jdReady && "✓"}
                 </button>
                 <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                  2. Resume {resumeReady && <span className="text-emerald-400 text-lg">✓</span>}
+                  2. Resume {resumeReady && "✓"}
                 </button>
             </div>
             
@@ -295,107 +294,85 @@ export default function Dashboard() {
             </div>
 
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
             <button onClick={handleScreen} disabled={loading} className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all">
-              <span className="bg-white/20 w-5 h-5 rounded-full flex items-center justify-center text-[9px]">3</span>
               {loading ? "Analyzing..." : "Execute AI Screen →"}
             </button>
         </div>
 
-        {/* RESULTS FEED */}
         <div className="h-[850px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
             {analysis ? (
-              <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+              <div className="space-y-6 animate-in fade-in">
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
-                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 border-4 border-indigo-500/50">{analysis.score}%</div>
-                  <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Elite Match Score</h3>
+                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4">{analysis.score}%</div>
+                  <h3 className="uppercase text-[9px] font-bold tracking-widest text-slate-500 mb-1">Match Score</h3>
                   <div className="text-white font-bold text-lg mb-4">{analysis.candidate_name}</div>
-                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 transition-all">Download Full Intelligence Report</button>
+                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 transition-all">Download Elite Report</button>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]">
-                    <h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Strengths</h4>
-                    {analysis.strengths.map((s: any, i: number) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}
-                  </div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]">
-                    <h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px] tracking-widest">Critical Gaps</h4>
-                    {analysis.gaps.map((g: any, i: number) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}
-                  </div>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-emerald-400 font-bold uppercase mb-3 text-[9px]">Strengths</h4>{analysis.strengths.map((s: any, i: number) => <p key={i} className="mb-2 text-slate-200">• {s}</p>)}</div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]"><h4 className="text-rose-400 font-bold uppercase mb-3 text-[9px]">Gaps</h4>{analysis.gaps.map((g: any, i: number) => <p key={i} className="mb-2 text-slate-200">• {g}</p>)}</div>
                 </div>
-
-                <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl">
-                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Interview Guide</h4>
-                  <div className="space-y-3 text-[11px] text-slate-300">
-                    {analysis.questions.map((q: any, i: number) => <p key={i} className="p-4 bg-slate-800/40 rounded-xl border border-slate-700 font-medium">"{q}"</p>)}
-                  </div>
-                </div>
-
                 <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl text-center">
-                    <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Outreach Script</h4>
-                    <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed italic">{analysis.outreach_email}</p>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-700">Copy to Clipboard</button>
+                    <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4">Outreach Email</h4>
+                    <p className="text-[10px] text-slate-300 mb-4 whitespace-pre-wrap leading-relaxed">{analysis.outreach_email}</p>
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied", "success")}} className="w-full py-3 bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-widest">Copy Email</button>
                 </div>
               </div>
             ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest gap-4 text-center p-10 opacity-40">
-                <span className="text-5xl">📊</span>
-                Intelligence Engine Idle... <br/> Complete Steps 1 & 2 to Begin
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-4 text-center p-10">
+                Waiting for Candidate Data...
               </div>
             )}
         </div>
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
-        <p className="mb-4 text-[9px]">&copy; {new Date().getFullYear()} Recruit-IQ. Exclusive Intel Platform.</p>
         <div className="flex justify-center gap-6">
-          <a href="#" className="hover:text-indigo-400">Security</a>
-          <a href="#" className="hover:text-indigo-400">Terms</a>
-          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400">Elite Support</button>
+          <a href="#" className="hover:text-indigo-400">Privacy Policy</a>
+          <a href="#" className="hover:text-indigo-400">Terms of Service</a>
+          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400">Contact Support</button>
         </div>
       </footer>
 
-      {/* ELITE UPGRADE MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center shadow-2xl">
-            <h2 className="text-3xl font-black mb-4 leading-none text-white uppercase tracking-tighter">Upgrade to Elite</h2>
-            <p className="text-slate-400 mb-8 text-sm">You have exhausted your trial scans. Access unlimited intelligence reports and strategic guides now.</p>
+            <h2 className="text-3xl font-black mb-4 leading-none text-white uppercase">Unlock Elite</h2>
+            <p className="text-slate-400 mb-8 text-sm">Upgrade for unlimited AI screens and detailed PDF reports.</p>
             {!isSignedIn ? (
-                // COMPATIBLE CLERK PROP FOR YOUR VERSION
+                // IF NOT SIGNED IN, THIS BUTTON USES CLERK
                 <SignUpButton afterSignUpUrl="/">
-                    <button className="w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20">Create Elite Account</button>
+                    <button className="w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs">Create Account</button>
                 </SignUpButton>
             ) : (
-                <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20">Start 3-Day Free Trial</a>
+                // IF SIGNED IN, THIS IS A PLAIN LINK TO STRIPE - STOPS THE LOOP
+                <a href={finalStripeUrl} target="_blank" rel="noopener noreferrer" className="block w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs flex items-center justify-center">Start 3-Day Free Trial</a>
             )}
-            <button onClick={() => setShowLimitModal(false)} className="mt-5 text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest">Return to Dashboard</button>
+            <button onClick={() => setShowLimitModal(false)} className="mt-5 text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest">Close</button>
           </div>
         </div>
       )}
 
-      {/* SUPPORT MODAL */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
-          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl">
-            <h2 className="text-2xl font-black mb-4 uppercase text-center tracking-widest">Elite Support</h2>
-            <textarea required className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white outline-none resize-none focus:border-indigo-500" placeholder="Describe the inquiry..." value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
+            <h2 className="text-2xl font-black mb-4 uppercase">Support</h2>
+            <textarea className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-[11px] text-white" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
             <div className="flex gap-3 mt-4">
-              <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send Inquiry</button>
-              <button onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Close</button>
+              <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-6 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* NOTIFICATIONS */}
       {toast.show && (
-        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl animate-in slide-in-from-bottom ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-2xl ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
           {toast.message}
         </div>
       )}
