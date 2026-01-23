@@ -1,13 +1,13 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Routes that can be accessed while signed out
+  // Allows the home page and stripe webhook to be viewed without being logged in
   publicRoutes: ["/", "/api/webhook/stripe"],
-  // Routes that should be ignored by the authentication middleware entirely
+  // Prevents the middleware from blocking these essential background routes
   ignoredRoutes: ["/api/webhook/stripe", "/(api|trpc)(.*)"],
 });
 
 export const config = {
-  // This matcher ensures the middleware doesn't block internal Clerk/Next.js files
+  // This ensures Clerk's internal redirect files aren't treated as "missing pages"
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
