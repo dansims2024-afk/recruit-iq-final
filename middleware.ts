@@ -1,10 +1,12 @@
 import { authMiddleware } from "@clerk/nextjs";
 
-// This allows Stripe to talk to your API without being logged in
 export default authMiddleware({
-  publicRoutes: ["/api/webhooks/stripe"],
+  // FIXED: Added "/" to publicRoutes so the page loads immediately.
+  // We also keep the Stripe webhook public so payments work.
+  publicRoutes: ["/", "/api/webhooks/stripe"],
 });
 
 export const config = {
+  // This matches all routes except static files (images, css, etc.)
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
