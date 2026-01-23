@@ -6,10 +6,6 @@ export default authMiddleware({
 });
 
 export const config = {
-  // This matcher is optimized for Clerk V4 to catch internal redirect signals
-  matcher: [
-    "/((?!.+\\.[\\w]+$|_next).*)", 
-    "/", 
-    "/(api|trpc)(.*)"
-  ],
+  // Broad matcher catches home page AND hidden Clerk login signals
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
