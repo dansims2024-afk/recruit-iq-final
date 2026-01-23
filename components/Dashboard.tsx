@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [verifying, setVerifying] = useState(false);
 
   // THE KEY "PRO" CHECK
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
@@ -85,16 +86,41 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${userId}&prefilled_email=${encodeURIComponent(userEmail)}`
     : STRIPE_URL;
 
+  // INITIAL LOAD & AUTO-REFRESH LOGIC
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
     
-    // AUTO-OPEN MODAL: If user just logged in (or is logged in) but hit limit and isn't pro
-    // This prevents them from being lost after the redirect.
+    // Aggressively try to refresh user data on mount if they are signed in
+    // This helps catch the "Just returned from Stripe" state
+    if (isLoaded && isSignedIn) {
+        user.reload().catch(() => null);
+    }
+    
+    // AUTO-OPEN MODAL: Only if NOT Pro and limit reached
     if (isLoaded && isSignedIn && !isPro && savedCount >= 3) {
       setShowLimitModal(true);
     }
   }, [isLoaded, isSignedIn, isPro]);
+
+  // MANUAL VERIFY FUNCTION
+  const handleVerifySubscription = async () => {
+    setVerifying(true);
+    try {
+        await user?.reload();
+        // The isPro variable will naturally update if publicMetadata changed
+        if (user?.publicMetadata?.isPro === true) {
+            setShowLimitModal(false);
+            showToast("Subscription Verified! Account Unlocked.", "success");
+        } else {
+            showToast("Pro status not found yet. Please wait a moment.", "error");
+        }
+    } catch (error) {
+        showToast("Verification failed. Try again.", "error");
+    } finally {
+        setVerifying(false);
+    }
+  };
 
   const showToast = (message: string, type = 'success') => {
     setToast({ show: true, message, type });
@@ -368,7 +394,7 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* ELITE UPGRADE MODAL - FIXED LOOP & BUILD ERROR */}
+      {/* ELITE UPGRADE MODAL - FIXED LOOP, BUILD ERROR & POST-PAYMENT REFRESH */}
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
           <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-lg w-full text-center shadow-2xl">
@@ -376,21 +402,30 @@ export default function Dashboard() {
             <p className="text-slate-400 mb-8 text-sm">You have exhausted your trial scans. Access unlimited intelligence reports and strategic guides now.</p>
             {!isSignedIn ? (
                 // 1. IF NOT LOGGED IN: Use Clerk to Sign In
-                // Fixed: Removed 'forceRedirectUrl' (build error) and relying on 'afterSignUpUrl'
                 <SignUpButton mode="modal" afterSignUpUrl="/">
                     <button className="w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20">Create Elite Account</button>
                 </SignUpButton>
             ) : (
-                // 2. IF LOGGED IN: THIS IS THE FIX
-                // Direct link to Stripe, using finalStripeUrl with ID pre-filled
-                <a 
-                  href={finalStripeUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all flex items-center justify-center"
-                >
-                  Start 3-Day Free Trial
-                </a>
+                <div className="space-y-4">
+                  {/* 2. IF LOGGED IN: DIRECT STRIPE LINK */}
+                  <a 
+                    href={finalStripeUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block w-full py-5 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all flex items-center justify-center"
+                  >
+                    Start 3-Day Free Trial
+                  </a>
+                  
+                  {/* 3. NEW: MANUAL REFRESH BUTTON FOR POST-PAYMENT */}
+                  <button 
+                    onClick={handleVerifySubscription}
+                    disabled={verifying}
+                    className="w-full py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-300 border border-slate-700 hover:text-white transition-all"
+                  >
+                    {verifying ? "Verifying..." : "I've Already Paid (Refresh Status)"}
+                  </button>
+                </div>
             )}
             <button onClick={() => setShowLimitModal(false)} className="mt-5 text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest">Return to Dashboard</button>
           </div>
