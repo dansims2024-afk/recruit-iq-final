@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [verifying, setVerifying] = useState(false); // Added for manual check button
+  const [verifying, setVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -85,6 +85,7 @@ export default function Dashboard() {
       const urlParams = new URLSearchParams(window.location.search);
 
       // 1. Handle "Sign Up then Pay" flow
+      // The button sets this flag. When Clerk redirects back to "/", we read it and send them to Stripe.
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
@@ -92,7 +93,6 @@ export default function Dashboard() {
       }
 
       // 2. Handle "Returning from Payment" flow
-      // This detects the ?payment_success=true tag we set in Stripe
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         showToast("Syncing payment...", "info");
         await handleVerifySubscription();
@@ -113,7 +113,6 @@ export default function Dashboard() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
-  // --- MANUAL UNLOCK FUNCTION (Restored) ---
   const handleVerifySubscription = async () => {
     setVerifying(true);
     try {
@@ -125,10 +124,8 @@ export default function Dashboard() {
         if (user?.publicMetadata?.isPro) {
           setShowLimitModal(false);
           showToast("Elite Status Confirmed!", "success");
-          // Clean URL
           window.history.replaceState({}, '', '/');
         } else {
-           // Retry once for propagation
            setTimeout(async () => {
              await user?.reload();
              if (user?.publicMetadata?.isPro) setShowLimitModal(false);
@@ -172,7 +169,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // Page 1: Summary
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -202,7 +198,6 @@ export default function Dashboard() {
         if (gaps[i]) doc.text(`• ${gaps[i]}`, 110, y + (i * 6));
     }
 
-    // Page 2: Interview Guide
     doc.addPage();
     doc.setTextColor(79, 70, 229); doc.setFontSize(16); doc.setFont("helvetica", "bold");
     doc.text("STRATEGIC INTERVIEW GUIDE", 20, 20);
@@ -261,7 +256,6 @@ export default function Dashboard() {
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* TOAST NOTIFICATION */}
       {toast.show && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top duration-300 ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
           <p className="text-xs font-bold uppercase tracking-widest">{toast.message}</p>
@@ -456,6 +450,7 @@ export default function Dashboard() {
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Unlock unlimited resume screening, deep AI personality analysis, and strategic interview guides.</p>
                  
                  {!isSignedIn ? (
+                    /* FIXED: Replaced 'forceRedirectUrl' with 'afterSignUpUrl="/"' to stop buffering */
                     <SignUpButton mode="modal" afterSignUpUrl="/">
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
