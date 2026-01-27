@@ -15,8 +15,10 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
-    // Scan the last 100 Stripe sessions to find a match by email or ID
-    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
+    // Scan the last 100 Stripe sessions to find a match manually
+    const sessions = await stripe.checkout.sessions.list({ 
+      limit: 100
+    });
 
     const match = sessions.data.find(s => 
       s.status === 'complete' && 
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
     );
 
     if (match) {
-      // FIXED: Use clerkClient as an object directly (not a function) to pass build
+      // Use clerkClient object directly to pass the build
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
