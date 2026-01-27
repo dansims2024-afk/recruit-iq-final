@@ -9,10 +9,18 @@ const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
-SALARY: $240,000 - $285,000 + Performance Bonus + Equity`;
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech.
+- Deep expertise in AWS Cloud Architecture.
+- Strong proficiency in Go, C++, Python, and TypeScript.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY`;
+Principal Software Architect | New York, NY
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -26,8 +34,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [verifying, setVerifying] = useState(false);
 
-  // --- CRITICAL BUILD FIXES ---
-  // These variables must be defined here to prevent "Cannot find name" errors
+  // BUILD FIX: Define variables in the component scope
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -42,15 +49,16 @@ export default function Dashboard() {
     
     if (isLoaded && isSignedIn) {
       const urlParams = new URLSearchParams(window.location.search);
+      // Auto-redirect to Stripe if just signed up
       if (urlParams.get('signup') === 'true' && !isPro) {
         window.location.href = finalStripeUrl;
         return;
       }
+      // Auto-unlock if returning from successful payment
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
-      } else if (!isPro && savedCount >= 3) {
-        setShowLimitModal(true);
       }
+      if (!isPro && savedCount >= 3) setShowLimitModal(true);
     }
   }, [isLoaded, isSignedIn, isPro, finalStripeUrl]);
 
@@ -151,7 +159,7 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2 mb-4">
             <label className="flex-1 text-center cursor-pointer bg-slate-800 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Upload File<input type="file" onChange={handleFileUpload} className="hidden" /></label>
-            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
+            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
           </div>
           <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
           <button onClick={handleScreen} disabled={loading} className="mt-6 py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
@@ -160,13 +168,13 @@ export default function Dashboard() {
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
           {analysis ? (
             <div className="space-y-6 text-center animate-in fade-in zoom-in">
-              <div className="text-2xl font-bold">{analysis.score}% Match</div>
+              <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
               <div className="font-bold text-lg">{analysis.candidate_name}</div>
               <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
               <div className="text-left text-xs text-slate-300 space-y-4 pt-4">
-                <p><strong>Summary:</strong> {analysis.summary}</p>
-                <p><strong>Strengths:</strong> {analysis.strengths.join(', ')}</p>
-                <p><strong>Gaps:</strong> {analysis.gaps.join(', ')}</p>
+                <p><strong className="text-indigo-400 uppercase text-[10px]">Summary:</strong><br/>{analysis.summary}</p>
+                <p className="text-emerald-400"><strong className="uppercase text-[10px]">Strengths:</strong><br/>{analysis.strengths.join(', ')}</p>
+                <p className="text-rose-400"><strong className="uppercase text-[10px]">Gaps:</strong><br/>{analysis.gaps.join(', ')}</p>
               </div>
             </div>
           ) : (
