@@ -120,7 +120,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-4"><img src="/logo.png" className="h-10" />
+        <div className="flex items-center gap-4">
+          <img src="/logo.png" className="h-10" />
           <h1 className="text-xl font-black uppercase">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
@@ -134,8 +135,8 @@ export default function Dashboard() {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 flex flex-col h-[700px]">
           <div className="flex gap-3 mb-6">
-            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. JD {jdReady && "✓"}</button>
-            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume {resumeReady && "✓"}</button>
+            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. JD {jdReady && "✓"}</button>
+            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume {resumeReady && "✓"}</button>
           </div>
           <label className="block mb-4 text-center cursor-pointer bg-slate-800 py-2 rounded-lg text-[9px] font-bold uppercase border border-slate-700">Upload PDF/DOCX<input type="file" onChange={handleFileUpload} className="hidden" /></label>
           <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-4 border border-slate-800 rounded-xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
@@ -166,12 +167,7 @@ export default function Dashboard() {
             <button onClick={() => setShowLimitModal(false)} className="absolute top-4 right-4 text-slate-500">✕</button>
             <h2 className="text-2xl font-black mb-4 uppercase">Upgrade to Elite</h2>
             {!isSignedIn ? (
-              <SignUpButton 
-                mode="modal" 
-                afterSignUpUrl="/?signup=true"
-                // This ensures they go straight to the payment path after verification
-                signUpForceRedirectUrl="/?signup=true"
-              >
+              <SignUpButton mode="modal" afterSignUpUrl="/?signup=true">
                 <button className="w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Sign Up</button>
               </SignUpButton>
             ) : (
@@ -185,7 +181,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      {toast.show && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase">{toast.message}</div>}
+      {toast.show && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase shadow-2xl">{toast.message}</div>}
     </div>
   );
 }
