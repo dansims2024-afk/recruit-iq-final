@@ -138,7 +138,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-4"><img src="/logo.png" className="h-10" alt="Logo" />
+        <div className="flex items-center gap-4">
+          <img src="/logo.png" className="h-10" alt="Logo" />
           <h1 className="text-xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
@@ -192,7 +193,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Start Elite Trial</a>
                 <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[9px] text-slate-400 border border-slate-700">
-                  {verifying ? "Checking Stripe..." : "I've Paid (Force Unlock)"}
+                  {verifying ? "Checking Stripe..." : "I've Already Paid (Force Unlock)"}
                 </button>
               </div>
             )}
