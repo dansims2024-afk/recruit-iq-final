@@ -11,51 +11,50 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Not Logged In" }, { status: 401 });
     }
 
-    // 1. Setup Stripe
-    const stripeKey = process.env.STRIPE_SECRET_KEY!;
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
+    const userEmail = user.emailAddresses[0].emailAddress;
 
-    // 2. DIAGNOSTIC: Log what key we are using (safe version)
-    const keyType = stripeKey.startsWith("sk_live") ? "LIVE" : "TEST";
-    console.log(`[Verify] Searching Stripe (${keyType} MODE) for user: ${user.emailAddresses[0].emailAddress}`);
+    console.log(`[Sync] Checking for User: ${userEmail} (ID: ${userId})`);
 
-    // 3. Pull last 100 sessions (paid only)
-    const sessions = await stripe.checkout.sessions.list({ 
-      limit: 100, 
-      status: 'complete' 
+    // STRATEGY 1: Search by Client Reference ID (The most accurate link)
+    // We explicitly look for a session that matches the Clerk User ID
+    const idSearchResults = await stripe.checkout.sessions.list({
+      limit: 5,
+      client_reference_id: userId,
+      status: 'complete'
     });
 
-    // 4. Find Match (Case-Insensitive)
-    const targetEmail = user.emailAddresses[0].emailAddress.toLowerCase().trim();
+    // STRATEGY 2: Search by Email (Fallback)
+    // We scan recent payments for the user's email address
+    const emailSearchResults = await stripe.checkout.sessions.list({
+        limit: 10,
+        status: 'complete'
+    });
     
-    const match = sessions.data.find(session => {
-      const stripeEmail = session.customer_details?.email?.toLowerCase().trim();
-      // Match by ID (Best) OR Email (Fallback)
-      return session.client_reference_id === userId || stripeEmail === targetEmail;
-    });
+    // Check for a match in either result set
+    const idMatch = idSearchResults.data[0];
+    const emailMatch = emailSearchResults.data.find(s => 
+        s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase()
+    );
+
+    const match = idMatch || emailMatch;
 
     if (match) {
-      console.log(`[Verify] Match Found! Session ID: ${match.id}`);
+      console.log(`[Sync] Payment Found! Session ID: ${match.id}`);
       
-      // 5. UNLOCK ACCOUNT
+      // FORCE UNLOCK
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
       
-      return NextResponse.json({ success: true, mode: keyType });
+      return NextResponse.json({ success: true, method: idMatch ? 'ID' : 'Email' });
     }
 
-    // 6. IF NO MATCH: Log what we DID find to Vercel Logs for debugging
-    const recentEmails = sessions.data.slice(0, 3).map(s => s.customer_details?.email).join(", ");
-    console.log(`[Verify] Failed. Recent Stripe emails were: ${recentEmails}`);
-
-    return NextResponse.json({ 
-      success: false, 
-      error: `No payment found in ${keyType} mode for ${targetEmail}.` 
-    }, { status: 404 });
+    console.log(`[Sync] No match found. Searched ID: ${userId} and Email: ${userEmail}`);
+    return NextResponse.json({ success: false, error: "Payment record not found in Stripe." }, { status: 404 });
 
   } catch (error: any) {
-    console.error("[Verify] API Error:", error);
+    console.error("[Sync] Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
