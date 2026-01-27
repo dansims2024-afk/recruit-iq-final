@@ -3,7 +3,7 @@ import { auth, currentUser, clerkClient } from "@clerk/nextjs";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2023-10-16", // Matched to your project version
 });
 
 export async function POST(req: Request) {
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
+    // Direct check of Stripe for this specific user's email
     const sessions = await stripe.checkout.sessions.list({ limit: 100 });
     const match = sessions.data.find(s => 
       s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase() &&
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     );
 
     if (match) {
-      // FIXED: Use clerkClient directly as an object, not a function
+      // FIXED: Used clerkClient as an object to resolve build error
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
