@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  const [verifying, setVerifying] = useState(false); // Added for manual check
+  const [verifying, setVerifying] = useState(false); // Added for manual check button
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -109,7 +109,7 @@ export default function Dashboard() {
   }, [isSignedIn, isPro, isLoaded, user, finalStripeUrl]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
-    setToast({ show: true, message, type });
+    setToast({ show: true, message, type: type as any });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
@@ -456,7 +456,7 @@ export default function Dashboard() {
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Unlock unlimited resume screening, deep AI personality analysis, and strategic interview guides.</p>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <SignUpButton mode="modal" afterSignUpUrl="/">
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
                             className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40"
