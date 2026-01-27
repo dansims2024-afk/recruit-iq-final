@@ -1,45 +1,36 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { clerkClient } from "@clerk/nextjs";
+import { auth, currentUser, clerkClient } from "@clerk/nextjs";
 import Stripe from "stripe";
 
-// FIXED: Changed apiVersion to match your installed package (2023-10-16)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16", 
+  apiVersion: "2023-10-16",
 });
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = headers().get("Stripe-Signature") as string;
-  let event: Stripe.Event;
-
   try {
-    // 1. Verify the event came from Stripe
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+    const { userId } = auth();
+    const user = await currentUser();
+
+    if (!userId || !user) return new NextResponse("Unauthorized", { status: 401 });
+
+    const userEmail = user.emailAddresses[0].emailAddress;
+
+    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
+    const match = sessions.data.find(s => 
+      s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase() &&
+      s.status === 'complete'
     );
-  } catch (err: any) {
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
-  }
 
-  // 2. Handle the successful payment
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    
-    // This ID was passed from Dashboard.tsx in the URL
-    const userId = session.client_reference_id; 
-
-    if (userId) {
-      // 3. Update Clerk Metadata to unlock the account
+    if (match) {
+      // FIXED: Use clerkClient as an object directly
       await clerkClient.users.updateUserMetadata(userId, {
-        publicMetadata: {
-          isPro: true,
-        },
+        publicMetadata: { isPro: true }
       });
+      return NextResponse.json({ success: true });
     }
+    
+    return NextResponse.json({ success: false, error: "Payment not found" }, { status: 404 });
+  } catch (error: any) {
+    return new NextResponse(error.message, { status: 500 });
   }
-
-  return new NextResponse(null, { status: 200 });
 }
