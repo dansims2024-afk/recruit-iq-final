@@ -5,12 +5,21 @@ import mammoth from 'mammoth';
 import { jsPDF } from "jspdf"; 
 import { useUser, SignUpButton, UserButton } from "@clerk/nextjs";
 
-// --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLES ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect...`; // (Keep short for brevity)
-const SAMPLE_RESUME = `MARCUS VANDELAY...`; 
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech.
+- Deep expertise in AWS Cloud Architecture.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -25,6 +34,8 @@ export default function Dashboard() {
   const [verifying, setVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
+  const jdReady = jdText.trim().length > 50;
+  const resumeReady = resumeText.trim().length > 50;
   
   // Embed User ID into Stripe URL for 100% matching accuracy
   const finalStripeUrl = user?.id 
@@ -45,7 +56,6 @@ export default function Dashboard() {
       }
 
       // 2. AUTO-UNLOCK (Returning from Stripe)
-      // If the URL has ?payment_success=true, we run the check immediately
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
       }
@@ -61,53 +71,84 @@ export default function Dashboard() {
 
   const handleVerifySubscription = async () => {
     setVerifying(true);
-    showToast("Syncing with Stripe...");
+    showToast("Syncing payment...");
     try {
       const res = await fetch('/api/manual-check', { method: 'POST' });
-      if (res.ok) {
-        await user?.reload(); // CRITICAL: Force Clerk to see the new status
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        await user?.reload(); 
         if (user?.publicMetadata?.isPro) {
           setShowLimitModal(false);
           showToast("Elite Status Confirmed!");
           // Clean the URL
           window.history.replaceState({}, '', '/');
         } else {
-           // Retry once more after a delay
+           // Retry logic for metadata propagation delay
            setTimeout(async () => {
              await user?.reload();
              if (user?.publicMetadata?.isPro) setShowLimitModal(false);
            }, 2000);
         }
       } else { 
+        console.error("Verification failed:", data.error);
         showToast("Payment not found yet. Retrying..."); 
       }
     } catch (err) { showToast("Connection error."); } finally { setVerifying(false); }
   };
 
   const handleFileUpload = async (e: any) => {
-     // ... (Your existing file upload logic) ...
-     const file = e.target.files[0];
-     if (!file) return;
-     showToast("File uploaded!");
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      let text = "";
+      if (file.name.endsWith('.docx')) {
+        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+        text = result.value;
+      } else if (file.name.endsWith('.pdf')) {
+        // @ts-ignore
+        const pdfJS = window.pdfjsLib;
+        const pdf = await pdfJS.getDocument(URL.createObjectURL(file)).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map((item: any) => item.str).join(' ') + "\n";
+        }
+        text = fullText;
+      } else { text = await file.text(); }
+      activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+      showToast("File uploaded!");
+    } catch (err) { showToast("Upload failed."); }
   };
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
     setLoading(true);
-    // ... (Your AI logic) ...
-    // Simulator for now to verify UI
-    setTimeout(() => {
-        setAnalysis({ candidate_name: "Test Candidate", score: 95, summary: "Excellent match.", strengths: ["A","B"], gaps: ["C"] });
-        setLoading(false);
-        if(!isPro) {
-            const newCount = scanCount + 1;
-            setScanCount(newCount);
-            localStorage.setItem('recruit_iq_scans', newCount.toString());
-        }
-    }, 2000);
+    try {
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 questions, and outreach email. Return ONLY JSON.`;
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await res.json();
+      const result = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/)[0]);
+      setAnalysis(result);
+      if (!isPro) {
+        const newCount = scanCount + 1;
+        setScanCount(newCount);
+        localStorage.setItem('recruit_iq_scans', newCount.toString());
+      }
+      showToast("Intelligence Generated");
+    } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  const downloadPDF = () => { /* ... PDF logic ... */ };
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("RECRUIT-IQ REPORT", 20, 25);
+    doc.text(analysis.candidate_name, 20, 55);
+    doc.save(`Report.pdf`);
+  };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] text-white p-10">Loading Recruit-IQ...</div>;
 
@@ -127,15 +168,34 @@ export default function Dashboard() {
 
       {/* MAIN GRID */}
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[600px]">
-             {/* INPUTS */}
-             <button onClick={handleScreen} disabled={loading} className="w-full py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg mt-10">
-                {loading ? "Analyzing..." : "Execute AI Screen"}
-             </button>
+        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
+          <div className="flex gap-3 mb-6">
+            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. JD {jdReady && "✓"}</button>
+            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume {resumeReady && "✓"}</button>
+          </div>
+          <div className="flex gap-2 mb-4">
+            <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700">Upload PDF/DOCX<input type="file" onChange={handleFileUpload} className="hidden" /></label>
+            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Full Samples</button>
+          </div>
+          <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
+          <button onClick={handleScreen} disabled={loading} className="mt-6 py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
         </div>
-        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[600px]">
-             {/* RESULTS */}
-             {analysis && <div className="text-center text-2xl font-bold">{analysis.score}% Match</div>}
+
+        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
+          {analysis ? (
+            <div className="space-y-6 text-center">
+              <div className="text-2xl font-bold">{analysis.score}% Match</div>
+              <div className="font-bold text-lg">{analysis.candidate_name}</div>
+              <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
+              <div className="text-left text-xs text-slate-300 space-y-4 pt-4">
+                <p><strong>Summary:</strong> {analysis.summary}</p>
+                <p><strong>Strengths:</strong> {analysis.strengths.join(', ')}</p>
+                <p><strong>Gaps:</strong> {analysis.gaps.join(', ')}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase opacity-40">📊<br/>Engine Idle</div>
+          )}
         </div>
       </div>
 
@@ -152,7 +212,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <a href={finalStripeUrl} className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Start Elite Trial</a>
                 <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[9px] text-slate-400 border border-slate-700">
-                  {verifying ? "Syncing..." : "I've Paid (Force Unlock)"}
+                  {verifying ? "Checking..." : "I've Paid (Force Unlock)"}
                 </button>
               </div>
             )}
