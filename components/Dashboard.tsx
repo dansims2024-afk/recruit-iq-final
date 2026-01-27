@@ -104,7 +104,7 @@ export default function Dashboard() {
           setShowLimitModal(false);
           showToast("Elite Status Confirmed!");
         } else { showToast("Verifying... try once more."); }
-      } else { showToast("Payment not found yet."); }
+      } else { showToast("Payment record not found yet."); }
     } catch (err) { showToast("Connection error."); } finally { setVerifying(false); }
   };
 
@@ -170,7 +170,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-4"><img src="/logo.png" className="h-10" />
+        <div className="flex items-center gap-4">
+          <img src="/logo.png" className="h-12 w-auto" alt="Logo" />
           <h1 className="text-xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
@@ -197,7 +198,7 @@ export default function Dashboard() {
 
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
           {analysis ? (
-            <div className="space-y-6 text-center animate-in fade-in zoom-in">
+            <div className="space-y-6 text-center">
               <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
               <div className="font-bold text-lg">{analysis.candidate_name}</div>
               <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
