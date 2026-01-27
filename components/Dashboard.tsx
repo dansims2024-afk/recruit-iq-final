@@ -11,48 +11,16 @@ const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 
-ABOUT THE COMPANY:
-Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
-
-KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS and Fargate to ensure 99.999% uptime.
-- Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.
-- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
-- Collaborate with quantitative researchers to implement complex trading algorithms.
-- Ensure strict compliance with financial regulations and data security standards (SOC2, ISO 27001).
-
 REQUIREMENTS:
-- 12+ years of software engineering experience in FinTech or Capital Markets.
-- Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
-- Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
-- Strong proficiency in Go (Golang), C++, Python, and TypeScript.
-- Experience designing low-latency, high-throughput systems.
-- Bachelor’s or Master’s degree in Computer Science or related field.`;
+- 12+ years of software engineering experience in FinTech.
+- Deep expertise in AWS Cloud Architecture.
+- Strong proficiency in Go, C++, Python, and TypeScript.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
+Principal Software Architect | New York, NY
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers and successfully delivered multi-million dollar platform overhauls.
-
-PROFESSIONAL EXPERIENCE:
-Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
-- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda and Kinesis.
-- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration and spot instance orchestration.
-- Led a team of 15 engineers in re-writing the core risk engine, improving calculation speed by 400%.
-- Implemented a zero-trust security model across the entire engineering organization.
-
-InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
-- Built the core execution engine in Go, achieving a 50% reduction in order latency (sub-50 microseconds).
-- Implemented automated failover protocols that prevented over $10M in potential slippage during market volatility.
-- Mentored junior developers and established the company's first formal code review process.
-
-TECHNICAL SKILLS:
-- Languages: Go, C++, Python, TypeScript, Java, Rust.
-- Cloud: AWS (EKS, Lambda, Aurora, SQS, DynamoDB), Terraform, Docker, Kubernetes.
-- Architecture: Microservices, Event-Driven Design, Serverless, CQRS.
-- Tools: GitLab CI, Prometheus, Grafana, Splunk, Jira.`;
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -81,6 +49,7 @@ export default function Dashboard() {
     if (isLoaded && isSignedIn) {
       user.reload().catch(() => null);
       const urlParams = new URLSearchParams(window.location.search);
+      // AUTO-REDIRECT: If flag ?signup=true is present, send them to Stripe instantly
       if (urlParams.get('signup') === 'true' && !isPro) {
         window.location.href = finalStripeUrl;
         return;
@@ -170,9 +139,8 @@ export default function Dashboard() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
       <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
-        <div className="flex items-center gap-4">
-          <img src="/logo.png" className="h-12 w-auto" alt="Logo" />
-          <h1 className="text-xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+        <div className="flex items-center gap-4"><img src="/logo.png" className="h-10" />
+          <h1 className="text-xl font-black uppercase">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
@@ -198,7 +166,7 @@ export default function Dashboard() {
 
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
           {analysis ? (
-            <div className="space-y-6 text-center">
+            <div className="space-y-6 text-center animate-in fade-in zoom-in">
               <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
               <div className="font-bold text-lg">{analysis.candidate_name}</div>
               <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
@@ -225,7 +193,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Start Elite Trial</a>
                 <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[9px] text-slate-400 border border-slate-700">
-                  {verifying ? "Checking Stripe..." : "I've Already Paid (Force Unlock)"}
+                  {verifying ? "Checking Stripe..." : "I've Paid (Force Unlock)"}
                 </button>
               </div>
             )}
