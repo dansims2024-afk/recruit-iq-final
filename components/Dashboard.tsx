@@ -7,6 +7,7 @@ import { useUser, SignUpButton, UserButton } from "@clerk/nextjs";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
+// --- SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -56,11 +57,12 @@ export default function Dashboard() {
       }
 
       // 2. AUTO-UNLOCK (Returning from Stripe)
+      // If we see ?payment_success=true, we run the check immediately
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
+      } else if (!isPro && savedCount >= 3) {
+        setShowLimitModal(true);
       }
-
-      if (!isPro && savedCount >= 3) setShowLimitModal(true);
     }
   }, [isLoaded, isSignedIn, isPro]);
 
@@ -71,7 +73,7 @@ export default function Dashboard() {
 
   const handleVerifySubscription = async () => {
     setVerifying(true);
-    showToast("Syncing payment...");
+    showToast("Finalizing account upgrade...");
     try {
       const res = await fetch('/api/manual-check', { method: 'POST' });
       const data = await res.json();
@@ -81,10 +83,10 @@ export default function Dashboard() {
         if (user?.publicMetadata?.isPro) {
           setShowLimitModal(false);
           showToast("Elite Status Confirmed!");
-          // Clean the URL
+          // Remove the query param so they don't get stuck in a loop
           window.history.replaceState({}, '', '/');
         } else {
-           // Retry logic for metadata propagation delay
+           // Retry once more for propagation delay
            setTimeout(async () => {
              await user?.reload();
              if (user?.publicMetadata?.isPro) setShowLimitModal(false);
@@ -92,7 +94,7 @@ export default function Dashboard() {
         }
       } else { 
         console.error("Verification failed:", data.error);
-        showToast("Payment not found yet. Retrying..."); 
+        showToast(data.error || "Payment not found."); 
       }
     } catch (err) { showToast("Connection error."); } finally { setVerifying(false); }
   };
