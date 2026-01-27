@@ -20,7 +20,7 @@ const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY
 
 EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure.`;
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -49,12 +49,10 @@ export default function Dashboard() {
     
     if (isLoaded && isSignedIn) {
       const urlParams = new URLSearchParams(window.location.search);
-      // Auto-redirect to Stripe if just signed up
       if (urlParams.get('signup') === 'true' && !isPro) {
         window.location.href = finalStripeUrl;
         return;
       }
-      // Auto-unlock if returning from successful payment
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
       }
@@ -159,7 +157,7 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2 mb-4">
             <label className="flex-1 text-center cursor-pointer bg-slate-800 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Upload File<input type="file" onChange={handleFileUpload} className="hidden" /></label>
-            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
+            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
           </div>
           <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
           <button onClick={handleScreen} disabled={loading} className="mt-6 py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
@@ -192,7 +190,7 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-4">
                 <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl">Start Elite Trial</a>
-                <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400 border border-slate-700">{verifying ? "Syncing..." : "I've Paid (Force Unlock)"}</button>
+                <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400 border border-slate-700">{verifying ? "Syncing..." : "I've Paid (Force Unlock)"}</button>
               </div>
             )}
           </div>
