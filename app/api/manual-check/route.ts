@@ -15,18 +15,20 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
-    // Scan the last 100 Stripe sessions to find a match manually
+    // STEP 1: Get the list (Don't filter by ID here, it causes Build Error)
     const sessions = await stripe.checkout.sessions.list({ 
-      limit: 100
+      limit: 100,
+      status: 'complete'
     });
 
+    // STEP 2: Filter manually in Javascript
     const match = sessions.data.find(s => 
-      s.status === 'complete' && 
-      (s.client_reference_id === userId || s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase())
+      s.client_reference_id === userId || 
+      s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase()
     );
 
     if (match) {
-      // Use clerkClient object directly to pass the build
+      // Use clerkClient object directly
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
