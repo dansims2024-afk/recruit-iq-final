@@ -2,228 +2,237 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, UserButton, useClerk, SignOutButton } from "@clerk/nextjs";
-import { jsPDF } from "jspdf";
-import { 
-  Loader2, Download, Zap, Shield, HelpCircle, Sparkles, 
-  Star, Check, Upload, Mail, Copy, ArrowRight, LogOut 
-} from "lucide-react";
+import { jsPDF } from "jspdf"; 
+import { useUser, SignUpButton, UserButton } from "@clerk/nextjs";
 
-const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
+const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- SAMPLES ---
-const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect\nLOCATION: New York, NY\nSALARY: $240k - $285k\n\nWe need a visionary Architect to lead the evolution of our next-gen high-frequency trading platform using AWS EKS and gRPC.`;
-const SAMPLE_RESUME = `MARCUS VANDELAY\nPrincipal Architect | New York | m.vandelay@email.com\n\nStrategic leader with 14 years building low-latency financial systems. Expert in AWS, C++, and Go.`;
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
+LOCATION: New York, NY (Hybrid)
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity
+
+ABOUT THE COMPANY:
+Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
+
+KEY RESPONSIBILITIES:
+- Design and implement high-availability microservices using AWS EKS and Fargate to ensure 99.999% uptime.
+- Lead the migration from legacy monolithic structures to a modern, event-driven architecture using Kafka and gRPC.
+- Optimize C++ and Go-based trading engines for sub-millisecond latency.
+- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
+- Collaborate with quantitative researchers to implement complex trading algorithms.
+- Ensure strict compliance with financial regulations and data security standards (SOC2, ISO 27001).
+
+REQUIREMENTS:
+- 12+ years of software engineering experience in FinTech or Capital Markets.
+- Deep expertise in AWS Cloud Architecture (AWS Certified Solutions Architect preferred).
+- Proven track record with Kubernetes, Docker, Kafka, Redis, and Terraform.
+- Strong proficiency in Go (Golang), C++, Python, and TypeScript.
+- Experience designing low-latency, high-throughput systems.
+- Bachelor’s or Master’s degree in Computer Science or related field.`;
+
+const SAMPLE_RESUME = `MARCUS VANDELAY
+Principal Software Architect | New York, NY | m.vandelay@email.com | (555) 123-4567
+
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers and successfully delivered multi-million dollar platform overhauls.
+
+PROFESSIONAL EXPERIENCE:
+Global Quant Solutions | Principal Architect | New York, NY | 2018 - Present
+- Architected a serverless data processing pipeline handling 5TB of daily market data using AWS Lambda and Kinesis.
+- Reduced infrastructure costs by 35% through aggressive AWS Graviton migration and spot instance orchestration.
+- Led a team of 15 engineers in re-writing the core risk engine, improving calculation speed by 400%.
+- Implemented a zero-trust security model across the entire engineering organization.
+
+InnovaTrade | Senior Staff Engineer | Chicago, IL | 2014 - 2018
+- Built the core execution engine in Go, achieving a 50% reduction in order latency (sub-50 microseconds).
+- Implemented automated failover protocols that prevented over $10M in potential slippage during market volatility.
+- Mentored junior developers and established the company's first formal code review process.
+
+TECHNICAL SKILLS:
+- Languages: Go, C++, Python, TypeScript, Java, Rust.
+- Cloud: AWS (EKS, Lambda, Aurora, SQS, DynamoDB), Terraform, Docker, Kubernetes.
+- Architecture: Microservices, Event-Driven Design, Serverless, CQRS.
+- Tools: GitLab CI, Prometheus, Grafana, Splunk, Jira.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const clerk = useClerk();
-  
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<any>(null); 
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [verifying, setVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
+  const jdReady = jdText.trim().length > 50;
+  const resumeReady = resumeText.trim().length > 50;
   
-  // --- UNIVERSAL ACTION HANDLER ---
-  const handleUniversalAction = () => {
-    if (!isSignedIn) {
-        // If guest, force login
-        clerk.redirectToSignIn();
-    } else {
-        // If signed in, go to Stripe
-        if (!user?.id) window.location.href = STRIPE_URL;
-        const url = new URL(STRIPE_URL);
-        url.searchParams.set("client_reference_id", user.id);
-        if (user?.primaryEmailAddress?.emailAddress) {
-            url.searchParams.set("prefilled_email", user.primaryEmailAddress.emailAddress);
-        }
-        window.location.href = url.toString();
-    }
-  };
+  const finalStripeUrl = user?.id && user?.primaryEmailAddress?.emailAddress
+    ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress.emailAddress)}`
+    : STRIPE_URL;
 
   useEffect(() => {
-    setScanCount(parseInt(localStorage.getItem('recruit_iq_scans') || '0'));
-  }, []);
+    const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
+    setScanCount(savedCount);
+    
+    if (isLoaded && isSignedIn) {
+      user.reload().catch(() => null);
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('signup') === 'true' && !isPro) {
+        window.location.href = finalStripeUrl;
+        return;
+      }
+      if (!isPro && savedCount >= 3) setShowLimitModal(true);
+    }
+  }, [isLoaded, isSignedIn, isPro, finalStripeUrl]);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
+    setTimeout(() => setToast({ show: false, message: '' }), 4000);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleVerifySubscription = async () => {
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/manual-check', { method: 'POST' });
+      if (res.ok) {
+        await user?.reload(); 
+        if (user?.publicMetadata?.isPro) {
+          setShowLimitModal(false);
+          showToast("Elite Status Confirmed!");
+        } else { showToast("Verifying... try once more."); }
+      } else { showToast("Payment record not found yet."); }
+    } catch (err) { showToast("Connection error."); } finally { setVerifying(false); }
+  };
+
+  const handleFileUpload = async (e: any) => {
+    const file = e.target.files[0];
     if (!file) return;
     try {
-      setLoading(true);
       let text = "";
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
+      } else if (file.name.endsWith('.pdf')) {
+        // @ts-ignore
+        const pdfJS = window.pdfjsLib;
+        const pdf = await pdfJS.getDocument(URL.createObjectURL(file)).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map((item: any) => item.str).join(' ') + "\n";
+        }
+        text = fullText;
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      showToast("Document Loaded");
-    } catch (err) { showToast("Error reading file."); } finally { setLoading(false); }
+      showToast("File uploaded!");
+    } catch (err) { showToast("Upload failed."); }
   };
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (jdText.length < 50 || resumeText.length < 50) { showToast("More data required."); return; }
+    if (!jdReady || !resumeReady) { showToast("Steps 1 & 2 Required."); return; }
     setLoading(true);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Return JSON only: {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 questions, and outreach email. Return ONLY JSON.`;
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
       const data = await res.json();
-      const resultText = data.candidates[0].content.parts[0].text;
-      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        setAnalysis(JSON.parse(jsonMatch[0]));
-        if (!isPro) {
-          const newCount = scanCount + 1;
-          setScanCount(newCount);
-          localStorage.setItem('recruit_iq_scans', newCount.toString());
-        }
+      const result = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/)[0]);
+      setAnalysis(result);
+      if (!isPro) {
+        const newCount = scanCount + 1;
+        setScanCount(newCount);
+        localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
+      showToast("Intelligence Generated");
     } catch (err) { showToast("AI Engine Error."); } finally { setLoading(false); }
   };
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="animate-spin text-white" /></div>;
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.text("RECRUIT-IQ REPORT", 20, 25);
+    doc.setTextColor(30, 41, 59); doc.setFontSize(18); doc.text(analysis.candidate_name, 20, 55);
+    doc.text(`SCORE: ${analysis.score}%`, 140, 55);
+    doc.setFontSize(10); const lines = doc.splitTextToSize(analysis.summary, 170);
+    doc.text(lines, 20, 70); doc.save(`Report_${analysis.candidate_name}.pdf`);
+  };
 
-  // --- GATEKEEPER UI (If Signed In + Not Pro) ---
-  if (isSignedIn && !isPro) {
-    return (
-        <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-6 text-white">
-            <div className="max-w-md w-full bg-[#111827] border border-slate-700 rounded-[2.5rem] p-10 text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                <h2 className="text-3xl font-black text-white mb-2 mt-4">Account Ready!</h2>
-                <p className="text-slate-400 text-sm mb-8">One last step to unlock Elite access.</p>
-                
-                {/* SAFE MODE BUTTON: NO CONDITIONALS */}
-                <button 
-                    onClick={handleUniversalAction}
-                    className="block w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest py-4 rounded-xl shadow-lg transition-all"
-                >
-                    Proceed to Checkout <ArrowRight className="w-4 h-4 inline ml-2" />
-                </button>
-
-                <div className="mt-6">
-                    <SignOutButton>
-                        <button className="text-slate-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto">
-                            <LogOut className="w-3 h-3" /> Sign Out
-                        </button>
-                    </SignOutButton>
-                </div>
-            </div>
-        </div>
-    );
-  }
+  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
 
   return (
-    <div className="relative p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
-      
-      {/* --- STATUS BAR --- */}
-      <div className={`fixed top-0 left-0 w-full ${isSignedIn ? 'bg-green-600' : 'bg-yellow-600'} text-black font-bold text-center text-xs py-2 z-[9999]`}>
-         STATUS: {isSignedIn ? "SIGNED IN" : "GUEST MODE"} (SAFE MODE)
-      </div>
-
-      {toast.show && <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-6 py-3 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 font-bold uppercase text-[10px]">{toast.message}</div>}
-
-      <div className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
+    <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
+      <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+          <img src="/logo.png" className="h-12 w-auto" alt="Logo" />
+          <h1 className="text-xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
-            {!isPro && !isSignedIn && (
-                <button onClick={() => setShowLimitModal(true)} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
-                    <Zap className="w-3 h-3 fill-current" /> Upgrade
-                </button>
-            )}
-            {!isSignedIn ? (
-                <button onClick={() => clerk.redirectToSignIn()} className="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-slate-700">
-                    Sign In
-                </button>
-            ) : <UserButton afterSignOutUrl="/"/>}
+          <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
+            {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
+          </div>
+          <UserButton afterSignOutUrl="/"/>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
-            <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. Job Description</button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume</button>
-            </div>
-            
-            <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-colors">
-                <Upload className="w-3 h-3 inline mr-2" /> Upload .docx
-                <input type="file" accept=".docx" onChange={handleFileUpload} className="hidden" />
-              </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Samples</button>
-            </div>
-
-            <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono mb-6 leading-relaxed" placeholder={activeTab === 'jd' ? "Paste JD..." : "Paste Resume..."} value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
-            
-            <button onClick={handleScreen} disabled={loading} className="py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 flex items-center justify-center gap-3 shadow-xl hover:bg-indigo-500 transition-all">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-white" />} Execute Elite AI Screen
-            </button>
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl">
+          <div className="flex gap-3 mb-6">
+            <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>1. JD {jdReady && "✓"}</button>
+            <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume {resumeReady && "✓"}</button>
+          </div>
+          <div className="flex gap-2 mb-4">
+            <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700">Upload PDF/DOCX<input type="file" onChange={handleFileUpload} className="hidden" /></label>
+            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Full Samples</button>
+          </div>
+          <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
+          <button onClick={handleScreen} disabled={loading} className="mt-6 py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
         </div>
 
-        <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
-            {analysis ? (
-              <div className="space-y-6 animate-in fade-in zoom-in-95">
-                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
-                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl">{analysis.score}%</div>
-                  <div className="text-white font-bold text-xl mb-4">{analysis.candidate_name}</div>
-                </div>
-                <div className="bg-indigo-600/5 border border-indigo-500/20 p-8 rounded-[2.5rem]">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-indigo-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2"><Mail className="w-3 h-3" /> Outreach Email</h4>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Copied!")}} className="p-2 hover:bg-indigo-500/20 rounded-lg"><Copy className="w-4 h-4 text-indigo-400" /></button>
-                  </div>
-                  <div className="bg-[#0B1120] p-6 rounded-2xl border border-slate-800 text-[11px] leading-relaxed text-slate-300 font-mono whitespace-pre-wrap">{analysis.outreach_email}</div>
-                </div>
+        <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
+          {analysis ? (
+            <div className="space-y-6 text-center animate-in fade-in zoom-in">
+              <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
+              <div className="font-bold text-lg">{analysis.candidate_name}</div>
+              <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
+              <div className="text-left text-xs text-slate-300 space-y-4 pt-4">
+                <p><strong className="text-indigo-400 uppercase text-[10px]">Summary:</strong><br/>{analysis.summary}</p>
+                <p className="text-emerald-400"><strong className="uppercase text-[10px]">Strengths:</strong><br/>{analysis.strengths.join(', ')}</p>
+                <p className="text-rose-400"><strong className="uppercase text-[10px]">Critical Gaps:</strong><br/>{analysis.gaps.join(', ')}</p>
               </div>
-            ) : (
-              <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase gap-6 text-center p-12 opacity-50">
-                <Sparkles className="w-8 h-8 opacity-20" />
-                <p>Waiting for Elite AI Screen...</p>
-              </div>
-            )}
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase opacity-40">📊<br/>Engine Idle</div>
+          )}
         </div>
       </div>
 
       {showLimitModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-3xl animate-in fade-in">
-          <div className="relative w-full max-w-4xl bg-[#0F172A] border-2 border-slate-700 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row text-left">
-              <div className="p-12 md:w-3/5 flex flex-col justify-center relative">
-                 <h2 className="text-5xl font-black text-white mb-6 leading-tight tracking-tighter italic">Hire Smarter. <br/><span className="text-indigo-400 not-italic">Finish First.</span></h2>
-                 <p className="text-slate-400 mb-10 text-sm leading-relaxed max-w-sm">Join top recruiters using Recruit-IQ Elite to screen candidates 10x faster.</p>
-                 
-                 {/* UNIVERSAL BUTTON: ALWAYS VISIBLE */}
-                 <button 
-                    onClick={handleUniversalAction}
-                    className="inline-flex items-center gap-3 bg-indigo-600 px-12 py-5 rounded-2xl text-white font-black uppercase tracking-wider text-xs shadow-lg hover:bg-indigo-500 transition-all border border-indigo-400 hover:scale-[1.05]"
-                 >
-                    CONTINUE TO ACCESS <ArrowRight className="w-4 h-4" />
-                 </button>
-                 
-                 <button onClick={() => setShowLimitModal(false)} className="text-[10px] text-slate-500 hover:text-white uppercase font-black w-fit tracking-[0.2em] mt-10 transition-colors uppercase block">Dismiss</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
+          <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-sm w-full text-center shadow-2xl">
+            <button onClick={() => setShowLimitModal(false)} className="absolute top-4 right-4 text-slate-500">✕</button>
+            <h2 className="text-2xl font-black mb-4 uppercase">Upgrade to Elite</h2>
+            {!isSignedIn ? (
+              <SignUpButton mode="modal" afterSignUpUrl="/?signup=true"><button className="w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Sign Up</button></SignUpButton>
+            ) : (
+              <div className="space-y-4">
+                <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Start Elite Trial</a>
+                <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[9px] text-slate-400 border border-slate-700">
+                  {verifying ? "Checking Stripe..." : "I've Already Paid (Force Unlock)"}
+                </button>
               </div>
-              
-              <div className="md:w-2/5 bg-slate-900/80 p-12 border-l border-slate-800 flex flex-col justify-center gap-10">
-                 <div className="flex gap-4 items-start"><Zap className="text-indigo-400 w-6 h-6 shrink-0 fill-current" /><div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Elite Speed</h4></div></div>
-                 <div className="flex gap-4 items-start"><Shield className="text-purple-400 w-6 h-6 shrink-0" /><div><h4 className="text-white font-bold text-[10px] uppercase tracking-widest">Precision Match</h4></div></div>
-              </div>
+            )}
           </div>
         </div>
       )}
+      {toast.show && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase shadow-2xl">{toast.message}</div>}
     </div>
   );
 }
