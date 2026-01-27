@@ -15,20 +15,19 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
-    // STEP 1: Get the list (Don't filter by ID here, it causes Build Error)
+    // Fetch sessions without the invalid 'client_reference_id' filter to pass build
     const sessions = await stripe.checkout.sessions.list({ 
-      limit: 100,
-      status: 'complete'
+      limit: 100 
     });
 
-    // STEP 2: Filter manually in Javascript
+    // Manually find the match in the results
     const match = sessions.data.find(s => 
-      s.client_reference_id === userId || 
-      s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase()
+      s.status === 'complete' && 
+      (s.client_reference_id === userId || s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase())
     );
 
     if (match) {
-      // Use clerkClient object directly
+      // Correct object-based call for your Clerk SDK version
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
