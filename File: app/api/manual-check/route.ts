@@ -15,6 +15,7 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
+    // Scan the last 100 Stripe sessions for a match with this user's email
     const sessions = await stripe.checkout.sessions.list({ limit: 100 });
     const match = sessions.data.find(s => 
       s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase() &&
@@ -22,14 +23,14 @@ export async function POST(req: Request) {
     );
 
     if (match) {
-      // FIXED: Use clerkClient directly as an object, not a function
+      // FIXED: Use clerkClient as an object directly (no parentheses) to pass Vercel build
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
       return NextResponse.json({ success: true });
     }
     
-    return NextResponse.json({ success: false }, { status: 404 });
+    return NextResponse.json({ success: false, error: "Payment not found" }, { status: 404 });
   } catch (error: any) {
     return new NextResponse(error.message, { status: 500 });
   }
