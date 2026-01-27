@@ -137,7 +137,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // Styling Header
     doc.setFillColor(79, 70, 229); 
     doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); 
@@ -148,7 +147,6 @@ export default function Dashboard() {
     doc.setFont("helvetica", "normal");
     doc.text("RECRUIT-IQ | ELITE CANDIDATE SCREENING", 20, 32);
 
-    // Profile Data
     doc.setTextColor(30, 41, 59); 
     doc.setFontSize(20); 
     doc.setFont("helvetica", "bold");
@@ -156,7 +154,6 @@ export default function Dashboard() {
     doc.setTextColor(79, 70, 229); 
     doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
 
-    // Executive Summary
     doc.setTextColor(100, 116, 139); 
     doc.setFontSize(9); 
     doc.text("EXECUTIVE SUMMARY", 20, 72);
@@ -168,7 +165,6 @@ export default function Dashboard() {
 
     let y = 79 + (summaryLines.length * 6) + 15;
     
-    // Strengths & Gaps
     doc.setFont("helvetica", "bold"); 
     doc.setFontSize(10);
     doc.setTextColor(16, 185, 129); 
@@ -189,7 +185,6 @@ export default function Dashboard() {
         if (gaps[i]) doc.text(`• ${gaps[i]}`, 110, y + (i * 6));
     }
 
-    // Interview Questions Page
     doc.addPage();
     doc.setTextColor(79, 70, 229); 
     doc.setFontSize(16); 
@@ -256,14 +251,12 @@ export default function Dashboard() {
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* TOAST NOTIFICATION */}
       {toast.show && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top duration-300 ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
           <p className="text-xs font-bold uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
@@ -287,7 +280,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START WIZARD */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-3">
@@ -314,9 +306,7 @@ export default function Dashboard() {
           </div>
       </div>
 
-      {/* WORKSPACE */}
       <div className="grid lg:grid-cols-2 gap-8">
-        {/* LEFT COLUMN: INPUT */}
         <div className="bg-[#111827] p-6 md:p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
             <div className="flex gap-3 mb-6">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
@@ -352,11 +342,9 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RIGHT COLUMN: RESULTS */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
-                {/* Score Header */}
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500"></div>
                   <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-indigo-900/40">{analysis.score}%</div>
@@ -367,7 +355,6 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                {/* Pros/Cons Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]">
                     <h4 className="text-emerald-400 font-bold uppercase mb-4 text-[9px] tracking-widest flex items-center gap-2">
@@ -387,7 +374,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Interview Questions */}
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
                   <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 tracking-widest flex items-center gap-2">
                     <HelpCircle className="w-3 h-3" /> Strategic Interview Guide
@@ -401,7 +387,6 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Outreach Email */}
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl text-center">
                     <h4 className="text-blue-400 font-bold uppercase text-[9px] mb-4 tracking-widest">Candidate Outreach</h4>
                     <div className="bg-slate-900/50 rounded-2xl p-6 mb-6 text-left border border-slate-800">
@@ -429,7 +414,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* FOOTER */}
       <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
         <p className="mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
         <div className="flex justify-center gap-6">
@@ -439,7 +423,6 @@ export default function Dashboard() {
         </div>
       </footer>
 
-      {/* SALES MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90 animate-in fade-in duration-300">
           <div className="relative w-full max-w-4xl animate-in zoom-in-95 duration-500">
@@ -451,7 +434,10 @@ export default function Dashboard() {
                  <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">Unlock unlimited resume screening, deep AI personality analysis, and strategic interview guides.</p>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                    <SignUpButton 
+                      mode="modal" 
+                      signInForceRedirectUrl={STRIPE_URL}
+                    >
                         <button 
                             onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
                             className="block w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-wider hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40"
@@ -485,7 +471,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* SUPPORT MODAL */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
