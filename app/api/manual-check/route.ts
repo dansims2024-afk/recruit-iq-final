@@ -2,59 +2,39 @@ import { NextResponse } from "next/server";
 import { auth, currentUser, clerkClient } from "@clerk/nextjs";
 import Stripe from "stripe";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16",
+});
+
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const user = await currentUser();
 
-    if (!userId || !user) {
-      return NextResponse.json({ success: false, error: "Not Logged In" }, { status: 401 });
-    }
+    if (!userId || !user) return new NextResponse("Unauthorized", { status: 401 });
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
     const userEmail = user.emailAddresses[0].emailAddress;
 
-    console.log(`[Sync] Checking for User: ${userEmail} (ID: ${userId})`);
-
-    // STRATEGY 1: Search by Client Reference ID (The most accurate link)
-    // We explicitly look for a session that matches the Clerk User ID
-    const idSearchResults = await stripe.checkout.sessions.list({
-      limit: 5,
-      client_reference_id: userId,
-      status: 'complete'
+    // Scan the last 100 Stripe sessions to find a match by email or Client Reference ID
+    const sessions = await stripe.checkout.sessions.list({ 
+      limit: 100
     });
 
-    // STRATEGY 2: Search by Email (Fallback)
-    // We scan recent payments for the user's email address
-    const emailSearchResults = await stripe.checkout.sessions.list({
-        limit: 10,
-        status: 'complete'
-    });
-    
-    // Check for a match in either result set
-    const idMatch = idSearchResults.data[0];
-    const emailMatch = emailSearchResults.data.find(s => 
-        s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase()
+    const match = sessions.data.find(s => 
+      s.status === 'complete' && 
+      (s.client_reference_id === userId || s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase())
     );
 
-    const match = idMatch || emailMatch;
-
     if (match) {
-      console.log(`[Sync] Payment Found! Session ID: ${match.id}`);
-      
-      // FORCE UNLOCK
+      // FIXED: Use clerkClient as an object directly (not a function) to pass build
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
-      
-      return NextResponse.json({ success: true, method: idMatch ? 'ID' : 'Email' });
+      return NextResponse.json({ success: true });
     }
-
-    console.log(`[Sync] No match found. Searched ID: ${userId} and Email: ${userEmail}`);
-    return NextResponse.json({ success: false, error: "Payment record not found in Stripe." }, { status: 404 });
-
+    
+    return NextResponse.json({ success: false, error: "Payment not found" }, { status: 404 });
   } catch (error: any) {
-    console.error("[Sync] Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return new NextResponse(error.message, { status: 500 });
   }
 }
