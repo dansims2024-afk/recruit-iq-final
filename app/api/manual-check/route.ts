@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     );
 
     if (match) {
-      // Correct object-based call for your Clerk SDK version
+      // Use clerkClient as an object directly (no parentheses)
       await clerkClient.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
