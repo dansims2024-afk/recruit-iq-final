@@ -32,11 +32,8 @@ export default function Dashboard() {
     setScanCount(savedCount);
     
     if (isLoaded && isSignedIn) {
-      // Force-refresh user data to catch background metadata updates
       user.reload().catch(() => null);
-
       const urlParams = new URLSearchParams(window.location.search);
-      // Automatic redirect if the signup flag is present
       if (urlParams.get('signup') === 'true' && !isPro) {
         window.location.href = finalStripeUrl;
         return;
@@ -55,7 +52,6 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/manual-check', { method: 'POST' });
       if (res.ok) {
-        // Force client-side reload of the User object to show Pro status immediately
         await user?.reload(); 
         if (user?.publicMetadata?.isPro) {
           setShowLimitModal(false);
@@ -123,10 +119,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto text-white bg-[#0B1120] min-h-screen pt-20">
-      {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-6">
         <div className="flex items-center gap-4"><img src="/logo.png" className="h-10" />
-          <h1 className="text-xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+          <h1 className="text-xl font-black uppercase">Recruit-IQ</h1>
         </div>
         <div className="flex items-center gap-4">
           <div className={`px-4 py-2 rounded-full text-[10px] font-bold border ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
@@ -167,14 +162,14 @@ export default function Dashboard() {
 
       {showLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/80">
-          <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-sm:w-full max-w-sm text-center">
+          <div className="relative bg-[#0F172A] border border-slate-700 p-10 rounded-[2rem] max-w-sm w-full text-center">
             <button onClick={() => setShowLimitModal(false)} className="absolute top-4 right-4 text-slate-500">✕</button>
             <h2 className="text-2xl font-black mb-4 uppercase">Upgrade to Elite</h2>
             {!isSignedIn ? (
               <SignUpButton 
                 mode="modal" 
                 afterSignUpUrl="/?signup=true"
-                // Forces the user to the Stripe trigger path immediately
+                // This ensures they go straight to the payment path after verification
                 signUpForceRedirectUrl="/?signup=true"
               >
                 <button className="w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Sign Up</button>
@@ -190,7 +185,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      {toast.show && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase shadow-2xl">{toast.message}</div>}
+      {toast.show && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase">{toast.message}</div>}
     </div>
   );
 }
