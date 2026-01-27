@@ -15,10 +15,8 @@ export async function POST(req: Request) {
 
     const userEmail = user.emailAddresses[0].emailAddress;
 
-    // Scan the last 100 Stripe sessions to find a match by email or Client Reference ID
-    const sessions = await stripe.checkout.sessions.list({ 
-      limit: 100
-    });
+    // Scan the last 100 Stripe sessions to find a match by email or ID
+    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
 
     const match = sessions.data.find(s => 
       s.status === 'complete' && 
