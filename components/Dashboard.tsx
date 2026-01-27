@@ -9,18 +9,10 @@ const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
-SALARY: $240,000 - $285,000 + Performance Bonus + Equity
-
-REQUIREMENTS:
-- 12+ years of software engineering experience in FinTech.
-- Deep expertise in AWS Cloud Architecture.
-- Strong proficiency in Go, C++, Python, and TypeScript.`;
+SALARY: $240,000 - $285,000 + Performance Bonus + Equity`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
-Principal Software Architect | New York, NY
-
-EXECUTIVE SUMMARY:
-Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design.`;
+Principal Software Architect | New York, NY`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -34,7 +26,8 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [verifying, setVerifying] = useState(false);
 
-  // Variables used in JSX must be defined within the component scope
+  // --- CRITICAL BUILD FIXES ---
+  // These variables must be defined here to prevent "Cannot find name" errors
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -55,8 +48,9 @@ export default function Dashboard() {
       }
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
+      } else if (!isPro && savedCount >= 3) {
+        setShowLimitModal(true);
       }
-      if (!isPro && savedCount >= 3) setShowLimitModal(true);
     }
   }, [isLoaded, isSignedIn, isPro, finalStripeUrl]);
 
@@ -166,13 +160,13 @@ export default function Dashboard() {
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
           {analysis ? (
             <div className="space-y-6 text-center animate-in fade-in zoom-in">
-              <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
+              <div className="text-2xl font-bold">{analysis.score}% Match</div>
               <div className="font-bold text-lg">{analysis.candidate_name}</div>
               <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
               <div className="text-left text-xs text-slate-300 space-y-4 pt-4">
-                <p><strong className="text-indigo-400 uppercase text-[10px]">Summary:</strong><br/>{analysis.summary}</p>
-                <p className="text-emerald-400"><strong className="uppercase text-[10px]">Strengths:</strong><br/>{analysis.strengths.join(', ')}</p>
-                <p className="text-rose-400"><strong className="uppercase text-[10px]">Gaps:</strong><br/>{analysis.gaps.join(', ')}</p>
+                <p><strong>Summary:</strong> {analysis.summary}</p>
+                <p><strong>Strengths:</strong> {analysis.strengths.join(', ')}</p>
+                <p><strong>Gaps:</strong> {analysis.gaps.join(', ')}</p>
               </div>
             </div>
           ) : (
