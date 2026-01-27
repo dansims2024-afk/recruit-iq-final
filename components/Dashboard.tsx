@@ -5,10 +5,8 @@ import mammoth from 'mammoth';
 import { jsPDF } from "jspdf"; 
 import { useUser, SignUpButton, UserButton } from "@clerk/nextjs";
 
-// --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803"; 
 
-// --- ELITE SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -37,8 +35,6 @@ export default function Dashboard() {
   const [verifying, setVerifying] = useState(false);
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
-  const jdReady = jdText.trim().length > 50;
-  const resumeReady = resumeText.trim().length > 50;
   
   const finalStripeUrl = user?.id 
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user?.primaryEmailAddress?.emailAddress || '')}`
@@ -50,12 +46,10 @@ export default function Dashboard() {
     
     if (isLoaded && isSignedIn) {
       const urlParams = new URLSearchParams(window.location.search);
-      // AUTO-REDIRECT TO STRIPE (New Signups)
       if (urlParams.get('signup') === 'true' && !isPro) {
         window.location.href = finalStripeUrl;
         return;
       }
-      // AUTO-UNLOCK (Returning from Stripe)
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         handleVerifySubscription();
       }
@@ -111,7 +105,6 @@ export default function Dashboard() {
 
   const handleScreen = async () => {
     if (!isPro && scanCount >= 3) { setShowLimitModal(true); return; }
-    if (!jdReady || !resumeReady) { showToast("Input Required."); return; }
     setLoading(true);
     try {
       const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 questions, and outreach email. Return ONLY JSON.`;
@@ -135,7 +128,7 @@ export default function Dashboard() {
     const doc = new jsPDF();
     doc.text("RECRUIT-IQ REPORT", 20, 25);
     doc.text(analysis.candidate_name, 20, 55);
-    doc.save(`Report_${analysis.candidate_name}.pdf`);
+    doc.save(`Report.pdf`);
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#0B1120]" />;
@@ -159,8 +152,8 @@ export default function Dashboard() {
             <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase border ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>2. Resume {resumeReady && "✓"}</button>
           </div>
           <div className="flex gap-2 mb-4">
-            <label className="flex-1 text-center cursor-pointer bg-slate-800 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700">Upload File<input type="file" onChange={handleFileUpload} className="hidden" /></label>
-            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
+            <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700">Upload File<input type="file" onChange={handleFileUpload} className="hidden" /></label>
+            <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded");}} className="flex-1 bg-indigo-600/10 py-3 rounded-xl text-[10px] font-bold uppercase text-indigo-400 border border-indigo-500/30">Load Samples</button>
           </div>
           <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} />
           <button onClick={handleScreen} disabled={loading} className="mt-6 py-4 rounded-xl font-black uppercase text-xs bg-indigo-600 shadow-lg">{loading ? "Analyzing..." : "Execute AI Screen →"}</button>
@@ -169,13 +162,13 @@ export default function Dashboard() {
         <div className="bg-[#111827] p-8 rounded-[2rem] border border-slate-800 h-[750px] overflow-y-auto">
           {analysis ? (
             <div className="space-y-6 text-center animate-in fade-in zoom-in">
-              <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-black border-4 border-indigo-500/50">{analysis.score}%</div>
+              <div className="text-2xl font-bold">{analysis.score}% Match</div>
               <div className="font-bold text-lg">{analysis.candidate_name}</div>
               <button onClick={downloadPDF} className="bg-slate-800 text-indigo-400 px-6 py-2 rounded-lg text-[10px] font-bold uppercase border border-slate-700">Download PDF</button>
               <div className="text-left text-xs text-slate-300 space-y-4 pt-4">
                 <p><strong className="text-indigo-400 uppercase text-[10px]">Summary:</strong><br/>{analysis.summary}</p>
-                <p className="text-emerald-400"><strong className="uppercase text-[10px]">Strengths:</strong><br/>{analysis.strengths.join(', ')}</p>
-                <p className="text-rose-400"><strong className="uppercase text-[10px]">Gaps:</strong><br/>{analysis.gaps.join(', ')}</p>
+                <p><strong className="text-emerald-400 uppercase text-[10px]">Strengths:</strong><br/>{analysis.strengths.join(', ')}</p>
+                <p><strong className="text-rose-400 uppercase text-[10px]">Gaps:</strong><br/>{analysis.gaps.join(', ')}</p>
               </div>
             </div>
           ) : (
@@ -192,8 +185,8 @@ export default function Dashboard() {
               <SignUpButton mode="modal" afterSignUpUrl="/?signup=true"><button className="w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Sign Up</button></SignUpButton>
             ) : (
               <div className="space-y-4">
-                <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs">Start Elite Trial</a>
-                <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-2 bg-slate-800 rounded-xl font-bold uppercase text-[9px] text-slate-400 border border-slate-700">{verifying ? "Checking Stripe..." : "I've Paid (Force Unlock)"}</button>
+                <a href={finalStripeUrl} target="_blank" className="block w-full py-4 bg-indigo-600 rounded-xl font-black uppercase text-xs shadow-xl">Start Elite Trial</a>
+                <button onClick={handleVerifySubscription} disabled={verifying} className="w-full py-3 bg-slate-800 rounded-xl font-bold uppercase text-[10px] text-slate-400 border border-slate-700">{verifying ? "Syncing..." : "I've Paid (Force Unlock)"}</button>
               </div>
             )}
           </div>
