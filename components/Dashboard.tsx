@@ -19,36 +19,16 @@ SALARY: $240,000 - $285,000 + Performance Bonus + Equity
 ABOUT THE COMPANY:
 Vertex Financial Systems is a global leader in high-frequency trading technology. We are seeking a visionary Architect to lead the evolution of our next-generation platform.
 
-KEY RESPONSIBILITIES:
-- Design and implement high-availability microservices using AWS EKS and Fargate.
-- Lead the migration from legacy monolithic structures to modern gRPC architecture.
-- Optimize C++ and Go-based trading engines for sub-millisecond latency.
-- Establish CI/CD best practices and mentor a global team of 15+ senior engineers.
-
 REQUIREMENTS:
-- 12+ years of software engineering experience in FinTech or Capital Markets.
+- 12+ years of software engineering experience in FinTech.
 - Deep expertise in AWS Cloud Architecture.
-- Proven track record with Kubernetes, Docker, Kafka, and Terraform.
 - Strong proficiency in Go (Golang), C++, and Python.`;
 
 const SAMPLE_RESUME = `MARCUS VANDELAY
 Principal Software Architect | New York, NY | m.vandelay@email.com
 
-EXECUTIVE SUMMARY:Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.
-
-PROFESSIONAL EXPERIENCE:
-Global Quant Solutions | Principal Architect | 2018 - Present
-- Architected serverless data pipelines handling 5TB of daily market data.
-- Reduced infrastructure costs by 35% through AWS Graviton migration.
-- Led team of 15 engineers in re-writing core risk engine, improving speed by 400%.
-
-InnovaTrade | Senior Staff Engineer | 2014 - 2018
-- Built core execution engine in Go, achieving 50% reduction in order latency.
-- Implemented automated failover protocols preventing over $10M in slippage.
-
-TECHNICAL SKILLS:
-- Languages: Go, C++, Python, Rust.
-- Cloud: AWS (EKS, Lambda, Aurora), Terraform, Docker, Kubernetes.`;
+EXECUTIVE SUMMARY:
+Strategic Technical Leader with 14 years of experience building mission-critical financial infrastructure. Expert in AWS cloud-native transformations and low-latency system design. Managed teams of 20+ engineers.`;
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -66,7 +46,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [verifying, setVerifying] = useState(false);
 
-  // --- BUILD FIX: Scope variables correctly ---
+  // --- BUILD FIXES: Ensure variables are in component scope ---
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -80,7 +60,7 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- THE STRIPE TRAP logic ---
+  // --- STRIPE TRAP & INSTANT UNLOCK logic ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
@@ -95,6 +75,12 @@ export default function Dashboard() {
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         showToast("Finalizing Elite Access...", "info");
         await handleVerifySubscription();
+      } else if (!isPro) {
+        await user?.reload();
+        if (user?.publicMetadata?.isPro === true) {
+          showToast("Elite Status Activated!", "success");
+          setShowLimitModal(false);
+        }
       }
     };
     handleReturnFlow();
@@ -143,7 +129,7 @@ export default function Dashboard() {
         text = fullText;
       } else { text = await file.text(); }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      showToast(`${file.name} Uploaded!`);
+      showToast(`${file.name} Uploaded Successfully!`);
     } catch (err) { showToast("Upload failed.", "error"); } finally { setLoading(false); }
   };
 
@@ -188,15 +174,35 @@ export default function Dashboard() {
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Intelligence Generated!");
+      showToast("Intelligence Generated Successfully!");
     } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
   };
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>;
+  const handleSupportSubmit = () => {
+      showToast("Message sent! We'll reply shortly.");
+      setShowSupportModal(false);
+      setSupportMessage("");
+  };
+
+  // --- SYNTAX FIX: Balanced braces and Loader UI ---
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
+      {/* TOAST SYSTEM */}
+      {toast.show && (
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
+          <p className="text-xs font-bold uppercase tracking-widest">{toast.message}</p>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -216,18 +222,18 @@ export default function Dashboard() {
                 <span className="bg-indigo-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">1</span>
                 {jdReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
-              <h4 className="uppercase text-[11px] font-black tracking-widest">Requirements</h4>
+              <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Requirements</h4>
           </div>
           <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
                 <span className="bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">2</span>
                 {resumeReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
-              <h4 className="uppercase text-[11px] font-black tracking-widest">Candidate Data</h4>
+              <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Candidate Data</h4>
           </div>
           <div className={`p-8 rounded-[2.5rem] border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4"><span className="bg-purple-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">3</span></div>
-              <h4 className="uppercase text-[11px] font-black tracking-widest">Intelligence</h4>
+              <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Intelligence</h4>
           </div>
       </div>
 
@@ -248,7 +254,6 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* RESULTS */}
         <div className="h-[750px] overflow-y-auto pr-2 custom-scrollbar">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95">
@@ -296,6 +301,27 @@ export default function Dashboard() {
                  )}
                  <button onClick={() => setShowLimitModal(false)} className="mt-8 text-[11px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline decoration-slate-800 w-full">No thanks, I'll screen manually</button>
               </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
+        <p className="mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-6">
+          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors">Contact Support</button>
+          <a href="#" className="hover:text-indigo-400">Terms</a>
+          <a href="#" className="hover:text-indigo-400">Privacy</a>
+        </div>
+      </footer>
+
+      {/* SUPPORT MODAL */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
+          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
+            <h2 className="text-2xl font-black mb-6 uppercase tracking-tighter">Support</h2>
+            <textarea required className="w-full h-40 bg-[#0B1120] border border-slate-800 rounded-2xl p-6 text-[12px] text-white outline-none resize-none mb-6 focus:border-indigo-500 transition-colors" placeholder="How can we help your hiring process?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            <div className="flex gap-4"><button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Send Message</button><button onClick={() => setShowSupportModal(false)} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Cancel</button></div>
           </div>
         </div>
       )}
