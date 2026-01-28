@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
+import { useUser, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, Check, FileText, User, Download, Send, 
-  Zap, Shield, HelpCircle, CheckCircle2, XCircle, Info 
+  Zap, Shield, HelpCircle, CheckCircle2 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -53,7 +53,6 @@ TECHNICAL SKILLS:
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const clerk = useClerk();
   
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
@@ -153,14 +152,13 @@ export default function Dashboard() {
     } catch (err) { showToast("Upload failed.", "error"); } finally { setLoading(false); }
   };
 
-  // --- GEMMY SPECIAL PDF GENERATOR 2.0 (Smart Wrapping) ---
+  // --- PDF GENERATOR 2.0 ---
   const downloadPDF = () => {
     if (!analysis) return;
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
     const score = analysis.score;
 
-    // Helper: Wrap Text
     const addWrappedText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
@@ -193,7 +191,7 @@ export default function Dashboard() {
     doc.setFont("helvetica", "normal"); doc.setTextColor(30, 41, 59);
     addWrappedText(analysis.summary || "", 20, 78, 170, 5);
 
-    // Strengths & Gaps Columns
+    // Strengths & Gaps
     let yStart = 115;
     doc.setTextColor(16, 185, 129); doc.setFont("helvetica", "bold"); doc.setFontSize(12);
     doc.text("KEY STRENGTHS", 15, yStart);
@@ -202,7 +200,6 @@ export default function Dashboard() {
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(51, 65, 85);
     
-    // Render Strengths
     let yLeft = yStart + 8;
     (analysis.strengths || []).forEach((s: string) => {
         doc.setFillColor(209, 250, 229); doc.circle(18, yLeft - 1.5, 1.5, 'F');
@@ -210,7 +207,6 @@ export default function Dashboard() {
         yLeft += h + 3;
     });
 
-    // Render Gaps
     let yRight = yStart + 8;
     (analysis.gaps || []).forEach((g: string) => {
         doc.setFillColor(254, 226, 226); doc.circle(113, yRight - 1.5, 1.5, 'F');
@@ -227,8 +223,8 @@ export default function Dashboard() {
     doc.setTextColor(51, 65, 85); doc.setFontSize(10);
     let qY = 45;
     (analysis.questions || []).forEach((q: string, i: number) => {
-        doc.setFillColor(241, 245, 249); doc.rect(15, qY, 180, 20, 'F'); // Box
-        doc.setFillColor(99, 102, 241); doc.rect(15, qY, 2, 20, 'F'); // Accent
+        doc.setFillColor(241, 245, 249); doc.rect(15, qY, 180, 20, 'F');
+        doc.setFillColor(99, 102, 241); doc.rect(15, qY, 2, 20, 'F');
         doc.setFont("helvetica", "bold"); doc.text(`QUESTION ${i + 1}`, 20, qY + 6);
         doc.setFont("helvetica", "italic");
         const lines = doc.splitTextToSize(q, 170);
@@ -310,16 +306,16 @@ export default function Dashboard() {
                 <span className="bg-indigo-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">1</span>
                 {jdReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
-              <h4 className="uppercase text-[11px] font-black tracking-widest mb-2">Define Requirements</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Paste JD or upload PDF/Word to set the benchmark.</p>
+              <h4 className="uppercase text-[11px] font-black tracking-widest mb-2">Job Description</h4>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Paste text or Upload PDF/Docx to set the benchmark.</p>
           </div>
           <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
                 <span className="bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">2</span>
                 {resumeReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
-              <h4 className="uppercase text-[11px] font-black tracking-widest mb-2">Upload Candidate</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Upload a PDF/Word resume or paste candidate data.</p>
+              <h4 className="uppercase text-[11px] font-black tracking-widest mb-2">Candidate Resume</h4>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Paste text or Upload PDF/Docx to screen candidate.</p>
           </div>
           <div className={`p-8 rounded-[2.5rem] border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4"><span className="bg-purple-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">3</span></div>
