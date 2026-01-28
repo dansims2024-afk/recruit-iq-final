@@ -6,7 +6,7 @@ import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@cler
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, Check, FileText, User, Download, Send, 
-  Zap, Shield, HelpCircle, CheckCircle2, XCircle, Info, Printer 
+  Zap, Shield, HelpCircle, CheckCircle2, XCircle, Info 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -80,7 +80,7 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- STRIPE TRAP & UNLOCK ---
+  // --- STRIPE TRAP logic ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
@@ -153,14 +153,14 @@ export default function Dashboard() {
     } catch (err) { showToast("Upload failed.", "error"); } finally { setLoading(false); }
   };
 
-  // --- SMART PDF GENERATOR (Fixed Text Wrapping) ---
+  // --- GEMMY SPECIAL PDF GENERATOR 2.0 (Smart Wrapping) ---
   const downloadPDF = () => {
     if (!analysis) return;
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
     const score = analysis.score;
 
-    // Helper: Wrap Text to prevent overlap
+    // Helper: Wrap Text
     const addWrappedText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, x, y);
@@ -274,6 +274,13 @@ export default function Dashboard() {
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
+      {/* TOAST SYSTEM */}
+      {toast.show && (
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
+          <p className="text-xs font-bold uppercase tracking-widest">{toast.message}</p>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
@@ -285,7 +292,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
             <div className={`px-4 py-2 rounded-full text-[10px] font-bold border flex items-center gap-2 ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
-                {isPro && <Zap className="w-3 h-3 fill-current" />}
+                {isPro ? <Zap className="w-3 h-3 fill-current" /> : null}
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
@@ -296,7 +303,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START WIZARD (Detailed) */}
+      {/* QUICK START WIZARD (Updated Text) */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
@@ -304,7 +311,7 @@ export default function Dashboard() {
                 {jdReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
               <h4 className="uppercase text-[11px] font-black tracking-widest mb-2">Define Requirements</h4>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Paste the full Job Description to set the hiring benchmark.</p>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">Paste JD or upload PDF/Word to set the benchmark.</p>
           </div>
           <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
@@ -332,11 +339,22 @@ export default function Dashboard() {
                   {resumeReady && <Check className="w-4 h-4 text-emerald-400" />} 2. Resume
                 </button>
             </div>
+            
             <div className="flex gap-4 mb-6">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">Upload PDF / Word<input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" /></label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full Samples Loaded!", "info");}} className="flex-1 bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Elite Samples</button>
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
+                Upload PDF / Word
+                <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
+              </label>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Samples Loaded!", "info");}} className="flex-1 bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Samples</button>
             </div>
-            <textarea className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-3xl text-[11px] font-mono leading-relaxed focus:border-indigo-500 transition-colors custom-scrollbar" value={activeTab === 'jd' ? jdText : resumeText} onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)} placeholder="Paste data here..."/>
+
+            <textarea 
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-3xl text-[11px] font-mono leading-relaxed focus:border-indigo-500 transition-colors custom-scrollbar"
+              value={activeTab === 'jd' ? jdText : resumeText} 
+              onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
+              placeholder={activeTab === 'jd' ? "Paste target Job Description..." : "Paste Candidate Resume..."}
+            />
+            
             <button onClick={handleScreen} disabled={loading} className="mt-8 py-6 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-4 hover:bg-indigo-500 transition-all disabled:opacity-50">
               {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white animate-pulse" />}
               {loading ? "Crunching Data..." : "Execute Elite AI Screen →"}
@@ -352,13 +370,10 @@ export default function Dashboard() {
                   <div className="w-28 h-28 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-5xl font-black mb-6 shadow-xl shadow-indigo-900/40">{analysis.score}%</div>
                   <div className="text-white font-black text-2xl mb-8 uppercase tracking-tighter">{analysis.candidate_name}</div>
                   
-                  {/* ACTIONS: Download & Print */}
+                  {/* ACTIONS: Download Only */}
                   <div className="flex gap-3 justify-center mb-8">
-                    <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition-all flex items-center gap-2">
-                        <Download className="w-4 h-4" /> Download Report
-                    </button>
-                    <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-700 text-slate-400 px-6 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition-all flex items-center gap-2">
-                        <Printer className="w-4 h-4" /> Print View
+                    <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-8 py-4 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition-all flex items-center gap-2">
+                        <Download className="w-4 h-4" /> Download PDF Report
                     </button>
                   </div>
 
@@ -407,7 +422,7 @@ export default function Dashboard() {
                  )}
                  <button onClick={() => setShowLimitModal(false)} className="mt-8 text-[11px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline decoration-slate-800 transition-all w-full">No thanks, I'll screen manually</button>
               </div>
-              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800/50 flex-col items-center justify-center p-16 text-center shadow-inner">
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800/50 flex-col items-center justify-center p-16 text-center border-l border-slate-800 shadow-inner">
                  <Zap className="w-14 h-14 text-indigo-400 mb-10 drop-shadow-2xl animate-pulse" />
                  <h3 className="font-black text-white uppercase text-2xl tracking-tighter mb-4">Elite Status</h3>
                  <ul className="text-[10px] text-slate-500 space-y-5 font-black uppercase tracking-widest text-left">
@@ -441,7 +456,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      {toast.show && <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 bg-emerald-600 px-6 py-2 rounded-lg font-black text-[10px] uppercase shadow-2xl z-[400]`}>{toast.message}</div>}
     </div>
   );
 }
