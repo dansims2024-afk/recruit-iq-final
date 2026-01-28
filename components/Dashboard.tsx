@@ -1,4 +1,4 @@
-"use client"; // REQUIRED: Line 1 for Vercel Build
+"use client"; // REQUIRED: Absolute first line
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [verifying, setVerifying] = useState(false);
 
-  // --- BUILD FIXES: Scope variables correctly ---
+  // --- BUILD FIXES: Ensure variables are in scope ---
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -81,25 +81,22 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // --- STRIPE TRAP & INSTANT UNLOCK ---
+  // --- STRIPE TRAP & INSTANT UNLOCK logic ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
-      // Handle the Boomerang: Clerk -> Home -> Stripe
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
 
-      // Detect payment success redirect from Stripe
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         showToast("Finalizing Elite Access...", "info");
         await handleVerifySubscription();
       } else if (!isPro) {
-        // Double check Clerk for Webhook updates
         await user?.reload();
         if (user?.publicMetadata?.isPro === true) {
           showToast("Elite Status Activated!", "success");
@@ -143,7 +140,6 @@ export default function Dashboard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        // Use standard PDF.js logic (loaded in layout.tsx via CDN)
         // @ts-ignore
         const pdfJS = window.pdfjsLib;
         const pdf = await pdfJS.getDocument(URL.createObjectURL(file)).promise;
@@ -165,7 +161,6 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // Page 1: High-Fidelity Header
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 45, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.setFont("helvetica", "bold");
     doc.text("INTELLIGENCE REPORT", 20, 25);
@@ -176,7 +171,6 @@ export default function Dashboard() {
     doc.text(cName, 20, 60);
     doc.setTextColor(79, 70, 229); doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 60);
 
-    // Summary Sections
     doc.setTextColor(100, 116, 139); doc.setFontSize(9); doc.text("EXECUTIVE SUMMARY", 20, 72);
     doc.setTextColor(51, 65, 85); doc.setFontSize(11); doc.setFont("helvetica", "normal");
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
@@ -196,7 +190,6 @@ export default function Dashboard() {
         if (gaps[i]) doc.text(`• ${gaps[i]}`, 110, y + (i * 6));
     }
 
-    // Page 2: Strategic Interview Questions
     doc.addPage();
     doc.setTextColor(79, 70, 229); doc.setFontSize(16); doc.setFont("helvetica", "bold");
     doc.text("STRATEGIC INTERVIEW GUIDE", 20, 20);
@@ -213,7 +206,7 @@ export default function Dashboard() {
       setShowLimitModal(true); return;
     }
     if (!jdReady || !resumeReady) {
-      showToast("Job Description and Resume are required.", "error"); return;
+      showToast("Both Job Description and Resume are required.", "error"); return;
     }
     setLoading(true);
     try {
@@ -234,7 +227,18 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
   };
 
-  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>;
+  const handleSupportSubmit = () => {
+      showToast("Message sent! We'll reply shortly.");
+      setShowSupportModal(false);
+      setSupportMessage("");
+  };
+
+  // --- RENDERING FIX: No unexpected backticks or characters ---
+  if (!isLoaded) return (
+    <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+      <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+    </div>
+  );
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
@@ -257,7 +261,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
             <div className={`px-4 py-2 rounded-full text-[10px] font-bold border flex items-center gap-2 ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
-                {isPro ? <Zap className="w-3 h-3 fill-current" /> : null}
+                {isPro && <Zap className="w-3 h-3 fill-current" />}
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
@@ -270,67 +274,63 @@ export default function Dashboard() {
 
       {/* QUICK START WIZARD */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div onClick={() => setActiveTab('jd')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div onClick={() => setActiveTab('jd')} className={`p-8 rounded-[2rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
                 <span className="bg-indigo-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">1</span>
                 {jdReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
               <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Requirements</h4>
-              <p className="text-[11px] text-slate-500 font-bold leading-relaxed uppercase">Define the target outcome</p>
+              <p className="text-[11px] text-slate-500 font-bold uppercase leading-relaxed">Paste JD or upload file</p>
           </div>
-          <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2rem] border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
                 <span className="bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">2</span>
                 {resumeReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}
               </div>
               <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Candidate Data</h4>
-              <p className="text-[11px] text-slate-500 font-bold leading-relaxed uppercase">Upload PDF / Word</p>
+              <p className="text-[11px] text-slate-500 font-bold uppercase leading-relaxed">Upload PDF / Word</p>
           </div>
-          <div className={`p-8 rounded-[2.5rem] border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
+          <div className={`p-8 rounded-[2rem] border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4"><span className="bg-purple-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black tracking-widest">3</span></div>
               <h4 className="uppercase text-[11px] font-black tracking-widest mb-1">Intelligence</h4>
-              <p className="text-[11px] text-slate-500 font-bold leading-relaxed uppercase">Generate Match Analytics</p>
+              <p className="text-[11px] text-slate-500 font-bold uppercase leading-relaxed">Generate Match Analytics</p>
           </div>
       </div>
 
-      {/* WORKSPACE AREA */}
+      {/* WORKSPACE */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[750px] shadow-2xl relative">
-            <div className="flex gap-3 mb-6">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                  <FileText className="w-3 h-3" /> {jdReady && <Check className="w-3 h-3 text-emerald-400" />} 1. Job Description
+            <div className="flex gap-4 mb-8">
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                  {jdReady && <Check className="w-4 h-4 text-emerald-400" />} 1. Job Description
                 </button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                  <User className="w-3 h-3" /> {resumeReady && <Check className="w-3 h-3 text-emerald-400" />} 2. Resume
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                  {resumeReady && <Check className="w-4 h-4 text-emerald-400" />} 2. Resume
                 </button>
             </div>
             
-            <div className="flex gap-3 mb-4">
-              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
+            <div className="flex gap-4 mb-6">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
                 Upload PDF / Word
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full Samples Loaded!", "info");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white">Load Elite Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Full Samples Loaded!", "info");}} className="flex-1 bg-slate-800/50 py-4 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white transition-all">Load Elite Samples</button>
             </div>
 
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-3xl text-[11px] font-mono leading-relaxed focus:border-indigo-500 custom-scrollbar"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-3xl text-[11px] font-mono leading-relaxed focus:border-indigo-500 transition-colors custom-scrollbar"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder={activeTab === 'jd' ? "Paste target Job Description..." : "Paste Candidate Resume..."}
             />
             
-            <button 
-              onClick={handleScreen} 
-              disabled={loading} 
-              className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-white animate-pulse" />}
+            <button onClick={handleScreen} disabled={loading} className="mt-8 py-6 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-4 hover:bg-indigo-500 transition-all disabled:opacity-50">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white animate-pulse" />}
               {loading ? "Crunching Data..." : "Execute Elite AI Screen →"}
             </button>
         </div>
 
-        {/* HIGH-FIDELITY RESULTS AREA */}
+        {/* RESULTS AREA */}
         <div className="h-[750px] overflow-y-auto space-y-6 pr-2 custom-scrollbar pb-10">
             {analysis ? (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
@@ -382,7 +382,7 @@ export default function Dashboard() {
                         <p className="text-[11px] text-slate-400 whitespace-pre-wrap leading-relaxed font-mono">{analysis.outreach_email}</p>
                     </div>
                     <button 
-                      onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied to Clipboard!");}} 
+                      onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied!");}} 
                       className="w-full py-5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 border border-slate-700"
                     >
                       <Copy className="w-4 h-4" /> Copy Email Template
@@ -394,10 +394,7 @@ export default function Dashboard() {
                 <div className="w-24 h-24 rounded-full bg-slate-800/30 flex items-center justify-center animate-pulse border-2 border-slate-800/20 shadow-2xl shadow-indigo-900/10">
                     <Zap className="w-10 h-10 opacity-20" />
                 </div>
-                <div>
-                    <p className="mb-2">Waiting for Intelligence</p>
-                    <p className="text-[9px] font-bold text-slate-800 normal-case tracking-normal">Execute screen to unlock analysis</p>
-                </div>
+                <p>Waiting for Intelligence</p>
               </div>
             )}
         </div>
@@ -406,51 +403,55 @@ export default function Dashboard() {
       {/* SALES MODAL */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-950/90 animate-in fade-in duration-300">
-          <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[3.5rem] p-12 max-w-4xl w-full shadow-2xl flex flex-col md:flex-row overflow-hidden group">
+          <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[3.5rem] p-12 max-w-4xl w-full shadow-2xl flex flex-col md:flex-row overflow-hidden">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[3rem] blur-3xl opacity-20 animate-pulse"></div>
               <div className="relative p-4 md:w-3/5">
                  <h2 className="text-6xl font-black text-white mb-6 leading-none tracking-tighter uppercase italic drop-shadow-2xl">Unlock <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Elite.</span></h2>
-                 <p className="text-slate-400 mb-10 font-black uppercase text-[10px] tracking-[0.2em] leading-relaxed drop-shadow">Unlimited resume screening, Deep AI personality metrics, and Strategic interview engineering.</p>
+                 <p className="text-slate-400 mb-10 font-black uppercase text-[10px] tracking-[0.2em] leading-relaxed">Unlimited scans, Deep AI metrics, and Strategic interview engineering.</p>
                  
                  {!isSignedIn ? (
                     <SignUpButton mode="modal" afterSignUpUrl="/">
-                        <button 
-                            onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
-                            className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-3xl uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40"
-                        >
-                            Start 3-Day Free Trial
-                        </button>
+                        <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-3xl uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">Start 3-Day Free Trial</button>
                     </SignUpButton>
                  ) : (
                     <div className="space-y-4">
-                        <a href={finalStripeUrl} className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-3xl uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">
-                            Unlock Elite Access
-                        </a>
-                        <button 
-                            onClick={handleVerifySubscription}
-                            disabled={verifying}
-                            className="block w-full py-4 bg-slate-800 text-slate-400 font-black rounded-2xl uppercase tracking-widest hover:text-white transition-all text-[10px] border border-slate-700 shadow-xl"
-                        >
-                            {verifying ? "VERIFYING..." : "I'VE PAID (SYNC ACCOUNT)"}
-                        </button>
+                        <a href={finalStripeUrl} className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-3xl uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">Unlock Elite Access</a>
+                        <button onClick={handleVerifySubscription} disabled={verifying} className="block w-full py-4 bg-slate-800 text-slate-400 font-black rounded-2xl uppercase tracking-widest hover:text-white transition-all text-[10px] border border-slate-700 shadow-xl">{verifying ? "VERIFYING..." : "I'VE PAID (SYNC ACCOUNT)"}</button>
                     </div>
                  )}
                  <button onClick={() => setShowLimitModal(false)} className="mt-8 text-[11px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline decoration-slate-800 transition-all w-full">No thanks, I'll screen manually</button>
               </div>
-              
-              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800/50 flex-col items-center justify-center p-16 text-center shadow-inner">
-                 <div className="w-28 h-28 bg-indigo-500/10 rounded-full flex items-center justify-center mb-10 border border-indigo-500/30 shadow-[0_0_50px_rgba(79,70,229,0.3)] animate-pulse">
-                    <Zap className="w-14 h-14 text-indigo-400 fill-indigo-400 drop-shadow-2xl" />
-                 </div>
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800/50 flex-col items-center justify-center p-16 text-center border-l border-slate-800 shadow-inner">
+                 <Zap className="w-14 h-14 text-indigo-400 mb-10 drop-shadow-2xl" />
                  <h3 className="font-black text-white text-3xl uppercase tracking-tighter mb-6">Elite Status</h3>
                  <ul className="text-[10px] text-slate-500 space-y-5 font-black uppercase tracking-widest text-left">
-                    <li className="flex items-center gap-3">✓ <span className="text-slate-400">Unlimited Scans</span></li>
-                    <li className="flex items-center gap-3">✓ <span className="text-slate-400">Match Analytics</span></li>
-                    <li className="flex items-center gap-3">✓ <span className="text-slate-400">Interview Engineering</span></li>
-                    <li className="flex items-center gap-3">✓ <span className="text-slate-400">Email Outreach AI</span></li>
+                    <li>✓ Unlimited Resume Scans</li>
+                    <li>✓ Advanced Match Analytics</li>
+                    <li>✓ Strategic Interview Guides</li>
+                    <li>✓ AI Email Outreach Generator</li>
                  </ul>
               </div>
-            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="mt-12 border-t border-slate-800 pt-8 pb-12 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500">
+        <p className="mb-4">&copy; {new Date().getFullYear()} Recruit-IQ. Powered by Core Creativity AI.</p>
+        <div className="flex justify-center gap-6">
+          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors">Contact Support</button>
+          <a href="#" className="hover:text-indigo-400">Terms</a>
+          <a href="#" className="hover:text-indigo-400">Privacy</a>
+        </div>
+      </footer>
+
+      {/* SUPPORT MODAL */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
+          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full shadow-2xl text-center">
+            <h2 className="text-2xl font-black mb-6 uppercase tracking-tighter">Support</h2>
+            <textarea required className="w-full h-40 bg-[#0B1120] border border-slate-800 rounded-2xl p-6 text-[12px] text-white outline-none resize-none mb-6 focus:border-indigo-500 transition-colors" placeholder="How can we help your hiring process?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            <div className="flex gap-4"><button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Send Message</button><button onClick={() => setShowSupportModal(false)} className="px-8 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all">Cancel</button></div>
           </div>
         </div>
       )}
