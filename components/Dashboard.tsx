@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
+import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, Check, FileText, User, Download, Send, 
-  Zap, Shield, HelpCircle, CheckCircle2 
+  Zap, Shield, HelpCircle, CheckCircle2, XCircle, Info 
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -269,7 +269,6 @@ export default function Dashboard() {
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
-      
       {/* TOAST SYSTEM */}
       {toast.show && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
@@ -299,7 +298,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK START WIZARD (Updated Text) */}
+      {/* QUICK START WIZARD (Updated) */}
       <div className="grid md:grid-cols-3 gap-6">
           <div onClick={() => setActiveTab('jd')} className={`p-8 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-4">
@@ -364,8 +363,14 @@ export default function Dashboard() {
                 <div className="bg-[#111827] border border-slate-800 p-10 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500"></div>
                   <div className="w-28 h-28 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-5xl font-black mb-6 shadow-xl shadow-indigo-900/40">{analysis.score}%</div>
-                  <div className="text-white font-black text-2xl mb-8 uppercase tracking-tighter">{analysis.candidate_name}</div>
+                  <div className="text-white font-black text-2xl mb-6 uppercase tracking-tighter">{analysis.candidate_name}</div>
                   
+                  {/* Executive Summary Block */}
+                  <div className="bg-slate-900/50 rounded-2xl p-6 mb-8 text-left border border-slate-800/50 shadow-inner">
+                    <h4 className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2"><FileText className="w-3 h-3" /> Executive Summary</h4>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">{analysis.summary}</p>
+                  </div>
+
                   {/* ACTIONS: Download Only */}
                   <div className="flex gap-3 justify-center mb-8">
                     <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-8 py-4 rounded-xl text-[10px] font-black uppercase border border-slate-700 transition-all flex items-center gap-2">
