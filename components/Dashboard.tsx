@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
+import { useUser, useClerk, SignInButton, UserButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, FileText, Download, 
   Zap, Shield, CheckCircle2, XCircle, Mail,
   Sparkles, TrendingUp, Search, Award,
-  Cpu, Briefcase, FileSearch, Target,
-  MessageSquare, LayoutDashboard, Settings,
-  ArrowRight, ShieldCheck, Clock, ListChecks,
-  BarChart4, UserCheck, ZapOff, Info
+  Cpu, Briefcase, Target,
+  MessageSquare, LayoutDashboard, 
+  ShieldCheck, Clock, ListChecks,
+  ZapOff
 } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
@@ -49,7 +49,6 @@ SKILLS:
 
 export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const clerk = useClerk();
   
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
@@ -73,8 +72,8 @@ export default function Dashboard() {
   }, []);
 
   const showToast = (message: string) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
+    setToast({ show: true, message, type: 'success' });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +201,7 @@ export default function Dashboard() {
               <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                 <button className="bg-white text-black px-8 py-2.5 rounded-xl text-xs font-black uppercase hover:bg-indigo-50 transition-all">Login</button>
               </SignInButton>
-            ) : <UserButton afterSignOutUrl="/" />}
+            ) : <UserButton />}
           </div>
         </div>
       </nav>
