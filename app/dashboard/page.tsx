@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
-import Dashboard from "@/components/Dashboard";
+// FIX: Use relative path instead of alias to find the component
+import Dashboard from "../../components/Dashboard";
 
 export default function DashboardPage() {
   auth().protect();
