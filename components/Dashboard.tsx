@@ -245,7 +245,7 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    /* THE CRITICAL FIX: mode="redirect" AND NO V5 PROPS */
+                    /* THE V4 + SPOOLING FIX - Using Redirect Mode with Valid Props */
                     <SignInButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
