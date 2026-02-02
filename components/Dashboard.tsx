@@ -67,7 +67,6 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
-  // --- UNIQUE STORAGE KEY PER USER ---
   const storageKey = user?.id ? `recruit_iq_scans_${user.id}` : 'recruit_iq_scans_guest';
 
   useEffect(() => {
@@ -77,18 +76,17 @@ export default function Dashboard() {
     }
   }, [storageKey, user?.id]); 
 
-  // --- FIXED STRIPE LOGIC (No Infinite Loops) ---
+  // --- STRIPE BYPASS & RETURN FLOW ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
-      // SAFETY CHECK: If already Elite, kill the trap immediately.
+      // If they are already Elite, clear any trigger and stop
       if (isPro) {
         sessionStorage.removeItem('trigger_stripe');
         return; 
       }
 
-      // Only redirect if NOT Pro and trigger is set
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
@@ -225,23 +223,43 @@ export default function Dashboard() {
       setShowLimitModal(true); return;
     }
     if (!jdReady || !resumeReady) { showToast("Input Required.", "error"); return; }
+    
     setLoading(true);
+    setAnalysis(null); // Safety: clear to avoid mapping empty arrays
+
     try {
       const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 deep-dive interview questions, and a short outreach email. Return JSON: {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
+      
       const response = await fetch('/api/generate', { 
         method: "POST", 
         body: JSON.stringify({ prompt }) 
       });
+
+      if (!response.ok) {
+        throw new Error("API Engine is warming up. Please try again in 5 seconds.");
+      }
+
       const data = await response.json();
-      setAnalysis(data);
+      
+      // Ensure arrays are initialized even if AI misses them
+      setAnalysis({
+        ...data,
+        strengths: data.strengths || [],
+        gaps: data.gaps || [],
+        questions: data.questions || []
+      });
+
       if (!isPro) {
-        // Increment scan count for THIS specific user
         const newCount = scanCount + 1;
         setScanCount(newCount);
         localStorage.setItem(storageKey, newCount.toString());
       }
-      showToast("Intelligence Generated Successfully!");
-    } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
+      showToast("Intelligence Generated!");
+    } catch (err: any) { 
+      showToast(err.message || "Connection Error.", "error"); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleSupportSubmit = () => {
@@ -277,8 +295,7 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
-                // FIX: Standard Login Button (No Trap)
-                <SignInButton mode="modal" forceRedirectUrl="/">
+                <SignInButton mode="modal" fallbackRedirectUrl="/">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all shadow-lg">Log In</button>
                 </SignInButton>
             ) : <UserButton />}
@@ -350,7 +367,6 @@ export default function Dashboard() {
                   <h3 className="uppercase text-xs font-black tracking-widest text-slate-500 mb-2">Elite Match Score</h3>
                   <div className="text-white font-black text-3xl mb-10 tracking-tight uppercase">{analysis.candidate_name}</div>
                   
-                  {/* Executive Summary Block */}
                   <div className="bg-slate-900/50 rounded-[2rem] p-10 mb-10 text-left border border-slate-800/50 shadow-inner">
                     <h4 className="text-slate-500 font-black uppercase text-xs tracking-widest mb-4 flex items-center gap-3"><FileText className="w-4 h-4" /> Executive Summary</h4>
                     <p className="text-base text-slate-200 leading-loose font-medium">{analysis.summary}</p>
@@ -367,7 +383,7 @@ export default function Dashboard() {
                         <Check className="w-5 h-5" /> Key Strengths
                     </h4>
                     <div className="space-y-4">
-                        {analysis.strengths.map((s: string, i: number) => <p key={i} className="text-slate-200 leading-relaxed font-bold">• {s}</p>)}
+                        {(analysis.strengths || []).map((s: string, i: number) => <p key={i} className="text-slate-200 leading-relaxed font-bold">• {s}</p>)}
                     </div>
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/20 p-10 rounded-[2.5rem] text-sm">
@@ -375,7 +391,7 @@ export default function Dashboard() {
                         <Shield className="w-5 h-5" /> Critical Gaps
                     </h4>
                     <div className="space-y-4">
-                        {analysis.gaps.map((g: string, i: number) => <p key={i} className="text-slate-200 leading-relaxed font-bold">• {g}</p>)}
+                        {(analysis.gaps || []).map((g: string, i: number) => <p key={i} className="text-slate-200 leading-relaxed font-bold">• {g}</p>)}
                     </div>
                   </div>
                 </div>
@@ -385,7 +401,7 @@ export default function Dashboard() {
                     <HelpCircle className="w-5 h-5" /> Strategic Interview Guide
                   </h4>
                   <div className="space-y-6">
-                    {analysis.questions.map((q: string, i: number) => (
+                    {(analysis.questions || []).map((q: string, i: number) => (
                         <div key={i} className="p-8 bg-slate-900/50 rounded-3xl border border-slate-800 text-sm leading-relaxed text-slate-200 font-bold italic shadow-inner">
                             "{q}"
                         </div>
@@ -425,8 +441,7 @@ export default function Dashboard() {
                  <p className="text-slate-400 mb-12 font-black uppercase text-xs tracking-widest leading-loose">Unlimited scans, Deep AI metrics, and Strategic interview engineering.</p>
                  
                  {!isSignedIn ? (
-                    <SignUpButton mode="modal" forceRedirectUrl="/">
-                        {/* THIS Button keeps the trap because it is explicit intent to buy */}
+                    <SignUpButton mode="modal" fallbackRedirectUrl="/">
                         <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[2.5rem] uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">Start 3-Day Free Trial</button>
                     </SignUpButton>
                  ) : (
