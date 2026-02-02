@@ -1,11 +1,30 @@
 {
+  "name": "recruit-iq",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "@clerk/nextjs": "^5.0.0",
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "@google/generative-ai": "latest",
+    "stripe": "latest",
     "lucide-react": "latest",
     "mammoth": "latest",
-    "jspdf": "latest"
+    "jspdf": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest"
   }
 }
