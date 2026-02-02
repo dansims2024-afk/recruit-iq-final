@@ -12,7 +12,7 @@ import {
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- SKILLED TRADES SAMPLE DATA (Restored for your context) ---
+// --- SKILLED TRADES SAMPLE DATA ---
 const SAMPLE_JD = `JOB TITLE: Lead Skilled Trades Supervisor (HVAC/Electrical)
 LOCATION: Mid-Atlantic Region (Philadelphia/NJ)
 SALARY: $110,000 - $135,000 + Company Vehicle + Bonus
@@ -252,8 +252,8 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800/50 pb-8">
         <div className="flex items-center gap-4">
-            {/* Replaced Image with Icon for reliability */}
-            <Zap className="w-10 h-10 text-indigo-500 fill-current" />
+            {/* LOGO RESTORED HERE */}
+            <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-3xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
                 <p className="text-xs text-indigo-400 font-bold uppercase tracking-wide mt-1">Elite Candidate Screening</p>
@@ -407,7 +407,8 @@ export default function Dashboard() {
           <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[3.5rem] p-16 max-w-4xl w-full shadow-2xl flex flex-col md:flex-row overflow-hidden group">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[3rem] blur-3xl opacity-20 animate-pulse"></div>
               <div className="relative p-4 md:w-3/5">
-                 <div className="mb-10"><Zap className="w-10 h-10 text-indigo-500" /></div>
+                 {/* LOGO RESTORED IN MODAL */}
+                 <div className="mb-10"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
                  <h2 className="text-7xl font-black text-white mb-8 leading-none tracking-tighter uppercase italic">Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Elite.</span></h2>
                  <p className="text-slate-400 mb-12 font-black uppercase text-xs tracking-widest leading-loose">Unlimited scans, Deep AI metrics, and Strategic interview engineering.</p>
                  
