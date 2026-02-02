@@ -14,7 +14,7 @@ import {
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- FULL SAMPLE DATA ---
+// --- FULL SAMPLE DATASET ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [verifying, setVerifying] = useState(false);
 
+  // MEMBERSHIP LOGIC
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -82,18 +83,10 @@ export default function Dashboard() {
     setScanCount(savedCount);
   }, []);
 
-  // AUTOMATED REDIRECT HANDLER (STRIPE -> DASHBOARD)
+  // AUTOMATED REDIRECT HANDLER (FOR PAYMENTS)
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
-
-      // Check if user was in the middle of an upgrade before signing up
-      if (sessionStorage.getItem('trigger_stripe') === 'true') {
-        sessionStorage.removeItem('trigger_stripe');
-        window.location.href = finalStripeUrl;
-        return;
-      }
-
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('payment_success') === 'true' && !isPro) {
         showToast("Verifying Elite Access...", "info");
@@ -101,7 +94,7 @@ export default function Dashboard() {
       }
     };
     handleReturnFlow();
-  }, [isSignedIn, isPro, isLoaded, user, finalStripeUrl]);
+  }, [isSignedIn, isPro, isLoaded]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ show: true, message, type: type as any });
@@ -139,6 +132,7 @@ export default function Dashboard() {
     } catch (err) { showToast("Error reading file.", "error"); } finally { setLoading(false); }
   };
 
+  // --- THE FULL PDF ENGINE ---
   const downloadPDF = () => {
     if (!analysis) return;
     const doc = new jsPDF();
@@ -213,6 +207,7 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error", "error"); } finally { setLoading(false); }
   };
 
+  // --- AUTH CHECK UI ---
   if (!isLoaded) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
         <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
@@ -223,14 +218,14 @@ export default function Dashboard() {
   return (
     <div className="relative p-4 md:p-10 max-w-[1600px] mx-auto space-y-12 text-white bg-[#020617] min-h-screen pt-24 font-sans selection:bg-indigo-500/30">
       
-      {/* TOAST NOTIFICATIONS */}
+      {/* TOASTS */}
       {toast.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 animate-in slide-in-from-top duration-300">
           <p className="text-[10px] font-black uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* DYNAMIC NAVIGATION - V4 COMPATIBLE + REDIRECT MODE */}
+      {/* NAVIGATION - VERSION 5 COMPATIBLE */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
             <div className="flex items-center gap-4 group cursor-default">
@@ -245,8 +240,7 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    /* THE V4 COMPATIBLE REDIRECT FIX */
-                    <SignInButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
+                    <SignInButton mode="modal" forceRedirectUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
                 ) : (
@@ -259,10 +253,10 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      {/* ELITE WORKSPACE GRID */}
+      {/* WORKSPACE */}
       <div className="grid lg:grid-cols-2 gap-12 pt-6">
         
-        {/* INPUT COLUMN */}
+        {/* INPUT BOX */}
         <div className="bg-[#0f172a] p-10 rounded-[3.5rem] border border-slate-800/80 shadow-2xl relative">
             <div className="flex gap-4 mb-10 p-1.5 bg-slate-950 rounded-[2rem] border border-slate-800">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-white'}`}>Job Criteria</button>
@@ -290,12 +284,12 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* ANALYSIS COLUMN */}
+        {/* ANALYSIS BOX */}
         <div className="space-y-12 h-full">
             {analysis ? (
               <div className="space-y-12 animate-in fade-in slide-in-from-right-12 duration-1000">
                 
-                {/* MATCH SCORE CARD */}
+                {/* SCORE CARD */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[4rem] text-center shadow-3xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-500"></div>
                   <div className="flex justify-center items-center gap-12 mb-10">
@@ -319,11 +313,11 @@ export default function Dashboard() {
                   </div>
                   <p className="text-sm text-slate-400 italic mb-10 leading-loose border-t border-slate-800/50 pt-8">"{analysis.summary}"</p>
                   <button onClick={downloadPDF} className="w-full py-7 bg-slate-900 hover:bg-slate-800 rounded-[2rem] text-[10px] font-black uppercase border border-slate-800 transition-all flex items-center justify-center gap-4 shadow-xl">
-                    <Download className="w-5 h-5" /> Export Elite Strategy Report
+                    <Download className="w-5 h-5" /> Export Strategic Report
                   </button>
                 </div>
 
-                {/* SWOT GRID */}
+                {/* SWOT */}
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="bg-emerald-500/5 border border-emerald-500/10 p-10 rounded-[3rem]">
                     <h4 className="text-emerald-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3">
@@ -341,7 +335,6 @@ export default function Dashboard() {
 
                 {/* INTERVIEW QUESTIONS */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] relative group">
-                  <div className="absolute top-8 right-12 text-slate-800 font-black text-6xl opacity-20">?</div>
                   <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-10 tracking-widest">Targeted Vetting Questions</h4>
                   <div className="space-y-6">
                       {analysis.questions.map((q: string, i: number) => (
@@ -350,7 +343,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* OUTREACH EMAIL */}
+                {/* EMAIL */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] text-center">
                     <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center justify-center gap-3">
                       <Mail className="w-4 h-4" /> Outreach Generation
@@ -358,54 +351,39 @@ export default function Dashboard() {
                     <div className="bg-slate-950/80 rounded-[2.5rem] p-10 mb-10 text-left border border-slate-800/60 max-h-96 overflow-y-auto custom-scrollbar">
                         <p className="text-sm text-slate-400 whitespace-pre-wrap leading-loose font-mono">{analysis.outreach_email}</p>
                     </div>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied to Clipboard");}} className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-5 transition-all shadow-2xl active:scale-95">
-                        <Copy className="w-5 h-5" /> Copy Template
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied");}} className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-5 transition-all shadow-2xl active:scale-95">
+                        <Copy className="w-5 h-5" /> Copy Email Template
                     </button>
                 </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center space-y-8 border-2 border-dashed border-slate-800/50 rounded-[5rem] bg-slate-900/10 group">
-                  <div className="p-10 bg-slate-900/40 rounded-full border border-slate-800 group-hover:scale-110 transition-transform duration-700">
-                    <Search className="w-16 h-16 text-slate-800" />
-                  </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700">System Ready for Processing</p>
+                  <Search className="w-16 h-16 text-slate-800" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700">System Ready</p>
               </div>
             )}
         </div>
       </div>
 
-      {/* ELITE SUBSCRIPTION MODAL - V4 COMPATIBLE + REDIRECT MODE */}
+      {/* MODAL - VERSION 5 COMPATIBLE */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
-          <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full shadow-4xl text-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-600/10 blur-[150px] rounded-full"></div>
+          <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full text-center relative overflow-hidden">
               <h2 className="text-8xl font-black text-white mb-8 tracking-tighter uppercase italic">GO <span className="text-indigo-500">ELITE.</span></h2>
-              <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
+              <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing and strategic reporting.</p>
               
               {!isSignedIn ? (
-                /* THE V4 COMPATIBLE REDIRECT FIX */
-                <SignUpButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
-                    <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
+                <SignUpButton mode="modal" forceRedirectUrl="/">
+                    <button className="block w-full py-12 bg-indigo-600 text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Join Elite Platform</button>
                 </SignUpButton>
               ) : (
-                <a href={finalStripeUrl} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all flex items-center justify-center gap-4">
-                  <ShieldCheck className="w-6 h-6" /> Complete Elite Licensing
-                </a>
+                <a href={finalStripeUrl} className="block w-full py-12 bg-indigo-600 text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Complete Elite License</a>
               )}
               
-              <button onClick={() => setShowLimitModal(false)} className="mt-14 text-[10px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline transition-all">Dismiss and Continue Limited Trial</button>
+              <button onClick={() => setShowLimitModal(false)} className="mt-14 text-[10px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline transition-all">Dismiss Trial</button>
           </div>
         </div>
       )}
-
-      {/* ELITE FOOTER */}
-      <footer className="mt-32 border-t border-slate-800/50 pt-16 pb-32 text-center opacity-40">
-        <div className="flex justify-center gap-12 text-[9px] uppercase font-black tracking-[0.3em] text-slate-600">
-            <span>&copy; {new Date().getFullYear()} Recruit-IQ Global</span>
-            <a href="https://www.corecreativityai.com/blank-2" target="_blank" className="hover:text-white transition-colors">Client Terms</a>
-            <a href="https://www.corecreativityai.com/blank" target="_blank" className="hover:text-white transition-colors">Privacy Protocols</a>
-        </div>
-      </footer>
     </div>
   );
 }
