@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-// FIX: In Clerk v5, these MUST import from /server
+// Use /server for auth and clerkClient in the app router
 import { auth, clerkClient } from "@clerk/nextjs/server"; 
 import Stripe from "stripe";
 
@@ -8,7 +8,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST() {
-  const { userId } = auth();
+  const session = await auth();
+  const userId = session.userId;
+  
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
   const client = await clerkClient();
@@ -17,6 +19,7 @@ export async function POST() {
 
   if (!email) return new NextResponse("No email found", { status: 400 });
 
+  // Check Stripe for this user's email
   const customers = await stripe.customers.list({ email, limit: 1 });
   
   if (customers.data.length > 0) {
@@ -27,6 +30,7 @@ export async function POST() {
     const hasPaid = sessions.data.some(s => s.payment_status === 'paid');
 
     if (hasPaid) {
+      // This is what actually unlocks the account
       await client.users.updateUserMetadata(userId, {
         publicMetadata: { isPro: true }
       });
