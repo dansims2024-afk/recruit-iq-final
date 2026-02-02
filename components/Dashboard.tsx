@@ -57,7 +57,7 @@ export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
   const clerk = useClerk();
   
-  // CORE APP STATE
+  // PRIMARY STATES
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -76,18 +76,17 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
-  // PERSISTENCE & LOCAL STORAGE
+  // INITIALIZATION & PERSISTENCE
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
-  // AUTOMATED REDIRECT HANDLER (STRIPE -> DASHBOARD)
+  // STRIPE SUCCESS & AUTOMATED SYNC HANDLER
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
-      // Check if user was in the middle of an upgrade before signing up
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
@@ -144,7 +143,7 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
     
-    // PDF BRANDING
+    // PDF HEADER LOGIC
     doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 60, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.setFont("helvetica", "bold");
     doc.text("RECRUIT-IQ", 15, 30);
@@ -223,14 +222,14 @@ export default function Dashboard() {
   return (
     <div className="relative p-4 md:p-10 max-w-[1600px] mx-auto space-y-12 text-white bg-[#020617] min-h-screen pt-24 font-sans selection:bg-indigo-500/30">
       
-      {/* GLOBAL TOAST */}
+      {/* TOAST NOTIFICATIONS */}
       {toast.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 animate-in slide-in-from-top duration-300">
           <p className="text-[10px] font-black uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* NAVIGATION BAR - INTEGRATED CLERK REDIRECT FIXES */}
+      {/* DYNAMIC NAVIGATION - PRODUCTION SPOOLING FIX APPLIED */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
             <div className="flex items-center gap-4 group cursor-default">
@@ -245,6 +244,7 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
+                    /* THE CRITICAL SPOOLING FIX - FORCE REDIRECT TO HOME */
                     <SignInButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
@@ -258,10 +258,10 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      {/* MAIN WORKSPACE */}
+      {/* ELITE WORKSPACE GRID */}
       <div className="grid lg:grid-cols-2 gap-12 pt-6">
         
-        {/* INPUT PANEL */}
+        {/* INPUT COLUMN */}
         <div className="bg-[#0f172a] p-10 rounded-[3.5rem] border border-slate-800/80 shadow-2xl relative">
             <div className="flex gap-4 mb-10 p-1.5 bg-slate-950 rounded-[2rem] border border-slate-800">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-white'}`}>Job Criteria</button>
@@ -289,12 +289,12 @@ export default function Dashboard() {
             </button>
         </div>
 
-        {/* ANALYSIS PANEL */}
+        {/* ANALYSIS COLUMN */}
         <div className="space-y-12 h-full">
             {analysis ? (
               <div className="space-y-12 animate-in fade-in slide-in-from-right-12 duration-1000">
                 
-                {/* HEADLINE METRICS */}
+                {/* MATCH SCORE CARD */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[4rem] text-center shadow-3xl relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-500"></div>
                   <div className="flex justify-center items-center gap-12 mb-10">
@@ -322,7 +322,7 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                {/* SWOT DATA */}
+                {/* SWOT GRID */}
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="bg-emerald-500/5 border border-emerald-500/10 p-10 rounded-[3rem]">
                     <h4 className="text-emerald-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3">
@@ -338,7 +338,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* VETTING SECTION */}
+                {/* INTERVIEW QUESTIONS */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] relative group">
                   <div className="absolute top-8 right-12 text-slate-800 font-black text-6xl opacity-20">?</div>
                   <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-10 tracking-widest">Targeted Vetting Questions</h4>
@@ -349,7 +349,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* OUTREACH SECTION */}
+                {/* OUTREACH EMAIL */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] text-center">
                     <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center justify-center gap-3">
                       <Mail className="w-4 h-4" /> Outreach Generation
@@ -373,7 +373,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* SUBSCRIPTION MODAL - INTEGRATED CLERK REDIRECT FIXES */}
+      {/* ELITE SUBSCRIPTION MODAL - PRODUCTION SPOOLING FIX APPLIED */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
           <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full shadow-4xl text-center relative overflow-hidden">
@@ -382,6 +382,7 @@ export default function Dashboard() {
               <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
               
               {!isSignedIn ? (
+                /* THE CRITICAL SPOOLING FIX - FORCING REDIRECT ON SIGN UP */
                 <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
                 </SignUpButton>
@@ -396,7 +397,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* FOOTER */}
+      {/* ELITE FOOTER */}
       <footer className="mt-32 border-t border-slate-800/50 pt-16 pb-32 text-center opacity-40">
         <div className="flex justify-center gap-12 text-[9px] uppercase font-black tracking-[0.3em] text-slate-600">
             <span>&copy; {new Date().getFullYear()} Recruit-IQ Global</span>
