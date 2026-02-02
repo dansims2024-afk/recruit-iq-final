@@ -6,45 +6,35 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
+    
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key missing in Vercel" }, { status: 500 });
+      console.error("Missing GEMINI_API_KEY");
+      return NextResponse.json({ error: "Configuration Error" }, { status: 500 });
+    }
+
+    const { prompt } = await req.json();
+    if (!prompt) {
+      return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const { prompt } = await req.json();
-
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // --- NEW ROBUST CLEANING LOGIC ---
-    // This finds the first { and the last } to ignore any "Here is your JSON" text
+    // Clean markdown if AI sends it back
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("AI did not return valid JSON format");
+      return NextResponse.json({ error: "Invalid AI response format" }, { status: 500 });
     }
     
-    const cleanedJson = jsonMatch[0];
-    const data = JSON.parse(cleanedJson);
-
-    // Ensure arrays exist even if AI forgot them to prevent the 'map' error
-    return NextResponse.json({
-      candidate_name: data.candidate_name || "Unknown Candidate",
-      score: data.score || 0,
-      summary: data.summary || "",
-      strengths: data.strengths || [],
-      gaps: data.gaps || [],
-      questions: data.questions || [],
-      outreach_email: data.outreach_email || ""
-    });
+    const data = JSON.parse(jsonMatch[0]);
+    return NextResponse.json(data);
 
   } catch (error: any) {
-    console.error("DEBUG API ERROR:", error);
-    return NextResponse.json({ 
-      error: "AI Processing Failed", 
-      details: error.message 
-    }, { status: 500 });
+    console.error("API ROUTE ERROR:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
