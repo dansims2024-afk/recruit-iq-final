@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Define which routes are public (don't require login)
+// This tells Clerk which routes don't need a login to view
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/api/webhook(.*)']);
 
 export default clerkMiddleware((auth, request) => {
@@ -11,9 +11,9 @@ export default clerkMiddleware((auth, request) => {
 
 export const config = {
   matcher: [
-    // This regex skips Next.js internals and static files
+    // Skips static files and internal Next.js paths
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
+    // Always runs for API routes
     '/(api|trpc)(.*)',
   ],
 };
