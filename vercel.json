@@ -1,3 +1,11 @@
 {
-  "installCommand": "npm install --legacy-peer-deps"
+  "dependencies": {
+    "@clerk/nextjs": "^5.0.0",
+    "lucide-react": "latest",
+    "mammoth": "latest",
+    "jspdf": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
 }
