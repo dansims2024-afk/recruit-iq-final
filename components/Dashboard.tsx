@@ -245,7 +245,7 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    /* THE V4 + SPOOLING FIX - Using Redirect Mode with Valid Props */
+                    /* THE V4 COMPATIBLE REDIRECT FIX */
                     <SignInButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
@@ -383,7 +383,7 @@ export default function Dashboard() {
               <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
               
               {!isSignedIn ? (
-                /* THE V4 + SPOOLING FIX - Using Redirect Mode with Valid Props */
+                /* THE V4 COMPATIBLE REDIRECT FIX */
                 <SignUpButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
                 </SignUpButton>
