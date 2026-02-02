@@ -57,7 +57,7 @@ export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
   const clerk = useClerk();
   
-  // PRIMARY STATES
+  // CORE APP STATE
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -76,17 +76,18 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
-  // INITIALIZATION & PERSISTENCE
+  // PERSISTENCE & LOCAL STORAGE
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
-  // STRIPE SUCCESS & AUTOMATED SYNC HANDLER
+  // AUTOMATED REDIRECT HANDLER (STRIPE -> DASHBOARD)
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
+      // Check if user was in the middle of an upgrade before signing up
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
@@ -143,7 +144,7 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
     
-    // PDF HEADER LOGIC
+    // PDF BRANDING
     doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 60, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.setFont("helvetica", "bold");
     doc.text("RECRUIT-IQ", 15, 30);
@@ -229,7 +230,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* DYNAMIC NAVIGATION - PRODUCTION SPOOLING FIX APPLIED */}
+      {/* DYNAMIC NAVIGATION - V4 COMPATIBLE FIX */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
             <div className="flex items-center gap-4 group cursor-default">
@@ -244,8 +245,8 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    /* THE CRITICAL SPOOLING FIX - FORCE REDIRECT TO HOME */
-                    <SignInButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
+                    /* THE V4 SPOOLING FIX - USING afterSignInUrl */
+                    <SignInButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
                 ) : (
@@ -373,7 +374,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ELITE SUBSCRIPTION MODAL - PRODUCTION SPOOLING FIX APPLIED */}
+      {/* ELITE SUBSCRIPTION MODAL - V4 COMPATIBLE FIX */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
           <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full shadow-4xl text-center relative overflow-hidden">
@@ -382,8 +383,8 @@ export default function Dashboard() {
               <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
               
               {!isSignedIn ? (
-                /* THE CRITICAL SPOOLING FIX - FORCING REDIRECT ON SIGN UP */
-                <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
+                /* THE V4 SPOOLING FIX - USING afterSignInUrl */
+                <SignUpButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
                 </SignUpButton>
               ) : (
