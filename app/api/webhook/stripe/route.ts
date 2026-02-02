@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { clerkClient } from "@clerk/nextjs/server"; // FIXED: New V5 Location
+import { clerkClient } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get("Stripe-Signature") as string;
+  const signature = (await headers()).get("Stripe-Signature") as string;
 
   let event: Stripe.Event;
 
@@ -19,31 +19,24 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (error: any) {
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+  } catch (err: any) {
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  const session = event.data.object as Stripe.Checkout.Session;
-
+  // When the checkout is successful
   if (event.type === "checkout.session.completed") {
-    const subscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
-    );
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId = session.client_reference_id;
 
-    if (!session?.client_reference_id) {
-      return new NextResponse("User id is required", { status: 400 });
-    }
-
-    await clerkClient.users.updateUserMetadata(
-      session.client_reference_id,
-      {
+    if (userId) {
+      // THIS IS THE UNLOCK: It tells Clerk this user is now "Pro"
+      const client = await clerkClient();
+      await client.users.updateUserMetadata(userId, {
         publicMetadata: {
-          isPro: true, // UPGRADES THE USER
-          stripeCustomerId: subscription.customer as string,
-          stripeSubscriptionId: subscription.id,
+          isPro: true,
         },
-      }
-    );
+      });
+    }
   }
 
   return new NextResponse(null, { status: 200 });
