@@ -1,42 +1,36 @@
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = auth();
-    const user = await currentUser();
+export async function POST() {
+  const { userId } = await auth();
+  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-    if (!userId || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+  // 1. Look up the user's email in Stripe to see if they have a successful payment
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const email = user.primaryEmailAddress?.emailAddress;
+
+  const customers = await stripe.customers.list({ email, limit: 1 });
+  
+  if (customers.data.length > 0) {
+    // Check for successful sessions for this customer
+    const sessions = await stripe.checkout.sessions.list({
+      customer: customers.data[0].id,
+    });
+
+    const hasPaid = sessions.data.some(s => s.payment_status === 'paid');
+
+    if (hasPaid) {
+      // Unlock the account
+      await client.users.updateUserMetadata(userId, {
+        publicMetadata: { isPro: true }
+      });
+      return NextResponse.json({ success: true });
     }
-
-    // Attempt to find the customer in Stripe by email
-    const email = user.emailAddresses[0].emailAddress;
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    
-    if (customers.data.length > 0) {
-       // Sync status if customer exists
-       const customer = customers.data[0];
-       const subscriptions = await stripe.subscriptions.list({ customer: customer.id });
-       
-       const isPro = subscriptions.data.some(sub => sub.status === 'active');
-
-       if (isPro) {
-         await clerkClient.users.updateUserMetadata(userId, {
-           publicMetadata: { isPro: true }
-         });
-         return NextResponse.json({ success: true, isPro: true });
-       }
-    }
-
-    return NextResponse.json({ success: true, isPro: false });
-  } catch (error) {
-    console.error("[MANUAL_CHECK_ERROR]", error);
-    return new NextResponse("Internal Error", { status: 500 });
   }
+
+  return NextResponse.json({ success: false, message: "No payment found." });
 }
