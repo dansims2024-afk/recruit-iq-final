@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth, currentUser, clerkClient } from "@clerk/nextjs";
+import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -11,31 +11,32 @@ export async function POST(req: Request) {
     const { userId } = auth();
     const user = await currentUser();
 
-    if (!userId || !user) return new NextResponse("Unauthorized", { status: 401 });
-
-    const userEmail = user.emailAddresses[0].emailAddress;
-
-    // Fetch sessions without the invalid 'client_reference_id' filter to pass build
-    const sessions = await stripe.checkout.sessions.list({ 
-      limit: 100 
-    });
-
-    // Manually find the match in the results
-    const match = sessions.data.find(s => 
-      s.status === 'complete' && 
-      (s.client_reference_id === userId || s.customer_details?.email?.toLowerCase() === userEmail.toLowerCase())
-    );
-
-    if (match) {
-      // Use clerkClient as an object directly (no parentheses)
-      await clerkClient.users.updateUserMetadata(userId, {
-        publicMetadata: { isPro: true }
-      });
-      return NextResponse.json({ success: true });
+    if (!userId || !user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    // Attempt to find the customer in Stripe by email
+    const email = user.emailAddresses[0].emailAddress;
+    const customers = await stripe.customers.list({ email, limit: 1 });
     
-    return NextResponse.json({ success: false, error: "Payment not found" }, { status: 404 });
-  } catch (error: any) {
-    return new NextResponse(error.message, { status: 500 });
+    if (customers.data.length > 0) {
+       // Sync status if customer exists
+       const customer = customers.data[0];
+       const subscriptions = await stripe.subscriptions.list({ customer: customer.id });
+       
+       const isPro = subscriptions.data.some(sub => sub.status === 'active');
+
+       if (isPro) {
+         await clerkClient.users.updateUserMetadata(userId, {
+           publicMetadata: { isPro: true }
+         });
+         return NextResponse.json({ success: true, isPro: true });
+       }
+    }
+
+    return NextResponse.json({ success: true, isPro: false });
+  } catch (error) {
+    console.error("[MANUAL_CHECK_ERROR]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
