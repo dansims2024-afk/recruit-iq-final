@@ -67,23 +67,28 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
-  // --- FIX: UNIQUE STORAGE KEY PER USER ---
-  // This ensures a new email gets a fresh set of scans
+  // --- UNIQUE STORAGE KEY PER USER ---
   const storageKey = user?.id ? `recruit_iq_scans_${user.id}` : 'recruit_iq_scans_guest';
 
   useEffect(() => {
-    // Check if we are in the browser
     if (typeof window !== 'undefined') {
         const savedCount = parseInt(localStorage.getItem(storageKey) || '0');
         setScanCount(savedCount);
     }
   }, [storageKey, user?.id]); 
 
-  // --- STRIPE TRAP & UNLOCK logic ---
+  // --- FIXED STRIPE LOGIC (No Infinite Loops) ---
   useEffect(() => {
     const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
 
+      // SAFETY CHECK: If already Elite, kill the trap immediately.
+      if (isPro) {
+        sessionStorage.removeItem('trigger_stripe');
+        return; 
+      }
+
+      // Only redirect if NOT Pro and trigger is set
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
@@ -272,14 +277,15 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
+                // FIX: Standard Login Button (No Trap)
                 <SignInButton mode="modal" forceRedirectUrl="/">
-                    <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all shadow-lg">Log In</button>
+                    <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all shadow-lg">Log In</button>
                 </SignInButton>
             ) : <UserButton />}
         </div>
       </div>
 
-      {/* QUICK START WIZARD (Readability Focused) */}
+      {/* QUICK START WIZARD */}
       <div className="grid md:grid-cols-3 gap-8">
           <div onClick={() => setActiveTab('jd')} className={`p-10 rounded-[2.5rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
               <div className="flex justify-between items-center mb-6">
@@ -420,6 +426,7 @@ export default function Dashboard() {
                  
                  {!isSignedIn ? (
                     <SignUpButton mode="modal" forceRedirectUrl="/">
+                        {/* THIS Button keeps the trap because it is explicit intent to buy */}
                         <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[2.5rem] uppercase tracking-widest hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/40">Start 3-Day Free Trial</button>
                     </SignUpButton>
                  ) : (
