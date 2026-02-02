@@ -1,9 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Define which routes should be accessible without a session
+// Define routes that don't need a logged-in user to hit the API
 const isPublicRoute = createRouteMatcher([
   '/', 
-  '/api/generate(.*)', // Add the (.*) to catch all variations
+  '/api/generate', 
   '/api/webhook/stripe'
 ]);
 
@@ -14,6 +14,5 @@ export default clerkMiddleware((auth, request) => {
 });
 
 export const config = {
-  // This matcher ensures the middleware runs on all routes
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
