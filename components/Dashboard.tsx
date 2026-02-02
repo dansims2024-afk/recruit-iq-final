@@ -14,7 +14,7 @@ import {
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- THE ELITE DATA ENGINE ---
+// --- GLOBAL SAMPLE DATA ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -76,7 +76,7 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
-  // INITIALIZATION
+  // INITIALIZATION & PERSISTENCE
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
@@ -143,7 +143,7 @@ export default function Dashboard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
     
-    // Header
+    // PDF HEADER LOGIC
     doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 60, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(28); doc.setFont("helvetica", "bold");
     doc.text("RECRUIT-IQ", 15, 30);
@@ -151,15 +151,12 @@ export default function Dashboard() {
     doc.text("STRATEGIC CANDIDATE ANALYSIS REPORT", 15, 40);
     doc.text(`DATE: ${new Date().toLocaleDateString()}`, 155, 40);
     
-    // Candidate Info
     doc.setTextColor(30, 41, 59); doc.setFontSize(24); doc.text(cName, 15, 80);
     doc.setDrawColor(226, 232, 240); doc.line(15, 85, 195, 85);
     
-    // Score Badge
     doc.setFillColor(79, 70, 229); doc.roundedRect(160, 65, 35, 20, 3, 3, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(16); doc.text(`${analysis.score}%`, 170, 78);
 
-    // Summary Box
     doc.setFillColor(248, 250, 252); doc.rect(15, 95, 180, 50, 'F');
     doc.setTextColor(79, 70, 229); doc.setFontSize(9); doc.setFont("helvetica", "bold");
     doc.text("EXECUTIVE SUMMARY", 20, 105);
@@ -167,7 +164,6 @@ export default function Dashboard() {
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
     doc.text(summaryLines, 20, 115);
 
-    // Dynamic Lists (Strengths/Gaps)
     doc.setTextColor(16, 185, 129); doc.setFont("helvetica", "bold"); doc.text("TOP STRENGTHS", 15, 160);
     doc.setTextColor(51, 65, 85); doc.setFont("helvetica", "normal");
     analysis.strengths.forEach((s: string, i: number) => doc.text(`• ${s}`, 15, 170 + (i * 7)));
@@ -219,21 +215,21 @@ export default function Dashboard() {
   if (!isLoaded) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
         <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-        <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest italic">Authenticating Secure Session</p>
+        <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest italic text-white">Authenticating Secure Session</p>
     </div>
   );
 
   return (
     <div className="relative p-4 md:p-10 max-w-[1600px] mx-auto space-y-12 text-white bg-[#020617] min-h-screen pt-24 font-sans selection:bg-indigo-500/30">
       
-      {/* ELITE TOAST COMPONENT */}
+      {/* TOAST NOTIFICATIONS */}
       {toast.show && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 animate-in slide-in-from-top duration-300">
           <p className="text-[10px] font-black uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* DYNAMIC NAVIGATION */}
+      {/* DYNAMIC NAVIGATION - PRODUCTION SPOOLING FIX APPLIED */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
             <div className="flex items-center gap-4 group cursor-default">
@@ -248,8 +244,7 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    // CRITICAL FIX: HARD-REDIRECT FOR CLERK V4
-                    <SignInButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
+                    <SignInButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
                 ) : (
@@ -262,8 +257,9 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      {/* WORKSPACE TOOLS */}
+      {/* ELITE WORKSPACE GRID */}
       <div className="grid lg:grid-cols-2 gap-12 pt-6">
+        
         {/* INPUT COLUMN */}
         <div className="bg-[#0f172a] p-10 rounded-[3.5rem] border border-slate-800/80 shadow-2xl relative">
             <div className="flex gap-4 mb-10 p-1.5 bg-slate-950 rounded-[2rem] border border-slate-800">
@@ -325,7 +321,7 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                {/* SWOT ANALYSIS */}
+                {/* SWOT GRID */}
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="bg-emerald-500/5 border border-emerald-500/10 p-10 rounded-[3rem]">
                     <h4 className="text-emerald-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3">
@@ -352,7 +348,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* OUTREACH TEMPLATE */}
+                {/* OUTREACH EMAIL */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] text-center">
                     <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center justify-center gap-3">
                       <Mail className="w-4 h-4" /> Outreach Generation
@@ -376,7 +372,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ELITE SUBSCRIPTION MODAL */}
+      {/* ELITE SUBSCRIPTION MODAL - PRODUCTION SPOOLING FIX APPLIED */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
           <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full shadow-4xl text-center relative overflow-hidden">
@@ -385,8 +381,7 @@ export default function Dashboard() {
               <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
               
               {!isSignedIn ? (
-                // CRITICAL FIX: HARD-REDIRECT FOR SIGN UP
-                <SignUpButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
+                <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
                 </SignUpButton>
               ) : (
@@ -400,7 +395,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* FOOTER */}
+      {/* ELITE FOOTER */}
       <footer className="mt-32 border-t border-slate-800/50 pt-16 pb-32 text-center opacity-40">
         <div className="flex justify-center gap-12 text-[9px] uppercase font-black tracking-[0.3em] text-slate-600">
             <span>&copy; {new Date().getFullYear()} Recruit-IQ Global</span>
