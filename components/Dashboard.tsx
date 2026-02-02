@@ -267,7 +267,7 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACCESS" : `TRIAL SCANS: ${3 - scanCount}`}
             </div>
             {!isSignedIn ? (
-                <SignInButton mode="modal" forceRedirectUrl="/">
+                <SignInButton mode="modal" afterSignInUrl="/">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase transition-all shadow-xl hover:scale-105 active:scale-95">Log In</button>
                 </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
