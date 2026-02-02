@@ -1,11 +1,11 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Allows the landing page and authentication routes to be accessed without logging in
+  // Routes that can be accessed while signed out
   publicRoutes: ["/", "/sign-in(.*)", "/sign-up(.*)", "/api/webhook(.*)"],
 });
 
 export const config = {
-  // Protects all routes except static files and next internals
+  // Protects all routes except static files
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
