@@ -177,16 +177,15 @@ export default function Dashboard() {
     if (!jdReady || !resumeReady) { showToast("Incomplete Data", "error"); return; }
     setLoading(true);
     try {
-      const prompt = `Analyze this Job Description: [${jdText}] against this Resume: [${resumeText}]. 
-      You are a world-class executive recruiter. Return a JSON object exactly like this:
-      {
+      const prompt = `Analyze Job: [${jdText}] and Resume: [${resumeText}]. 
+      Return JSON: {
         "candidate_name": "Full Name",
         "score": 85,
-        "summary": "One paragraph executive summary.",
-        "strengths": ["Strength 1", "Strength 2", "Strength 3"],
-        "gaps": ["Gap 1", "Gap 2"],
-        "questions": ["Question 1", "Question 2"],
-        "outreach_email": "A personalized email to the candidate."
+        "summary": "Executive summary.",
+        "strengths": ["Item"],
+        "gaps": ["Item"],
+        "questions": ["Item"],
+        "outreach_email": "Body text"
       }`;
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`, { 
@@ -207,165 +206,121 @@ export default function Dashboard() {
     } catch (err) { showToast("AI Engine Error", "error"); } finally { setLoading(false); }
   };
 
-  // --- AUTH CHECK UI ---
   if (!isLoaded) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
         <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-        <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest italic text-white">Authenticating Secure Session</p>
+        <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest italic">Authenticating Secure Session</p>
     </div>
   );
 
   return (
     <div className="relative p-4 md:p-10 max-w-[1600px] mx-auto space-y-12 text-white bg-[#020617] min-h-screen pt-24 font-sans selection:bg-indigo-500/30">
       
-      {/* TOASTS */}
       {toast.show && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400 animate-in slide-in-from-top duration-300">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl bg-indigo-600 shadow-2xl border border-indigo-400">
           <p className="text-[10px] font-black uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* NAVIGATION - VERSION 5 COMPATIBLE */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
-            <div className="flex items-center gap-4 group cursor-default">
-                <div className="bg-indigo-600 p-2 rounded-xl">
-                  <Zap className="w-6 h-6 text-white fill-current" />
-                </div>
+            <div className="flex items-center gap-4">
+                <Zap className="w-6 h-6 text-indigo-500 fill-current" />
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ <span className="text-indigo-500 italic">Elite</span></h1>
             </div>
             
             <div className="flex items-center gap-8">
-                <div className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isPro ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' : 'border-indigo-500/30 text-indigo-400 bg-indigo-500/5'}`}>
+                <div className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${isPro ? 'border-emerald-500/30 text-emerald-400' : 'border-indigo-500/30 text-indigo-400'}`}>
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
                     <SignInButton mode="modal" forceRedirectUrl="/">
-                        <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
+                        <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-50 transition-all">Log In</button>
                     </SignInButton>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    {isPro && <ShieldCheck className="w-5 h-5 text-emerald-500" />}
-                    <UserButton afterSignOutUrl="/"/>
-                  </div>
-                )}
+                ) : <UserButton afterSignOutUrl="/"/>}
             </div>
         </div>
       </nav>
 
-      {/* WORKSPACE */}
       <div className="grid lg:grid-cols-2 gap-12 pt-6">
-        
-        {/* INPUT BOX */}
-        <div className="bg-[#0f172a] p-10 rounded-[3.5rem] border border-slate-800/80 shadow-2xl relative">
+        <div className="bg-[#0f172a] p-10 rounded-[3.5rem] border border-slate-800/80 shadow-2xl">
             <div className="flex gap-4 mb-10 p-1.5 bg-slate-950 rounded-[2rem] border border-slate-800">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-white'}`}>Job Criteria</button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'resume' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-white'}`}>Resume Data</button>
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest ${activeTab === 'jd' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500'}`}>Job Criteria</button>
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-5 rounded-[1.6rem] text-[10px] font-black uppercase tracking-widest ${activeTab === 'resume' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500'}`}>Resume Data</button>
             </div>
             
             <div className="flex gap-4 mb-8">
-              <label className="flex-1 cursor-pointer bg-slate-900/40 py-5 rounded-2xl text-[10px] font-black uppercase text-slate-500 hover:text-indigo-400 border border-slate-800/50 transition-all flex items-center justify-center gap-3">
+              <label className="flex-1 cursor-pointer bg-slate-900/40 py-5 rounded-2xl text-[10px] font-black uppercase text-slate-500 hover:text-indigo-400 border border-slate-800/50 flex items-center justify-center gap-3 transition-all">
                 <FileText className="w-4 h-4" /> Import Document
                 <input type="file" accept=".pdf,.docx,.txt" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Global Sample Loaded");}} className="flex-1 bg-slate-900/40 py-5 rounded-2xl text-[10px] font-black uppercase text-slate-500 border border-slate-800/50 hover:text-indigo-400 transition-all">Sample Dataset</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Sample Loaded");}} className="flex-1 bg-slate-900/40 py-5 rounded-2xl text-[10px] font-black uppercase text-slate-500 border border-slate-800/50 hover:text-indigo-400 transition-all">Load Sample</button>
             </div>
 
             <textarea 
-              className="w-full h-[550px] bg-[#020617] resize-none outline-none text-slate-300 p-10 border border-slate-800 rounded-[3rem] text-sm leading-relaxed focus:border-indigo-600/50 transition-all font-medium custom-scrollbar"
+              className="w-full h-[550px] bg-[#020617] resize-none outline-none text-slate-300 p-10 border border-slate-800 rounded-[3rem] text-sm leading-relaxed"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder="System Ready. Awaiting Input Data..."
+              placeholder="System Ready..."
             />
             
-            <button onClick={handleScreen} disabled={loading} className="w-full mt-10 py-10 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.2em] bg-indigo-600 hover:bg-indigo-500 shadow-3xl flex items-center justify-center gap-5 transition-all group active:scale-[0.98]">
-              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6 fill-white group-hover:rotate-12 transition-transform" />}
-              {loading ? "ANALYZING CANDIDATE..." : "EXECUTE STRATEGIC SCREEN"}
+            <button onClick={handleScreen} disabled={loading} className="w-full mt-10 py-10 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.2em] bg-indigo-600 hover:bg-indigo-500 shadow-3xl flex items-center justify-center gap-5 transition-all">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6 fill-white" />}
+              {loading ? "ANALYZING..." : "EXECUTE STRATEGIC SCREEN"}
             </button>
         </div>
 
-        {/* ANALYSIS BOX */}
         <div className="space-y-12 h-full">
             {analysis ? (
-              <div className="space-y-12 animate-in fade-in slide-in-from-right-12 duration-1000">
-                
-                {/* SCORE CARD */}
-                <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[4rem] text-center shadow-3xl relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-500"></div>
-                  <div className="flex justify-center items-center gap-12 mb-10">
-                    <div className="relative">
-                        <svg className="w-36 h-36 transform -rotate-90">
-                            <circle cx="72" cy="72" r="66" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-slate-900" />
-                            <circle cx="72" cy="72" r="66" stroke="currentColor" strokeWidth="10" fill="transparent" 
-                                strokeDasharray={414.6}
-                                strokeDashoffset={414.6 - (414.6 * analysis.score) / 100}
-                                className="text-indigo-500 transition-all duration-1000" />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center font-black text-4xl italic">{analysis.score}%</div>
-                    </div>
-                    <div className="text-left">
-                        <div className="text-[10px] font-black uppercase text-indigo-400 mb-2 tracking-widest italic">Core Match Probability</div>
-                        <div className="text-3xl font-black uppercase tracking-tighter text-white mb-2">{analysis.candidate_name}</div>
-                        <div className="flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase">
-                          <Award className="w-4 h-4" /> Top Tier Talent
-                        </div>
-                    </div>
-                  </div>
+              <div className="space-y-12 animate-in fade-in slide-in-from-right duration-700">
+                <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[4rem] text-center shadow-3xl">
+                  <div className="text-6xl font-black text-indigo-500 mb-4 italic">{analysis.score}%</div>
+                  <div className="text-3xl font-black uppercase tracking-tighter text-white mb-6">{analysis.candidate_name}</div>
                   <p className="text-sm text-slate-400 italic mb-10 leading-loose border-t border-slate-800/50 pt-8">"{analysis.summary}"</p>
-                  <button onClick={downloadPDF} className="w-full py-7 bg-slate-900 hover:bg-slate-800 rounded-[2rem] text-[10px] font-black uppercase border border-slate-800 transition-all flex items-center justify-center gap-4 shadow-xl">
+                  <button onClick={downloadPDF} className="w-full py-7 bg-slate-900 hover:bg-slate-800 rounded-[2rem] text-[10px] font-black uppercase border border-slate-800 flex items-center justify-center gap-4 shadow-xl">
                     <Download className="w-5 h-5" /> Export Strategic Report
                   </button>
                 </div>
 
-                {/* SWOT */}
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="bg-emerald-500/5 border border-emerald-500/10 p-10 rounded-[3rem]">
-                    <h4 className="text-emerald-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3">
-                      <TrendingUp className="w-4 h-4" /> Candidate Strengths
-                    </h4>
-                    <div className="space-y-5 text-sm">{analysis.strengths.map((s: string, i: number) => <div key={i} className="flex gap-4 text-slate-300 font-medium leading-relaxed"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> {s}</div>)}</div>
+                    <h4 className="text-emerald-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3"><TrendingUp className="w-4 h-4" /> Strengths</h4>
+                    <div className="space-y-4 text-xs">{analysis.strengths.map((s: string, i: number) => <div key={i} className="flex gap-3 text-slate-300"><CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> {s}</div>)}</div>
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/10 p-10 rounded-[3rem]">
-                    <h4 className="text-rose-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3">
-                      <ZapOff className="w-4 h-4" /> Technical Gaps
-                    </h4>
-                    <div className="space-y-5 text-sm">{analysis.gaps.map((g: string, i: number) => <div key={i} className="flex gap-4 text-slate-300 font-medium leading-relaxed"><XCircle className="w-5 h-5 text-rose-500 shrink-0" /> {g}</div>)}</div>
+                    <h4 className="text-rose-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center gap-3"><ZapOff className="w-4 h-4" /> Gaps</h4>
+                    <div className="space-y-4 text-xs">{analysis.gaps.map((g: string, i: number) => <div key={i} className="flex gap-3 text-slate-300"><XCircle className="w-4 h-4 text-rose-500 shrink-0" /> {g}</div>)}</div>
                   </div>
                 </div>
 
-                {/* INTERVIEW QUESTIONS */}
-                <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] relative group">
-                  <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-10 tracking-widest">Targeted Vetting Questions</h4>
-                  <div className="space-y-6">
+                <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem]">
+                  <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-8 tracking-widest">Interview Prep</h4>
+                  <div className="space-y-4">
                       {analysis.questions.map((q: string, i: number) => (
-                          <div key={i} className="p-8 bg-slate-950/80 rounded-[2.5rem] border border-slate-800/40 text-sm italic font-medium leading-relaxed hover:border-indigo-500/30 transition-all">"{q}"</div>
+                          <div key={i} className="p-6 bg-slate-950/80 rounded-[2.5rem] border border-slate-800/40 text-xs italic leading-relaxed">"{q}"</div>
                       ))}
                   </div>
                 </div>
 
-                {/* EMAIL */}
                 <div className="bg-[#0f172a] border border-slate-800 p-12 rounded-[3.5rem] text-center">
-                    <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center justify-center gap-3">
-                      <Mail className="w-4 h-4" /> Outreach Generation
-                    </h4>
-                    <div className="bg-slate-950/80 rounded-[2.5rem] p-10 mb-10 text-left border border-slate-800/60 max-h-96 overflow-y-auto custom-scrollbar">
-                        <p className="text-sm text-slate-400 whitespace-pre-wrap leading-loose font-mono">{analysis.outreach_email}</p>
+                    <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-widest flex items-center justify-center gap-3"><Mail className="w-4 h-4" /> Outreach Generation</h4>
+                    <div className="bg-slate-950/80 rounded-[2.5rem] p-10 mb-10 text-left border border-slate-800/60 max-h-60 overflow-y-auto">
+                        <p className="text-xs text-slate-400 whitespace-pre-wrap leading-loose font-mono">{analysis.outreach_email}</p>
                     </div>
-                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied");}} className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-5 transition-all shadow-2xl active:scale-95">
+                    <button onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Email Copied");}} className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-5 transition-all shadow-2xl">
                         <Copy className="w-5 h-5" /> Copy Email Template
                     </button>
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center space-y-8 border-2 border-dashed border-slate-800/50 rounded-[5rem] bg-slate-900/10 group">
+              <div className="h-full flex flex-col items-center justify-center space-y-8 border-2 border-dashed border-slate-800/50 rounded-[5rem] bg-slate-900/10">
                   <Search className="w-16 h-16 text-slate-800" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700">System Ready</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700">Awaiting Intelligence Input</p>
               </div>
             )}
         </div>
       </div>
 
-      {/* MODAL - VERSION 5 COMPATIBLE */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
           <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full text-center relative overflow-hidden">
@@ -380,7 +335,7 @@ export default function Dashboard() {
                 <a href={finalStripeUrl} className="block w-full py-12 bg-indigo-600 text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Complete Elite License</a>
               )}
               
-              <button onClick={() => setShowLimitModal(false)} className="mt-14 text-[10px] text-slate-600 font-black uppercase tracking-widest hover:text-white underline transition-all">Dismiss Trial</button>
+              <button onClick={() => setShowLimitModal(false)} className="mt-14 text-[10px] text-slate-600 font-black uppercase tracking-widest hover:text-white transition-all underline">Dismiss Trial</button>
           </div>
         </div>
       )}
