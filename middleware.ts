@@ -1,11 +1,11 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Routes that can be accessed while signed out
+  // Public routes that don't require login
   publicRoutes: ["/", "/sign-in(.*)", "/sign-up(.*)", "/api/webhook(.*)"],
 });
 
 export const config = {
-  // The classic v4 matcher that prevents static file spooling
+  // Classic V4 matcher to prevent static file spooling
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
