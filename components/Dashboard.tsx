@@ -230,7 +230,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* DYNAMIC NAVIGATION - V4 COMPATIBLE FIX */}
+      {/* DYNAMIC NAVIGATION - REDIRECT MODE ENABLED */}
       <nav className="fixed top-0 left-0 w-full z-[100] backdrop-blur-xl border-b border-slate-800/50 bg-[#020617]/80">
         <div className="max-w-7xl mx-auto px-10 h-20 flex justify-between items-center">
             <div className="flex items-center gap-4 group cursor-default">
@@ -245,8 +245,8 @@ export default function Dashboard() {
                     {isPro ? "ELITE LICENSE" : `${3 - scanCount} SCANS REMAINING`}
                 </div>
                 {!isSignedIn ? (
-                    /* THE V4 SPOOLING FIX - USING afterSignInUrl */
-                    <SignInButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
+                    /* THE REDIRECT FIX - ELIMINATES MODAL SPOOLING */
+                    <SignInButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
                         <button className="bg-white text-black px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-xl hover:bg-indigo-50 transition-all active:scale-95">Log In</button>
                     </SignInButton>
                 ) : (
@@ -374,7 +374,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ELITE SUBSCRIPTION MODAL - V4 COMPATIBLE FIX */}
+      {/* ELITE SUBSCRIPTION MODAL - REDIRECT MODE ENABLED */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-950/98">
           <div className="bg-[#0F172A] border border-slate-800 rounded-[5rem] p-24 max-w-5xl w-full shadow-4xl text-center relative overflow-hidden">
@@ -383,8 +383,8 @@ export default function Dashboard() {
               <p className="text-slate-400 mb-16 font-black uppercase text-[10px] tracking-[0.4em] leading-loose max-w-2xl mx-auto">Access unlimited deep-match processing, strategic reporting, and priority AI threading.</p>
               
               {!isSignedIn ? (
-                /* THE V4 SPOOLING FIX - USING afterSignInUrl */
-                <SignUpButton mode="modal" afterSignInUrl="/" afterSignUpUrl="/">
+                /* THE REDIRECT FIX - ELIMINATES MODAL SPOOLING */
+                <SignUpButton mode="redirect" afterSignInUrl="/" afterSignUpUrl="/">
                     <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-[3rem] uppercase tracking-widest text-sm shadow-3xl hover:scale-[1.03] transition-all">Enable Full Platform Access</button>
                 </SignUpButton>
               ) : (
