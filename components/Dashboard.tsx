@@ -67,10 +67,17 @@ export default function Dashboard() {
     ? `${STRIPE_URL}?client_reference_id=${user.id}&prefilled_email=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || '')}`
     : STRIPE_URL;
 
+  // --- FIX: UNIQUE STORAGE KEY PER USER ---
+  // This ensures a new email gets a fresh set of scans
+  const storageKey = user?.id ? `recruit_iq_scans_${user.id}` : 'recruit_iq_scans_guest';
+
   useEffect(() => {
-    const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
-    setScanCount(savedCount);
-  }, []);
+    // Check if we are in the browser
+    if (typeof window !== 'undefined') {
+        const savedCount = parseInt(localStorage.getItem(storageKey) || '0');
+        setScanCount(savedCount);
+    }
+  }, [storageKey, user?.id]); 
 
   // --- STRIPE TRAP & UNLOCK logic ---
   useEffect(() => {
@@ -223,9 +230,10 @@ export default function Dashboard() {
       const data = await response.json();
       setAnalysis(data);
       if (!isPro) {
+        // Increment scan count for THIS specific user
         const newCount = scanCount + 1;
         setScanCount(newCount);
-        localStorage.setItem('recruit_iq_scans', newCount.toString());
+        localStorage.setItem(storageKey, newCount.toString());
       }
       showToast("Intelligence Generated Successfully!");
     } catch (err) { showToast("AI Engine Error.", "error"); } finally { setLoading(false); }
@@ -252,7 +260,6 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-10 border-b border-slate-800/50 pb-8">
         <div className="flex items-center gap-4">
-            {/* LOGO RESTORED HERE */}
             <img src="/logo.png" alt="Logo" className="h-10 w-auto" />
             <div className="hidden md:block">
                 <h1 className="text-3xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
@@ -407,7 +414,6 @@ export default function Dashboard() {
           <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[3.5rem] p-16 max-w-4xl w-full shadow-2xl flex flex-col md:flex-row overflow-hidden group">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[3rem] blur-3xl opacity-20 animate-pulse"></div>
               <div className="relative p-4 md:w-3/5">
-                 {/* LOGO RESTORED IN MODAL */}
                  <div className="mb-10"><img src="/logo.png" alt="Logo" className="h-10 w-auto" /></div>
                  <h2 className="text-7xl font-black text-white mb-8 leading-none tracking-tighter uppercase italic">Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Elite.</span></h2>
                  <p className="text-slate-400 mb-12 font-black uppercase text-xs tracking-widest leading-loose">Unlimited scans, Deep AI metrics, and Strategic interview engineering.</p>
