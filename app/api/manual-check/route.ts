@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-// FIX: In Clerk v5, these must come from /server
+// FIX: In Clerk v5, these MUST import from /server
 import { auth, clerkClient } from "@clerk/nextjs/server"; 
 import Stripe from "stripe";
 
