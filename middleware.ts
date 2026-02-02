@@ -1,11 +1,9 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { NextResponse } from 'next/server';
 
-export default authMiddleware({
-  // Public routes that don't require login
-  publicRoutes: ["/", "/sign-in(.*)", "/sign-up(.*)", "/api/webhook(.*)"],
-});
+export default function middleware() {
+  return NextResponse.next();
+}
 
 export const config = {
-  // Classic V4 matcher
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
