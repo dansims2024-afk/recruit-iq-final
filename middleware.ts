@@ -6,6 +6,6 @@ export default authMiddleware({
 });
 
 export const config = {
-  // Classic V4 matcher to prevent static file spooling
+  // Classic V4 matcher
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
