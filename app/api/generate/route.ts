@@ -1,44 +1,50 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// This line is CRITICAL for Vercel to recognize the API route correctly
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    // 1. Check for API Key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("CRITICAL: GEMINI_API_KEY is not defined in Vercel Environment Variables.");
-      return NextResponse.json({ error: "Configuration Error" }, { status: 500 });
+      return NextResponse.json({ error: "API Key missing in Vercel" }, { status: 500 });
     }
 
-    // 2. Initialize AI
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // 3. Parse Request
     const { prompt } = await req.json();
-    if (!prompt) {
-      return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
-    }
 
-    // 4. Generate Content
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // 5. Clean JSON formatting (removes markdown code blocks if AI adds them)
-    const cleanedText = text.replace(/```json|```/g, "").trim();
+    // --- NEW ROBUST CLEANING LOGIC ---
+    // This finds the first { and the last } to ignore any "Here is your JSON" text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("AI did not return valid JSON format");
+    }
     
-    // 6. Return Data
-    return NextResponse.json(JSON.parse(cleanedText));
+    const cleanedJson = jsonMatch[0];
+    const data = JSON.parse(cleanedJson);
+
+    // Ensure arrays exist even if AI forgot them to prevent the 'map' error
+    return NextResponse.json({
+      candidate_name: data.candidate_name || "Unknown Candidate",
+      score: data.score || 0,
+      summary: data.summary || "",
+      strengths: data.strengths || [],
+      gaps: data.gaps || [],
+      questions: data.questions || [],
+      outreach_email: data.outreach_email || ""
+    });
 
   } catch (error: any) {
-    console.error("API ROUTE ERROR:", error.message);
-    return NextResponse.json(
-      { error: "Internal Server Error", details: error.message }, 
-      { status: 500 }
-    );
+    console.error("DEBUG API ERROR:", error);
+    return NextResponse.json({ 
+      error: "AI Processing Failed", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
