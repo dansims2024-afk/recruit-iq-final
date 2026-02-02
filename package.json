@@ -1,2 +1,11 @@
 {
+  "dependencies": {
+    "@clerk/nextjs": "^5.0.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "lucide-react": "latest",
+    "mammoth": "latest",
+    "jspdf": "latest"
+  }
 }
