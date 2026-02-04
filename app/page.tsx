@@ -1,7 +1,8 @@
-// FIXED: Renamed import to avoid conflict with 'export const dynamic'
+// FIXED: Renamed import to avoid conflict
 import dynamicImport from 'next/dynamic';
 
-const Dashboard = dynamicImport(() => import('@/components/Dashboard'), { 
+// FIXED: Using relative path ".." to find the folder next to "app"
+const Dashboard = dynamicImport(() => import('../components/Dashboard'), { 
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
