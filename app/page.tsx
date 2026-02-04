@@ -1,7 +1,8 @@
-// FIXED: Renamed import to avoid conflict
+"use client"; // <-- THIS IS THE MISSING KEY!
+
 import dynamicImport from 'next/dynamic';
 
-// FIXED: Using relative path ".." to find the folder next to "app"
+// Now that we are in a "Client Component", this 'ssr: false' line is finally allowed.
 const Dashboard = dynamicImport(() => import('../components/Dashboard'), { 
   ssr: false,
   loading: () => (
@@ -12,9 +13,6 @@ const Dashboard = dynamicImport(() => import('../components/Dashboard'), {
     </div>
   )
 });
-
-// This forces the route to be dynamic without crashing the build
-export const dynamic = "force-dynamic";
 
 export default function HomePage() {
   return (
