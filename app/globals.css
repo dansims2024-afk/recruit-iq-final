@@ -1,13 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
+/* Keep your custom colors/variables below if you have them */
 :root {
-  --background: #0b1120;
-  --foreground: #ffffff;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
+  --background: #ffffff;
+  --foreground: #171717;
 }
