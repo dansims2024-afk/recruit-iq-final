@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Force this route to be dynamic so Vercel doesn't break
 export const dynamic = "force-dynamic";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
 
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      // FIXED: Added 'as any' to silence the strict type checking error
+      // Silence the TypeScript error
       generationConfig: { responseMimeType: "application/json" } as any
     });
 
