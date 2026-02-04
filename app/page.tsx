@@ -1,8 +1,7 @@
-// 1. Rename the import to avoid conflict
-import dynamicImport from 'next/dynamic'; 
+// FIXED: Renamed import to avoid conflict with 'export const dynamic'
+import dynamicImport from 'next/dynamic';
 
-// 2. Use the renamed import here
-const Dashboard = dynamicImport(() => import('../components/Dashboard'), { 
+const Dashboard = dynamicImport(() => import('@/components/Dashboard'), { 
   ssr: false,
   loading: () => (
     <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
@@ -13,7 +12,7 @@ const Dashboard = dynamicImport(() => import('../components/Dashboard'), {
   )
 });
 
-// 3. Now this export is valid and won't crash the build
+// This forces the route to be dynamic without crashing the build
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
