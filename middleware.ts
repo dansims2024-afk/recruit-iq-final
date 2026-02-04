@@ -1,7 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Only protect routes that definitely need auth. 
-// Keep the home page ('/') public so the build worker can see it.
 const isPublicRoute = createRouteMatcher([
   '/', 
   '/api/webhook/stripe',
