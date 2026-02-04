@@ -13,6 +13,7 @@ export async function POST(req: Request) {
   try {
     // 1. Authenticate the User
     const { userId } = await auth();
+    
     // Optional: Uncomment the next line to strictly block non-logged-in users
     // if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
