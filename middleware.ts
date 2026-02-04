@@ -1,9 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Define routes that don't need a logged-in user to hit the API
+// We make the API route public so the dashboard can talk to it freely
 const isPublicRoute = createRouteMatcher([
   '/', 
-  '/api/generate', 
+  '/api/generate(.*)', 
   '/api/webhook/stripe'
 ]);
 
@@ -14,5 +14,6 @@ export default clerkMiddleware((auth, request) => {
 });
 
 export const config = {
+  // This matcher handles all internal Next.js paths
   matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
