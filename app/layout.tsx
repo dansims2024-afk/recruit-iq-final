@@ -12,10 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider 
-      dynamic 
-      afterSignOutUrl="/"
-    >
+    // FIXED: Removed the invalid 'dynamic' prop causing the build error
+    <ClerkProvider afterSignOutUrl="/">
       <html lang="en">
         <body className={`${inter.className} bg-[#0B1120] antialiased`}>
           {children}
