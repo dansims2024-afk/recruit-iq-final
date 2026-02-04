@@ -6,54 +6,30 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    // 1. DEBUG CHECK: Do we have the key?
+    // 1. Check for the API Key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("CRITICAL ERROR: GEMINI_API_KEY is missing in Vercel Settings.");
-      return NextResponse.json(
-        { error: "Configuration Error: API Key is missing on the server." }, 
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Missing API Key on Server" }, { status: 500 });
     }
 
-    // 2. Initialize AI
+    // 2. Await Auth (Required for Next.js 15)
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
-
-    // 3. Handle Auth (Fail gracefully if auth breaks)
-    let userId = null;
-    try {
-      const authData = await auth();
-      userId = authData.userId;
-    } catch (e) {
-      console.warn("Auth check failed, proceeding as guest:", e);
-    }
-
-    // 4. Parse Request
     const body = await req.json();
     const { prompt } = body;
 
-    if (!prompt) {
-      return NextResponse.json({ error: "No prompt provided" }, { status: 400 });
-    }
-
-    // 5. Generate
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" } as any
-    });
-
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const text = response.text();
-    const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
     
-    return NextResponse.json(JSON.parse(cleanJson));
+    return NextResponse.json({ text: response.text() });
 
   } catch (error: any) {
-    console.error("API Error Details:", error);
-    return NextResponse.json(
-      { error: error.message || "Unknown API Error" }, 
-      { status: 500 }
-    );
+    console.error("API Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
