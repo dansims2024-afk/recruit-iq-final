@@ -1,6 +1,6 @@
 "use client";
 
-// CRITICAL: This tells Vercel to skip static pre-rendering, which stops the "Invariant" crash.
+// CRITICAL: Tells Vercel to skip static pre-rendering
 export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect } from 'react';
@@ -13,7 +13,7 @@ import {
   Briefcase
 } from "lucide-react";
 
-// --- CONSTANTS & SAMPLES ---
+// --- CONSTANTS ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
 const SAMPLE_JD = `JOB TITLE: Lead Skilled Trades Supervisor (HVAC/Electrical)
@@ -50,7 +50,7 @@ export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
   const clerk = useClerk();
   
-  // --- STATE MANAGEMENT ---
+  // --- STATE MANAGEMENT (Must be declared before any returns) ---
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
@@ -63,18 +63,6 @@ export default function Dashboard() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [verifying, setVerifying] = useState(false);
 
-  // --- BUILD-TIME SAFETY GATE ---
-  // This is the primary fix. It ensures Clerk doesn't touch cookies until the browser is live.
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
-        <div className="text-indigo-500 font-black tracking-widest animate-pulse uppercase">
-          Recruit-IQ Initializing...
-        </div>
-      </div>
-    );
-  }
-
   // --- DERIVED STATE ---
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
@@ -86,7 +74,7 @@ export default function Dashboard() {
 
   const storageKey = user?.id ? `recruit_iq_scans_${user.id}` : 'recruit_iq_scans_guest';
 
-  // --- PERSISTENCE ---
+  // --- PERSISTENCE EFFECT ---
   useEffect(() => {
     if (typeof window !== 'undefined') {
         const savedCount = parseInt(localStorage.getItem(storageKey) || '0');
@@ -94,9 +82,9 @@ export default function Dashboard() {
     }
   }, [storageKey, user?.id]); 
 
-  // --- STRIPE & AUTH FLOW ---
+  // --- SUBSCRIPTION CHECK EFFECT ---
   useEffect(() => {
-    if (!isSignedIn) return;
+    if (!isLoaded || !isSignedIn) return;
 
     const handleReturnFlow = async () => {
       if (isPro) {
@@ -115,9 +103,9 @@ export default function Dashboard() {
       }
     };
     handleReturnFlow();
-  }, [isSignedIn, isPro, user, finalStripeUrl]);
+  }, [isLoaded, isSignedIn, isPro, user, finalStripeUrl]);
 
-  // --- CORE FUNCTIONS ---
+  // --- FUNCTIONS ---
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ show: true, message, type: type as any });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
@@ -210,6 +198,17 @@ export default function Dashboard() {
     } finally { setLoading(false); }
   };
 
+  // --- SAFE RENDER CHECK ---
+  // We check isLoaded at the VERY END. This prevents the "React Hook Mismatch" (Error #310)
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-indigo-500 font-black tracking-widest animate-pulse uppercase">
+        Recruit-IQ Initializing...
+      </div>
+    );
+  }
+
+  // --- MAIN RENDER ---
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-12 text-white bg-[#0B1120] min-h-screen pt-20 font-sans tracking-tight">
       
@@ -231,7 +230,7 @@ export default function Dashboard() {
                 {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
-                <SignInButton mode="modal">
+                <SignInButton mode="modal" fallbackRedirectUrl="/">
                     <button className="bg-indigo-600 px-6 py-2 rounded-xl text-xs font-bold uppercase">Log In</button>
                 </SignInButton>
             ) : <UserButton />}
