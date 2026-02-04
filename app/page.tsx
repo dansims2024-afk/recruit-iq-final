@@ -1,8 +1,12 @@
 import Dashboard from "@/components/Dashboard";
 
-// Tells Vercel to skip pre-rendering and build successfully
+// This is the most important line for Next.js 15 builds
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return <Dashboard />;
+  return (
+    <main>
+      <Dashboard />
+    </main>
+  );
 }
