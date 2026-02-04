@@ -1,12 +1,8 @@
 import Dashboard from "@/components/Dashboard";
 
-// CRITICAL: This tells Vercel to skip static pre-rendering for the home route
+// Tells Vercel to skip pre-rendering and build successfully
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return (
-    <main>
-      <Dashboard />
-    </main>
-  );
+  return <Dashboard />;
 }
