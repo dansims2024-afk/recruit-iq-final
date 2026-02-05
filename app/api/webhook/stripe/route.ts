@@ -1,34 +1,57 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import { clerkClient } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover" as any,
+  apiVersion: "2023-10-16", // Use the latest stable version
 });
+
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = (await headers()).get("stripe-signature") as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    return NextResponse.json({ error: "Webhook secret missing" }, { status: 500 });
-  }
+  const signature = headers().get("stripe-signature") as string;
 
   let event: Stripe.Event;
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: any) {
-    console.error(`Webhook Signature Error: ${err.message}`);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
+  // Handle the checkout.session.completed event
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    console.log("Payment completed for:", session.customer_email);
-    // Add your database logic here to unlock Pro features
+    const userEmail = session.customer_details?.email;
+
+    if (userEmail) {
+      try {
+        // 1. Find the user in Clerk by email
+        const users = await clerkClient.users.getUserList({
+          emailAddress: [userEmail],
+        });
+
+        if (users.length > 0) {
+          const clerkUserId = users[0].id;
+
+          // 2. Update the user's Public Metadata to isPro: true
+          await clerkClient.users.updateUserMetadata(clerkUserId, {
+            publicMetadata: {
+              isPro: true,
+            },
+          });
+          
+          console.log(`Success: User ${userEmail} upgraded to Elite.`);
+        }
+      } catch (error) {
+        console.error("Error updating Clerk user:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+      }
+    }
   }
 
-  return NextResponse.json({ received: true });
+  return new NextResponse("Webhook processed", { status: 200 });
 }
