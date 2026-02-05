@@ -1,37 +1,26 @@
-const handleAnalyze = async () => {
-  setLoading(true);
-  // Clear the "Results will appear here..." message immediately
-  setAnalysis("AI is thinking..."); 
-  
-  try {
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        prompt: "Please analyze the uploaded document and provide a detailed report." 
-      }),
-    });
+"use client";
 
-    const data = await response.json();
+import React, { useState } from 'react';
+// ... other imports
 
-    if (data.error) {
-      setAnalysis(`Error from AI: ${data.error}`);
-      return;
-    }
+const MainBoard = () => {
+  const [analysis, setAnalysis] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    // This checks every possible field the API might have sent
-    const finalResult = data.analysis || data.text || data.result;
-    
-    if (finalResult) {
-      setAnalysis(finalResult);
-    } else {
-      setAnalysis("The AI responded, but no text was found in the data.");
-    }
+  // ... your handleAnalyze and other functions ...
 
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setAnalysis("Failed to connect to the server. Please try again.");
-  } finally {
-    setLoading(false);
-  }
+  return (
+    <div className="min-h-screen bg-[#0B1120] text-white p-8">
+      {/* Your UI code */}
+      <div className="bg-gray-900 p-6 rounded-lg border border-gray-700">
+        <h2 className="text-xl font-bold mb-4">Analysis Results</h2>
+        <div className="whitespace-pre-wrap text-gray-300">
+          {analysis || "Results will appear here..."}
+        </div>
+      </div>
+    </div>
+  );
 };
+
+// CRITICAL: This is the line that fixes the "not a module" error
+export default MainBoard;
