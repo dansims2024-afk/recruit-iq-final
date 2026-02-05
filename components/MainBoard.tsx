@@ -1,37 +1,49 @@
-const handleAnalyze = async () => {
-  setLoading(true);
-  // This clears the "Results will appear here..." message immediately
-  setAnalysis("AI is analyzing your request... please wait."); 
-  
-  try {
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        prompt: "Analyze the uploaded document and provide a detailed report." 
-      }),
-    });
+"use client";
 
-    const data = await response.json();
+import React, { useState } from 'react';
 
-    if (data.error) {
-      setAnalysis(`Error: ${data.error}`);
-      return;
+// Define the component
+const MainBoard = () => {
+  const [analysis, setAnalysis] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    setAnalysis("AI is thinking...");
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: "Analyze this resume" }),
+      });
+      const data = await response.json();
+      setAnalysis(data.analysis || data.text || "No results found.");
+    } catch (err) {
+      setAnalysis("Error connecting to AI.");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // This checks every possible field the API might have sent
-    const finalResult = data.analysis || data.text || data.result;
-    
-    if (finalResult) {
-      setAnalysis(finalResult);
-    } else {
-      setAnalysis("The AI responded, but no analysis text was found.");
-    }
-
-  } catch (err) {
-    console.error("Fetch error:", err);
-    setAnalysis("Failed to connect to the server. Check your internet or API key.");
-  } finally {
-    setLoading(false);
-  }
+  return (
+    <div className="min-h-screen bg-[#0B1120] text-white p-8">
+      <h1 className="text-2xl font-bold mb-4">Recruit-IQ Dashboard</h1>
+      <button 
+        onClick={handleAnalyze}
+        className="bg-blue-600 px-4 py-2 rounded mb-6"
+        disabled={loading}
+      >
+        {loading ? "Processing..." : "Execute Analysis"}
+      </button>
+      <div className="bg-gray-900 p-6 rounded-lg border border-gray-700">
+        <h2 className="text-xl font-bold mb-4">Analysis Results</h2>
+        <div className="whitespace-pre-wrap text-gray-300">
+          {analysis || "Results will appear here..."}
+        </div>
+      </div>
+    </div>
+  );
 };
+
+// EXPORT DEFAULT IS MANDATORY FOR THE DYNAMIC IMPORT TO WORK
+export default MainBoard;
