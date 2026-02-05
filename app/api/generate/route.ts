@@ -12,16 +12,20 @@ export async function POST(req: Request) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    const genAI = new GoogleGenerativeAI(apiKey || "");
+    if (!apiKey) {
+      return NextResponse.json({ error: "API Key Missing" }, { status: 500 });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const { prompt } = await req.json();
 
-    // Use Gemini 2.0 Flash for the best reliability
+    // Using Gemini 2.0 Flash for maximum reliability
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const aiText = response.text();
     
-    // We send all three to cover every possible frontend variable name
+    // We send multiple keys so the frontend definitely finds the text
     return NextResponse.json({ 
       analysis: aiText,
       text: aiText,
