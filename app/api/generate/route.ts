@@ -15,15 +15,16 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey || "");
     const { prompt } = await req.json();
 
+    // Use Gemini 2.0 Flash for the best reliability
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const aiText = response.text();
     
-    // We send all three to ensure the frontend finds what it's looking for
+    // We send all three to cover every possible frontend variable name
     return NextResponse.json({ 
-      text: aiText,
       analysis: aiText,
+      text: aiText,
       result: aiText
     });
 
