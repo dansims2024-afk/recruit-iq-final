@@ -1,10 +1,9 @@
+import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import Stripe from "stripe";
-import { clerkClient } from "@clerk/nextjs/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2023-10-16" as any,
 });
 
 export async function POST(req: Request) {
@@ -20,24 +19,16 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
+    console.error(`Webhook Signature Error: ${err.message}`);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // When the checkout is successful
+  // Handle the event
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.client_reference_id;
-
-    if (userId) {
-      // THIS IS THE UNLOCK: It tells Clerk this user is now "Pro"
-      const client = await clerkClient();
-      await client.users.updateUserMetadata(userId, {
-        publicMetadata: {
-          isPro: true,
-        },
-      });
-    }
+    console.log("Payment successful for session:", session.id);
+    // Add your logic to upgrade the user's account here
   }
 
-  return new NextResponse(null, { status: 200 });
+  return NextResponse.json({ received: true });
 }
