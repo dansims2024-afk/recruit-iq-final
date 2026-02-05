@@ -1,3 +1,5 @@
+"use client";
+
 import dynamic from 'next/dynamic';
 
 // We use dynamic import to prevent SSR issues with the dashboard
