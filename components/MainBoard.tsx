@@ -23,7 +23,7 @@ import {
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- PROFESSIONAL SAMPLES ---
+// --- ELITE SAMPLES ---
 const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect
 LOCATION: New York, NY (Hybrid)
 SALARY: $240,000 - $285,000 + Performance Bonus + Equity
@@ -87,7 +87,7 @@ export default function MainBoard() {
     ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
     : STRIPE_URL;
 
-  // --- PERSISTENCE & STRIPE LOGIC ---
+  // --- PERSISTENCE & AUTO-REDIRECT ---
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
@@ -95,15 +95,16 @@ export default function MainBoard() {
 
   useEffect(() => {
     const handleReturnFlow = async () => {
-      if (!isLoaded || !isSignedIn) return;
+      if (!isLoaded) return;
 
-      if (sessionStorage.getItem('trigger_stripe') === 'true') {
+      // Intercept logic: If user just logged in after clicking Upgrade
+      if (isSignedIn && sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
 
-      if (!isPro) {
+      if (isSignedIn && !isPro) {
         await user?.reload();
         if (user?.publicMetadata?.isPro === true) {
           showToast("Elite Membership Activated!", "success");
@@ -127,7 +128,7 @@ export default function MainBoard() {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         text = result.value;
       } else if (file.name.endsWith('.pdf')) {
-        showToast("PDF parsing requires Pro. Use .docx or paste text.", "info");
+        showToast("PDF parsing requires Elite Access. Use .docx or paste text.", "info");
         return;
       } else {
         text = await file.text();
@@ -145,7 +146,6 @@ export default function MainBoard() {
     const doc = new jsPDF();
     const cName = (analysis.candidate_name || "Candidate").toUpperCase();
 
-    // Background & Header
     doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 297, 'F');
     doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 50, 'F');
     
@@ -154,22 +154,18 @@ export default function MainBoard() {
     doc.text("INTELLIGENCE REPORT", 20, 30);
     doc.setFontSize(10); doc.text("RECRUIT-IQ • ELITE ALGORITHM V2.0", 20, 40);
 
-    // Profile Section
     doc.setFillColor(30, 41, 59); doc.roundedRect(15, 60, 180, 40, 5, 5, 'F');
     doc.setTextColor(255, 255, 255); doc.setFontSize(22);
     doc.text(cName, 25, 85);
     doc.setTextColor(129, 140, 248); doc.setFontSize(30);
     doc.text(`${analysis.score}%`, 160, 88);
 
-    // Summary
     doc.setTextColor(148, 163, 184); doc.setFontSize(10); doc.text("EXECUTIVE SUMMARY", 20, 115);
     doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "normal");
     const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
     doc.text(summaryLines, 20, 125);
 
-    let currentY = 125 + (summaryLines.length * 7) + 15;
-
-    // Strengths & Gaps
+    let currentY = 125 + (summaryLines.length * 7) + 20;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(52, 211, 153); doc.text("MATCH STRENGTHS", 20, currentY);
     doc.setTextColor(251, 113, 133); doc.text("IDENTIFIED GAPS", 110, currentY);
@@ -186,7 +182,7 @@ export default function MainBoard() {
   };
 
   const handleScreen = async () => {
-    if ((!isSignedIn && scanCount >= 3) || (isSignedIn && !isPro)) {
+    if ((!isPro && scanCount >= 3)) {
       setShowLimitModal(true);
       return;
     }
@@ -264,7 +260,7 @@ export default function MainBoard() {
             </div>
             {!isSignedIn ? (
                 <SignInButton mode="modal">
-                    <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-white text-black hover:bg-indigo-50 px-7 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl">
+                    <button className="bg-white text-black hover:bg-indigo-50 px-7 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl">
                         Agent Login
                     </button>
                 </SignInButton>
@@ -442,7 +438,7 @@ export default function MainBoard() {
         </div>
       </footer>
 
-      {/* ELITE UPGRADE OVERLAY */}
+      {/* ELITE UPGRADE OVERLAY (THE CLERK-FIRST FIX) */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 backdrop-blur-2xl bg-slate-950/95 animate-in fade-in duration-500">
           <div className="relative w-full max-w-4xl">
@@ -453,9 +449,23 @@ export default function MainBoard() {
                  <h2 className="text-5xl font-black text-white mb-6 leading-[0.9] tracking-tighter italic">UNLOCK THE <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">EDGE.</span></h2>
                  <p className="text-slate-400 text-sm mb-10 leading-relaxed font-bold uppercase tracking-wide">Unlimited enterprise scans, deep SWOT analysis, and strategic scripts.</p>
                  
-                 <a href={finalStripeUrl} onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/20">
-                    Initialize Elite Access
-                 </a>
+                 {!isSignedIn ? (
+                   <SignInButton mode="modal">
+                     <button 
+                       onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
+                       className="block w-full py-6 bg-white text-black font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-indigo-50 transition-all text-xs shadow-2xl"
+                     >
+                       Sign In to Upgrade
+                     </button>
+                   </SignInButton>
+                 ) : (
+                   <a 
+                     href={finalStripeUrl} 
+                     className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/20"
+                   >
+                     Initialize Elite Access
+                   </a>
+                 )}
 
                  <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-600 mt-8 hover:text-white underline decoration-slate-800 w-full uppercase font-black tracking-widest">Return to Base</button>
               </div>
@@ -494,12 +504,7 @@ export default function MainBoard() {
               >
                 Transmit
               </button>
-              <button 
-                onClick={() => setShowSupportModal(false)} 
-                className="px-10 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
-              >
-                Abort
-              </button>
+              <button onClick={() => setShowSupportModal(false)} className="px-10 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Abort</button>
             </div>
           </div>
         </div>
