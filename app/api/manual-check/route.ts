@@ -1,42 +1,22 @@
 import { NextResponse } from "next/server";
-// Use /server for auth and clerkClient in the app router
-import { auth, clerkClient } from "@clerk/nextjs/server"; 
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  // Updated to match the library's required version
+  apiVersion: "2026-01-28.clover" as any,
 });
 
-export async function POST() {
-  const session = await auth();
-  const userId = session.userId;
-  
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+export async function POST(req: Request) {
+  try {
+    const { sessionId } = await req.json();
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const email = user.primaryEmailAddress?.emailAddress;
-
-  if (!email) return new NextResponse("No email found", { status: 400 });
-
-  // Check Stripe for this user's email
-  const customers = await stripe.customers.list({ email, limit: 1 });
-  
-  if (customers.data.length > 0) {
-    const sessions = await stripe.checkout.sessions.list({
-      customer: customers.data[0].id,
+    return NextResponse.json({ 
+      status: session.status, 
+      payment_status: session.payment_status 
     });
-
-    const hasPaid = sessions.data.some(s => s.payment_status === 'paid');
-
-    if (hasPaid) {
-      // This is what actually unlocks the account
-      await client.users.updateUserMetadata(userId, {
-        publicMetadata: { isPro: true }
-      });
-      return NextResponse.json({ success: true });
-    }
+  } catch (error: any) {
+    console.error("Manual Check Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json({ success: false, message: "No payment found." });
 }
