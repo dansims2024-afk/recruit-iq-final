@@ -21,7 +21,6 @@ const MainBoard = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
 
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
@@ -40,15 +39,7 @@ const MainBoard = () => {
     }
     
     setLoading(true);
-    
-    // --- KEY FIX ---
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
-    if (!apiKey || apiKey === "your_gemini_api_key_here") {
-      showToast("Vercel error: API Key not found in Environment Variables.", "error");
-      setLoading(false);
-      return;
-    }
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
@@ -64,7 +55,7 @@ const MainBoard = () => {
         })
       });
 
-      if (!response.ok) throw new Error("API Rejected Key");
+      if (!response.ok) throw new Error("API Request Failed");
 
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
@@ -78,7 +69,7 @@ const MainBoard = () => {
       }
       showToast("Intelligence Generated!");
     } catch (err: any) {
-      showToast("AI Engine Error. Check API Key in Vercel.", "error");
+      showToast("AI Error: Check Vercel API Key", "error");
     } finally {
       setLoading(false);
     }
@@ -88,14 +79,13 @@ const MainBoard = () => {
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
-      {/* TOAST */}
       {toast.show && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border ${toast.type === 'error' ? 'bg-rose-500/90' : 'bg-indigo-600/90'}`}>
           <p className="text-xs font-bold uppercase tracking-widest text-white">{toast.message}</p>
         </div>
       )}
 
-      {/* HEADER - CLERK WARNINGS FIXED */}
+      {/* HEADER - FIXED CLERK COMPONENTS */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
             <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center font-black">IQ</div>
@@ -106,14 +96,15 @@ const MainBoard = () => {
                 {isPro ? "ELITE" : `TRIAL: ${3 - scanCount} LEFT`}
             </div>
             {!isSignedIn ? (
-                <SignInButton mode="modal" fallbackRedirectUrl="/">
+                <SignInButton mode="modal">
                     <button className="bg-indigo-600 px-5 py-2 rounded-lg text-xs font-bold">Log In</button>
                 </SignInButton>
-            ) : <UserButton fallbackRedirectUrl="/"/>}
+            ) : (
+                <UserButton afterSignOutUrl="/" />
+            )}
         </div>
       </div>
 
-      {/* WORKSPACE */}
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="bg-[#111827] p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[600px] shadow-2xl">
             <div className="flex gap-3 mb-6">
@@ -126,22 +117,18 @@ const MainBoard = () => {
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder="Paste content here..."
             />
-            <button onClick={handleScreen} disabled={loading} className="mt-4 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-3 transition-all hover:bg-indigo-500">
+            <button onClick={handleScreen} disabled={loading} className="mt-4 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-3">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
-              {loading ? "Crunching..." : "Execute Elite Screen"}
+              {loading ? "Crunching..." : "Execute Screen"}
             </button>
         </div>
 
-        {/* RESULTS */}
         <div className="h-[600px] overflow-y-auto space-y-6">
             {analysis ? (
-              <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+              <div className="space-y-6">
                 <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl">
                   <div className="w-20 h-20 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-3xl font-black mb-4">{analysis.score}%</div>
                   <div className="text-white font-bold text-xl mb-4 uppercase">{analysis.candidate_name}</div>
-                  <button onClick={() => {}} className="bg-slate-800 text-indigo-400 px-6 py-3 rounded-xl text-[10px] font-bold uppercase border border-slate-700 mx-auto flex items-center gap-2">
-                    <Download className="w-3 h-3" /> Download Intelligence Report
-                  </button>
                 </div>
               </div>
             ) : (
@@ -153,13 +140,13 @@ const MainBoard = () => {
       </div>
 
       <footer className="text-center text-[10px] uppercase font-bold text-slate-500 pb-10">
-        &copy; 2026 Recruit-IQ • <button onClick={() => setShowSupportModal(true)} className="underline hover:text-white">Contact Support</button>
+        &copy; 2026 Recruit-IQ • <button onClick={() => setShowSupportModal(true)} className="underline">Support</button>
       </footer>
 
       {showSupportModal && (
         <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
           <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full">
-            <h2 className="text-xl font-black mb-6 uppercase text-center">System Support</h2>
+            <h2 className="text-xl font-black mb-6 uppercase text-center">Support</h2>
             <textarea className="w-full h-32 bg-[#0B1120] border border-slate-800 rounded-xl p-4 text-xs text-white outline-none mb-4" placeholder="How can we help?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
             <div className="flex gap-4">
               <button onClick={() => {showToast("Sent!"); setShowSupportModal(false);}} className="flex-1 py-4 bg-indigo-600 rounded-xl font-bold uppercase text-xs">Send</button>
