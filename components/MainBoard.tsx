@@ -232,11 +232,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* HEADER */}
+      {/* HEADER WITH LOGO.PNG */}
       <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
         <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-                <Zap className="w-6 h-6 fill-white" />
+            <div className="p-1 rounded-lg">
+                {/* --- CORRECT LOGO.PNG --- */}
+                <img src="/logo.png" alt="Recruit-IQ Logo" className="w-10 h-10 object-contain" />
             </div>
             <div className="hidden md:block">
                 <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
