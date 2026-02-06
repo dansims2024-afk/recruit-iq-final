@@ -2,76 +2,31 @@
 
 import React, { useState, useEffect } from 'react';
 import mammoth from 'mammoth';
-import { useUser, useClerk, SignInButton, UserButton } from "@clerk/nextjs";
+import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@clerk/nextjs";
 import { jsPDF } from "jspdf";
-import { 
-  Loader2, 
-  Copy, 
-  Check, 
-  FileText, 
-  User, 
-  Download, 
-  Zap, 
-  Shield, 
-  HelpCircle, 
-  BrainCircuit,
-  Mail,
-  TrendingUp,
-  ArrowRight,
-  TrendingDown,
-  Target
-} from "lucide-react";
+import { Loader2, Copy, Check, FileText, User, Download, Zap, Shield, HelpCircle } from "lucide-react";
 
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
 
-// --- MOCK SAMPLES FOR TESTING ---
-const SAMPLE_JD = `JOB TITLE: Senior Technical Recruiter / Talent Lead
-LOCATION: Remote / New Jersey
-SALARY: $140,000 - $175,000 + Performance Bonus
+// --- SAMPLES ---
+const SAMPLE_JD = `JOB TITLE: Senior Principal FinTech Architect\nLOCATION: New York, NY (Hybrid)\nSALARY: $240,000 - $285,000\n\nREQUIREMENTS:\n- 12+ years of engineering.\n- Expertise in AWS, Kubernetes, and Go.`;
+const SAMPLE_RESUME = `MARCUS VANDELAY\nPrincipal Software Architect\n\nEXPERIENCE:\n- Global Quant Solutions: Architected data pipelines handling 5TB daily.\n- Reduced costs by 35% using AWS Graviton.`;
 
-REQUIREMENTS:
-- 8+ years in full-cycle recruiting for Skilled Trades or Tech.
-- Experience with AI-driven sourcing tools and CRM automation.
-- Ability to manage high-volume pipelines and executive stakeholders.
-- Expertise in SWOT analysis of candidates and strategic interviewing.
-- Strong proficiency in building divisions for the Mid-Atlantic region.`;
-
-const SAMPLE_RESUME = `DAN SIMS
-Lead Recruiter | East Windsor, NJ | d.sims@email.com
-
-EXECUTIVE SUMMARY:
-High-impact Lead Recruiter at SNI Companies with a track record of scaling specialized divisions. Expert in AI-integrated talent acquisition workflows and Skilled Trades recruitment.
-
-PROFESSIONAL EXPERIENCE:
-SNI Companies | Lead Recruiter | 2024 - Present
-- Promoted to lead the new Skilled Trades Division for the Mid-Atlantic region.
-- Integrated AI tools to reduce screening time by 40%.
-- Manage full-cycle recruitment for enterprise accounts in NJ, PA, and MD.
-
-SKILLS:
-- AI Sourcing, CRM Optimization, SWOT Metrics, Strategic Talent Acquisition.`;
-
-export default function MainBoard() {
+export default function Dashboard() {
   const { isSignedIn, user, isLoaded } = useUser();
-  const { signOut } = useClerk();
-  
-  // UI States
   const [activeTab, setActiveTab] = useState('jd');
   const [jdText, setJdText] = useState('');
   const [resumeText, setResumeText] = useState('');
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Modal & Notification States
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Elite Status State (Synced with Clerk)
-  const [isPro, setIsPro] = useState(false);
-
+  // Elite Status Check
+  const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
   
@@ -80,54 +35,39 @@ export default function MainBoard() {
     ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
     : STRIPE_URL;
 
-  // 1. COMPONENT INITIALIZATION
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
-  // 2. CLERK METADATA SYNC (Ensures Elite status unlocks on return)
+  // Auth & Stripe Sync Logic
   useEffect(() => {
-    if (user?.publicMetadata?.isPro === true) {
-      setIsPro(true);
-      setShowLimitModal(false);
-    }
-  }, [user]);
-
-  // 3. POST-CHECKOUT RECOVERY LOGIC
-  useEffect(() => {
-    const handleSync = async () => {
+    const handleReturnFlow = async () => {
       if (!isLoaded || !isSignedIn) return;
-
-      // Handle the "Interrupted Upgrade" flow
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
-
-      // If they just paid, we poll the server to catch the Webhook update
       if (!isPro) {
-        console.log("Checking for account activation...");
-        await user.reload();
-        
-        // Final attempt after delay to give Stripe time to talk to Clerk
-        const timer = setTimeout(async () => {
-          await user.reload();
-          if (user.publicMetadata?.isPro === true) {
-            setIsPro(true);
-            showToast("Elite Access Verified!", "success");
-          }
-        }, 5000);
-        return () => clearTimeout(timer);
+        await user?.reload();
+        if (user?.publicMetadata?.isPro === true) {
+          showToast("Elite Membership Activated!", "success");
+        }
       }
     };
-    handleSync();
-  }, [isSignedIn, isLoaded, user, isPro, finalStripeUrl]);
+    handleReturnFlow();
+  }, [isSignedIn, isPro, isLoaded, user, finalStripeUrl]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+  };
+
+  const handleSupportSubmit = () => {
+    showToast("Support message sent! We'll be in touch.", "success");
+    setSupportMessage('');
+    setShowSupportModal(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,63 +82,27 @@ export default function MainBoard() {
         text = await file.text();
       }
       activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-      showToast(`${file.name} Ingested!`);
+      showToast(`${file.name} uploaded successfully!`);
     } catch (err) {
-      showToast("System failed to read document.", "error");
+      showToast("Upload failed.", "error");
     }
   };
 
-  // --- PDF EXPORT ENGINE ---
-  const downloadPDF = () => {
-    if (!analysis) return;
-    const doc = new jsPDF();
-    const name = (analysis.candidate_name || "Candidate").toUpperCase();
-
-    // Dark Background Header
-    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 297, 'F');
-    doc.setFillColor(79, 70, 229); doc.rect(0, 0, 210, 50, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(26); doc.setFont("helvetica", "bold");
-    doc.text("INTELLIGENCE REPORT", 20, 30);
-    doc.setFontSize(10); doc.text("RECRUIT-IQ • ELITE ALGORITHM V2.0", 20, 40);
-
-    // Score Section
-    doc.setFillColor(30, 41, 59); doc.roundedRect(15, 60, 180, 40, 5, 5, 'F');
-    doc.setTextColor(255, 255, 255); doc.setFontSize(22);
-    doc.text(name, 25, 85);
-    doc.setTextColor(129, 140, 248); doc.setFontSize(30);
-    doc.text(`${analysis.score}%`, 160, 88);
-
-    // Summary
-    doc.setTextColor(148, 163, 184); doc.setFontSize(10); doc.text("EXECUTIVE SUMMARY", 20, 115);
-    doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "normal");
-    const summaryLines = doc.splitTextToSize(analysis.summary || "", 170);
-    doc.text(summaryLines, 20, 125);
-
-    doc.save(`RecruitIQ_${name}_Report.pdf`);
-    showToast("Report Exported!");
-  };
-
-  // --- AI ANALYSIS LOGIC ---
   const handleScreen = async () => {
-    if (!isPro && scanCount >= 3) {
+    if ((!isSignedIn && scanCount >= 3) || (isSignedIn && !isPro && scanCount >= 3)) {
       setShowLimitModal(true);
       return;
     }
     if (!jdReady || !resumeReady) {
-      showToast("Load all parameters before synthesis.", "error");
+      showToast("Both Job Description and Resume are required.", "error");
       return;
     }
     
     setLoading(true);
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
     try {
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      const prompt = `Act as an expert technical recruiter. Analyze JD: ${jdText} and Resume: ${resumeText}. Extract the candidate name, assign a match score from 0-100, provide a detailed summary, identify 3 core strengths, 3 execution gaps, 5 deep-dive interview questions, and a high-converting outreach email. 
-      Return ONLY valid JSON in this format: 
-      {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
+      const prompt = `Analyze JD: ${jdText} and Resume: ${resumeText}. Extract candidate name, score 0-100, summary, 3 strengths, 3 gaps, 5 deep-dive interview questions, and a short outreach email. Return ONLY JSON: {"candidate_name": "Name", "score": 0, "summary": "...", "strengths": [], "gaps": [], "questions": [], "outreach_email": "..."}`;
       
       const response = await fetch(url, { 
         method: "POST", 
@@ -217,300 +121,199 @@ export default function MainBoard() {
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Intelligence Stream Captured!");
+      showToast("Intelligence Generated!");
     } catch (err) {
-      showToast("API Sync Error. Verify Credentials.", "error");
+      showToast("AI Engine Error.", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isLoaded) return (
-    <div className="min-h-screen bg-[#0B1120] flex items-center justify-center flex-col gap-4">
-      <Loader2 className="w-12 h-12 animate-spin text-indigo-500" />
-      <p className="text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px]">Booting IQ Engine</p>
-    </div>
-  );
+  if (!isLoaded) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-500" /></div>;
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#0B1120] min-h-screen pt-20">
       
-      {/* --- TOAST NOTIFICATIONS --- */}
+      {/* TOAST NOTIFICATION */}
       {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[500] px-8 py-4 rounded-full shadow-2xl border backdrop-blur-md animate-in slide-in-from-top duration-500 ${toast.type === 'error' ? 'bg-rose-500/80 border-rose-400' : 'bg-indigo-600/80 border-indigo-400'}`}>
-          <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
-            <Zap className="w-3 h-3 fill-white" /> {toast.message}
-          </p>
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl border animate-in slide-in-from-top duration-300 ${toast.type === 'error' ? 'bg-rose-500/90 border-rose-400' : 'bg-indigo-600/90 border-indigo-400'}`}>
+          <p className="text-xs font-bold uppercase tracking-widest">{toast.message}</p>
         </div>
       )}
 
-      {/* --- SITE HEADER --- */}
-      <div className="flex justify-between items-center mb-12 border-b border-slate-800/50 pb-8">
-        <div className="flex items-center gap-5">
-            <div className="h-12 w-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <BrainCircuit className="w-7 h-7 text-white" />
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-8 border-b border-slate-800/50 pb-6">
+        <div className="flex items-center gap-4">
+            <div className="bg-indigo-600 p-2 rounded-lg">
+                <Zap className="w-6 h-6 fill-white" />
             </div>
             <div className="hidden md:block">
-                <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">Recruit-IQ</h1>
-                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em] mt-1">Skilled Trades Division</p>
+                <h1 className="text-2xl font-black uppercase tracking-tighter">Recruit-IQ</h1>
+                <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-1">Elite Candidate Screening</p>
             </div>
         </div>
-        <div className="flex items-center gap-6">
-            <div className={`px-5 py-2.5 rounded-full text-[10px] font-black border flex items-center gap-3 transition-all ${isPro ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5' : 'border-indigo-500 text-indigo-400 bg-indigo-500/5'}`}>
-                {isPro ? <Shield className="w-3 h-3 fill-current" /> : <Target className="w-3 h-3" />}
-                {isPro ? "ELITE ACCESS" : `TRIAL SCANS: ${3 - scanCount} LEFT`}
+        <div className="flex items-center gap-4">
+            <div className={`px-4 py-2 rounded-full text-[10px] font-bold border flex items-center gap-2 ${isPro ? 'border-emerald-500 text-emerald-400' : 'border-indigo-500 text-indigo-400'}`}>
+                {isPro && <Zap className="w-3 h-3 fill-current" />}
+                {isPro ? "ELITE ACTIVE" : `FREE TRIAL: ${Math.max(0, 3 - scanCount)} LEFT`}
             </div>
             {!isSignedIn ? (
                 <SignInButton mode="modal">
-                    <button className="bg-white text-black hover:bg-indigo-50 px-7 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl">
-                        Agent Login
+                    <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">
+                        Log In
                     </button>
                 </SignInButton>
             ) : <UserButton afterSignOutUrl="/"/>}
         </div>
       </div>
 
-      {/* --- PHASE WIZARD --- */}
+      {/* QUICK START WIZARD */}
       <div className="grid md:grid-cols-3 gap-6">
-          <div onClick={() => setActiveTab('jd')} className={`group p-8 rounded-[2rem] border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/10 border-indigo-500/50' : 'bg-slate-900/40 border-slate-800'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black border ${jdReady ? 'bg-indigo-600 border-indigo-400' : 'bg-slate-800 border-slate-700'}`}>01</div>
-                {jdReady && <Check className="w-5 h-5 text-emerald-500" />}
+          <div onClick={() => setActiveTab('jd')} className={`p-6 rounded-3xl border cursor-pointer transition-all hover:scale-[1.02] ${jdReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
+                {jdReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Ready</span>}
               </div>
-              <h4 className="uppercase text-[10px] font-black tracking-[0.2em] mb-2 text-slate-300">Phase One</h4>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Ingest Requirements</p>
+              <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Requirements</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Paste the Job Description.</p>
           </div>
-          <div onClick={() => setActiveTab('resume')} className={`group p-8 rounded-[2rem] border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/10 border-indigo-500/50' : 'bg-slate-900/40 border-slate-800'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black border ${resumeReady ? 'bg-indigo-600 border-indigo-400' : 'bg-slate-800 border-slate-700'}`}>02</div>
-                {resumeReady && <Check className="w-5 h-5 text-emerald-500" />}
+          <div onClick={() => setActiveTab('resume')} className={`p-6 rounded-3xl border cursor-pointer transition-all hover:scale-[1.02] ${resumeReady ? 'bg-indigo-900/20 border-emerald-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">2</span>
+                {resumeReady && <span className="text-emerald-400 font-bold text-[9px] uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded-md">Ready</span>}
               </div>
-              <h4 className="uppercase text-[10px] font-black tracking-[0.2em] mb-2 text-slate-300">Phase Two</h4>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter">Candidate Blueprint</p>
+              <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Candidate Data</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Upload or paste resume.</p>
           </div>
-          <div className={`p-8 rounded-[2rem] border transition-all ${analysis ? 'bg-indigo-900/10 border-indigo-500/50' : 'bg-slate-900/40 border-slate-800 opacity-50'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black border ${analysis ? 'bg-indigo-600 border-indigo-400' : 'bg-slate-800 border-slate-700'}`}>03</div>
-                {analysis && <Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" />}
+          <div className={`p-6 rounded-3xl border transition-all ${analysis ? 'bg-indigo-900/20 border-indigo-500' : 'bg-slate-800/30 border-slate-700'}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black">3</span>
               </div>
-              <h4 className="uppercase text-[10px] font-black tracking-[0.2em] mb-2 text-slate-300">Phase Three</h4>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-tighter">AI Synthesis</p>
+              <h4 className="uppercase text-[10px] font-black tracking-widest mb-1">Intelligence</h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed">Generate AI screening report.</p>
           </div>
       </div>
 
-      {/* --- MAIN WORKSPACE --- */}
-      <div className="grid lg:grid-cols-2 gap-10">
-        
-        {/* INPUT HUB */}
-        <div className="bg-[#111827] p-8 md:p-10 rounded-[3rem] border border-slate-800 flex flex-col h-[850px] shadow-2xl relative">
-            <div className="flex gap-4 mb-8">
-                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-2xl shadow-indigo-900/50' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:text-white'}`}>
-                  <FileText className="w-4 h-4" /> Requirements
+      {/* WORKSPACE */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        <div className="bg-[#111827] p-6 md:p-8 rounded-[2.5rem] border border-slate-800 flex flex-col h-[700px] shadow-2xl">
+            <div className="flex gap-3 mb-6">
+                <button onClick={() => setActiveTab('jd')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                  <FileText className="w-3 h-3" /> 1. Job Description
                 </button>
-                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white shadow-2xl shadow-indigo-900/50' : 'bg-slate-800/50 border-slate-700 text-slate-500 hover:text-white'}`}>
-                  <User className="w-4 h-4" /> Candidate
+                <button onClick={() => setActiveTab('resume')} className={`flex-1 py-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-500 text-white shadow-xl shadow-indigo-900/40' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+                  <User className="w-3 h-3" /> 2. Resume
                 </button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <label className="text-center cursor-pointer bg-slate-800/30 py-4 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-800 transition-all border border-dashed border-slate-700">
-                Upload .Docx
+            <div className="flex gap-3 mb-4">
+              <label className="flex-1 text-center cursor-pointer bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 hover:text-white border border-slate-700 transition-all">
+                Upload Docx
                 <input type="file" accept=".docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Mock data injected.", "info");}} className="bg-slate-800/30 py-4 rounded-2xl text-[10px] font-black uppercase text-slate-400 border border-dashed border-slate-700 hover:bg-slate-800 transition-all">Mock Samples</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Samples loaded!");}} className="flex-1 bg-slate-800/50 py-3 rounded-xl text-[10px] font-bold uppercase text-slate-400 border border-slate-700 hover:text-white">Load Samples</button>
             </div>
 
             <textarea 
-              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-[2rem] text-xs font-mono leading-loose focus:border-indigo-500/50 transition-all"
+              className="flex-1 bg-[#0B1120] resize-none outline-none text-slate-300 p-6 border border-slate-800 rounded-2xl text-xs font-mono leading-relaxed focus:border-indigo-500 transition-colors"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder={activeTab === 'jd' ? "Awaiting Job Parameters..." : "Awaiting Candidate Blueprint..."}
+              placeholder={activeTab === 'jd' ? "Paste JD here..." : "Paste Resume here..."}
             />
             
             <button 
               onClick={handleScreen} 
               disabled={loading} 
-              className="mt-8 py-6 rounded-[2rem] font-black uppercase text-xs bg-gradient-to-r from-indigo-600 to-purple-600 shadow-2xl shadow-indigo-900/40 flex items-center justify-center gap-4 hover:scale-[1.01] transition-all disabled:opacity-50"
+              className="mt-6 py-5 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-2xl flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white" />}
-              {loading ? "Synthesizing..." : "Engage AI Intelligence Engine"}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-white" />}
+              {loading ? "Crunching Data..." : "Execute Elite AI Screen →"}
             </button>
         </div>
 
-        {/* OUTPUT HUB */}
-        <div className="h-[850px] overflow-y-auto space-y-8 pr-4 custom-scrollbar pb-20">
+        {/* RESULTS */}
+        <div className="h-[700px] overflow-y-auto space-y-6 pr-2">
             {analysis ? (
-              <div className="space-y-8 animate-in fade-in slide-in-from-right-10 duration-700">
-                
-                {/* HERO MATCH CARD */}
-                <div className="bg-[#111827] border border-slate-800 p-12 rounded-[3.5rem] text-center shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500"></div>
-                  <div className="w-32 h-32 mx-auto rounded-[2.5rem] bg-indigo-600 flex items-center justify-center text-5xl font-black mb-6 shadow-2xl shadow-indigo-900/60 rotate-3 group-hover:rotate-0 transition-transform">
-                    {analysis.score}%
-                  </div>
-                  <h3 className="uppercase text-[10px] font-black tracking-[0.4em] text-slate-500 mb-2">Algorithm Rating</h3>
-                  <div className="text-white font-black text-2xl mb-8 tracking-tighter uppercase">{analysis.candidate_name}</div>
-                  
-                  <button onClick={downloadPDF} className="bg-slate-800 hover:bg-slate-700 text-indigo-400 px-8 py-4 rounded-2xl text-[10px] font-black uppercase border border-slate-700 transition-all flex items-center gap-3 mx-auto shadow-xl">
-                    <Download className="w-4 h-4" /> Export Intelligence PDF
-                  </button>
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-[2.5rem] text-center shadow-2xl relative overflow-hidden">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-4xl font-black mb-4 shadow-xl shadow-indigo-900/40">{analysis.score}%</div>
+                  <div className="text-white font-bold text-xl mb-6">{analysis.candidate_name}</div>
+                  <p className="text-xs text-slate-400 leading-relaxed mb-6">{analysis.summary}</p>
                 </div>
 
-                {/* SWOT GRID */}
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-8 rounded-[2.5rem] text-[11px]">
-                    <h4 className="text-emerald-400 font-black uppercase mb-6 text-[10px] tracking-widest flex items-center gap-3">
-                        <Check className="w-4 h-4" /> Core Strengths
-                    </h4>
-                    <div className="space-y-4">
-                        {analysis.strengths.map((s: string, i: number) => (
-                          <div key={i} className="flex gap-3 text-slate-200 leading-relaxed font-medium">
-                            <span className="text-emerald-500 font-black">•</span> {s}
-                          </div>
-                        ))}
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl text-[11px]">
+                    <h4 className="text-emerald-400 font-bold uppercase mb-4 text-[9px] flex items-center gap-2"><Check className="w-3 h-3" /> Strengths</h4>
+                    {analysis.strengths.map((s: any, i: number) => <p key={i} className="mb-2">• {s}</p>)}
                   </div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-8 rounded-[2.5rem] text-[11px]">
-                    <h4 className="text-rose-400 font-black uppercase mb-6 text-[10px] tracking-widest flex items-center gap-3">
-                        <Shield className="w-4 h-4" /> Execution Gaps
-                    </h4>
-                    <div className="space-y-4">
-                        {analysis.gaps.map((g: string, i: number) => (
-                          <div key={i} className="flex gap-3 text-slate-200 leading-relaxed font-medium">
-                            <span className="text-rose-500 font-black">•</span> {g}
-                          </div>
-                        ))}
-                    </div>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl text-[11px]">
+                    <h4 className="text-rose-400 font-bold uppercase mb-4 text-[9px] flex items-center gap-2"><Shield className="w-3 h-3" /> Gaps</h4>
+                    {analysis.gaps.map((g: any, i: number) => <p key={i} className="mb-2">• {g}</p>)}
                   </div>
                 </div>
 
-                {/* INTERVIEW BLUEPRINT */}
-                <div className="bg-[#111827] border border-slate-800 p-10 rounded-[2.5rem]">
-                  <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-8 tracking-[0.3em] flex items-center gap-3">
-                    <HelpCircle className="w-4 h-4" /> Strategic Interview Guide
-                  </h4>
-                  <div className="space-y-4">
-                    {analysis.questions.map((q: string, i: number) => (
-                        <div key={i} className="p-6 bg-slate-800/30 rounded-2xl border border-slate-700/50 text-[11px] leading-relaxed text-slate-300 font-medium italic">
-                            "{q}"
-                        </div>
-                    ))}
-                  </div>
+                <div className="bg-[#111827] border border-slate-800 p-8 rounded-3xl">
+                  <h4 className="text-indigo-400 font-bold uppercase text-[9px] mb-6 flex items-center gap-2"><HelpCircle className="w-3 h-3" /> Interview Guide</h4>
+                  {analysis.questions.map((q: any, i: number) => (
+                    <div key={i} className="p-4 bg-slate-800/40 rounded-2xl border border-slate-700/50 text-[11px] mb-3">"{q}"</div>
+                  ))}
                 </div>
-
-                {/* AI EMAIL GENERATOR */}
-                <div className="bg-[#111827] border border-slate-800 p-10 rounded-[2.5rem] text-center">
-                    <h4 className="text-blue-400 font-black uppercase text-[10px] mb-6 tracking-[0.3em] flex items-center justify-center gap-3">
-                      <Mail className="w-4 h-4" /> Outreach Blueprint
-                    </h4>
-                    <div className="bg-slate-900/80 rounded-3xl p-8 mb-8 text-left border border-slate-800 shadow-inner">
-                        <p className="text-[12px] text-slate-300 whitespace-pre-wrap leading-loose font-mono">{analysis.outreach_email}</p>
-                    </div>
-                    <button 
-                      onClick={() => {navigator.clipboard.writeText(analysis.outreach_email); showToast("Blueprint Copied!");}} 
-                      className="w-full py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
-                    >
-                      <Copy className="w-4 h-4" /> Copy Agent Script
-                    </button>
-                </div>
-
               </div>
             ) : (
-              <div className="h-full border-4 border-dashed border-slate-800/50 rounded-[4rem] flex flex-col items-center justify-center text-slate-700 font-black text-[10px] uppercase tracking-[0.5em] gap-8 text-center p-16">
-                <div className="w-24 h-24 rounded-full bg-slate-800/10 flex items-center justify-center animate-pulse">
-                    <Zap className="w-10 h-10 opacity-20" />
-                </div>
-                <div>
-                    <p className="mb-2">Awaiting Intelligence Stream</p>
-                    <p className="text-[8px] opacity-40 normal-case tracking-widest uppercase">Connect JD & Resume to execute analysis</p>
-                </div>
+              <div className="h-full border-2 border-dashed border-slate-800 rounded-[3rem] flex flex-col items-center justify-center text-slate-600 font-black text-[10px] uppercase tracking-widest gap-6">
+                <Zap className="w-8 h-8 opacity-20" />
+                <p>Waiting for Intelligence</p>
               </div>
             )}
         </div>
       </div>
 
-      {/* --- ELITE UPGRADE OVERLAY --- */}
-      {showLimitModal && !isPro && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 backdrop-blur-2xl bg-slate-950/95 animate-in fade-in duration-500">
-          <div className="relative w-full max-w-4xl">
-            <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-[4rem] blur-3xl opacity-30 animate-pulse"></div>
-            <div className="relative bg-[#0F172A] border border-slate-700/50 rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
-              <div className="p-12 md:w-3/5 flex flex-col justify-center">
-                 <div className="h-10 w-10 bg-indigo-600 rounded-xl mb-10 flex items-center justify-center font-black">IQ</div>
-                 <h2 className="text-5xl font-black text-white mb-6 leading-[0.9] tracking-tighter italic">UNLOCK THE <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">EDGE.</span></h2>
-                 <p className="text-slate-400 text-sm mb-10 leading-relaxed font-bold uppercase tracking-wide">Unlimited enterprise scans, deep SWOT analysis, and strategic scripts.</p>
+      {/* SALES MODAL */}
+      {showLimitModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
+          <div className="relative w-full max-w-4xl bg-[#0F172A] border border-slate-700/50 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+              <div className="p-10 md:w-3/5">
+                 <h2 className="text-5xl font-black text-white mb-4 leading-none tracking-tighter">Hire Your Next Star <br/> <span className="text-indigo-400">In Seconds.</span></h2>
+                 <p className="text-slate-400 text-sm mb-8 leading-relaxed">Unlock unlimited resume screening and AI email outreach generator.</p>
                  
                  {!isSignedIn ? (
-                   <SignInButton mode="modal">
-                     <button 
-                       onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
-                       className="block w-full py-6 bg-white text-black font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-indigo-50 transition-all text-xs shadow-2xl"
-                     >
-                       Sign In to Upgrade
-                     </button>
-                   </SignInButton>
+                    <SignUpButton mode="modal" forceRedirectUrl={STRIPE_URL}>
+                        <button onClick={() => sessionStorage.setItem('trigger_stripe', 'true')} className="block w-full py-5 bg-indigo-600 text-white font-black rounded-2xl uppercase text-xs shadow-2xl">Start 3-Day Free Trial</button>
+                    </SignUpButton>
                  ) : (
-                   <a 
-                     href={finalStripeUrl} 
-                     className="block w-full py-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-center text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:scale-[1.02] transition-all text-xs shadow-2xl shadow-blue-500/20"
-                   >
-                     Initialize Elite Access
-                   </a>
+                    <a href={finalStripeUrl} className="block w-full py-5 bg-indigo-600 text-center text-white font-black rounded-2xl uppercase text-xs shadow-2xl">Start 3-Day Free Trial</a>
                  )}
 
-                 <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-600 mt-8 hover:text-white underline decoration-slate-800 w-full uppercase font-black tracking-widest">Return to Base</button>
+                 <button onClick={() => setShowLimitModal(false)} className="text-center text-[10px] text-slate-500 mt-6 hover:text-white underline w-full uppercase font-bold">No thanks, I'll screen manually</button>
               </div>
-              
-              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-16 text-center">
-                 <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mb-10 border border-indigo-500/30 shadow-[0_0_60px_rgba(79,70,229,0.3)]">
-                    <Shield className="w-10 h-10 text-indigo-400 fill-indigo-400" />
-                 </div>
-                 <ul className="text-[10px] text-slate-400 space-y-5 font-black uppercase tracking-[0.2em]">
-                    <li className="flex items-center gap-3">✓ Unlimited Scans</li>
-                    <li className="flex items-center gap-3 text-indigo-400">✓ SWOT Metrics</li>
-                    <li className="flex items-center gap-3">✓ Strategic Guides</li>
-                    <li className="flex items-center gap-3 text-indigo-400">✓ Agent Scripts</li>
-                 </ul>
+              <div className="hidden md:flex md:w-2/5 bg-slate-900/50 border-l border-slate-800 flex-col items-center justify-center p-12 text-center text-xs text-slate-400 space-y-4">
+                 <Zap className="w-10 h-10 text-indigo-400 mb-4" />
+                 <p>✓ Unlimited Scans</p>
+                 <p>✓ Elite Candidate Reports</p>
+                 <p>✓ Priority Support</p>
               </div>
-            </div>
           </div>
         </div>
       )}
 
-      {/* --- SUPPORT HUB --- */}
+      {/* SUPPORT MODAL */}
       {showSupportModal && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4 backdrop-blur-2xl bg-slate-950/90">
-          <div className="bg-[#0F172A] border border-slate-700 p-12 rounded-[3.5rem] max-w-lg w-full shadow-2xl text-center">
-            <h2 className="text-3xl font-black mb-8 uppercase tracking-tighter">Support Hub</h2>
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-950/90">
+          <div className="bg-[#0F172A] border border-slate-700 p-10 rounded-[2.5rem] max-w-lg w-full text-center">
+            <h2 className="text-2xl font-black mb-6 uppercase tracking-tighter">Support</h2>
             <textarea 
-              className="w-full h-48 bg-[#0B1120] border border-slate-800 rounded-[2rem] p-8 text-[12px] text-white outline-none resize-none mb-8 focus:border-indigo-500 transition-colors" 
-              placeholder="What is your mission objective?" 
+              className="w-full h-40 bg-[#0B1120] border border-slate-800 rounded-2xl p-6 text-[12px] text-white outline-none mb-6" 
+              placeholder="How can we help?" 
               value={supportMessage} 
               onChange={(e) => setSupportMessage(e.target.value)} 
             />
             <div className="flex gap-4">
-              <button 
-                onClick={() => {showToast("Signal Transmitted."); setShowSupportModal(false);}} 
-                className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all"
-              >
-                Transmit
-              </button>
-              <button onClick={() => setShowSupportModal(false)} className="px-10 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Abort</button>
+              <button onClick={handleSupportSubmit} className="flex-1 py-4 bg-indigo-600 rounded-xl font-black uppercase text-[10px]">Send</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-8 py-4 bg-slate-800 rounded-xl font-black uppercase text-[10px]">Cancel</button>
             </div>
           </div>
         </div>
       )}
-
-      {/* --- GLOBAL FOOTER --- */}
-      <footer className="mt-20 border-t border-slate-800/50 pt-10 pb-20 text-center">
-        <div className="flex justify-center gap-10 text-[10px] uppercase font-black tracking-widest text-slate-600">
-          <button onClick={() => setShowSupportModal(true)} className="hover:text-indigo-400 transition-colors">Direct Support</button>
-          <span className="text-slate-800">|</span>
-          <span className="text-slate-500">Recruit-IQ Elite v2.0</span>
-          <span className="text-slate-800">|</span>
-          <span className="text-slate-500">&copy; 2026 Core Creativity</span>
-        </div>
-      </footer>
     </div>
   );
 }
