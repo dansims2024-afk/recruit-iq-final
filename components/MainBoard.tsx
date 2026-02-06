@@ -366,7 +366,7 @@ export default function MainBoard() {
             <div>
                 <h1 className="text-4xl font-black uppercase tracking-tighter leading-none bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent">Recruit-IQ</h1>
                 <div className="flex items-center gap-3 mt-3">
-                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.3em]">Talent Intelligence</span>
+                  <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.3em]">By Core Creativity AI</span>
                   <div className="h-1 w-1 rounded-full bg-slate-700"></div>
                   <span className="text-[10px] text-slate-500 font-medium">v2.0 Elite</span>
                 </div>
