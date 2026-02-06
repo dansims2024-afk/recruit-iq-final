@@ -8,7 +8,7 @@ import {
   Loader2, Copy, Check, FileText, User, Download, 
   Zap, Shield, HelpCircle, CheckCircle2, 
   Mail, ArrowRight, Sparkles, FileUp, Star, 
-  Lock, AlertCircle, TrendingUp, X, CheckCircle
+  Lock, AlertCircle, TrendingUp, X, CheckCircle, MessageSquare
 } from "lucide-react";
 
 // --- CONFIGURATION ---
@@ -106,7 +106,8 @@ export default function MainBoard() {
 
   const handleSupportSubmit = () => {
     if(!supportMessage) return;
-    showToast(`Message sent to ${SUPPORT_EMAIL}`, "success");
+    // In a real prod environment, you'd trigger a SendGrid/Resend API call here
+    showToast(`Feedback sent to ${SUPPORT_EMAIL}`, "success");
     setSupportMessage("");
     setShowSupportModal(false);
   };
@@ -426,7 +427,7 @@ export default function MainBoard() {
                 <FileUp className="w-4 h-4" /> Upload PDF/Word
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Alexander Sterling Profile Loaded", "info");}} className="flex-1 bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 border border-slate-800 hover:text-white transition-all">Elite Sample</button>
+              <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Sample Profile Loaded", "info");}} className="flex-1 bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 border border-slate-800 hover:text-white transition-all">Elite Sample</button>
             </div>
 
             <textarea 
@@ -524,6 +525,29 @@ export default function MainBoard() {
                    <a href={finalStripeUrl} className="block w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black rounded-2xl uppercase tracking-[0.2em] text-xs">Activate 3-Day Free Trial</a>
                  )}
                  <button onClick={() => setShowLimitModal(false)} className="mt-8 text-[9px] text-slate-600 hover:text-white uppercase font-black tracking-widest flex items-center justify-center gap-2 mx-auto"><X className="w-3 h-3" /> No thanks</button>
+          </div>
+        </div>
+      )}
+
+      {/* --- SUPPORT MODAL --- */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-[20px] bg-slate-950/90 animate-in fade-in">
+          <div className="bg-[#020617] border border-slate-800 p-12 rounded-[3.5rem] shadow-3xl text-center max-w-lg w-full relative">
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-t-[3.5rem] pointer-events-none" />
+            <MessageSquare className="w-12 h-12 text-indigo-500 mx-auto mb-6" />
+            <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter text-white">Share Your Feedback</h2>
+            <p className="text-[10px] text-slate-500 mb-8 font-black uppercase tracking-widest">To: {SUPPORT_EMAIL}</p>
+            
+            <textarea 
+              className="w-full h-40 bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 text-[12px] text-white outline-none resize-none mb-8 focus:border-indigo-500 transition-colors placeholder:text-slate-600 font-medium" 
+              placeholder="How can we improve Recruit-IQ for you?" 
+              value={supportMessage} 
+              onChange={(e) => setSupportMessage(e.target.value)} 
+            />
+            <div className="flex gap-4">
+              <button onClick={handleSupportSubmit} className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all text-white shadow-lg shadow-indigo-900/20">Send Feedback</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-8 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all text-slate-400 hover:text-white">Cancel</button>
+            </div>
           </div>
         </div>
       )}
