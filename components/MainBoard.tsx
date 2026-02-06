@@ -6,13 +6,14 @@ import { useUser, useClerk, SignInButton, UserButton, SignUpButton } from "@cler
 import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, Check, FileText, User, Download, 
-  Zap, Shield, HelpCircle, CheckCircle2, Trash2, 
+  Zap, Shield, HelpCircle, CheckCircle2, 
   Mail, ArrowRight, Sparkles, FileUp, Star, 
-  ExternalLink, Lock, AlertCircle, TrendingUp
+  Lock, AlertCircle, TrendingUp, X
 } from "lucide-react";
 
 // --- CONFIGURATION ---
 const STRIPE_URL = "https://buy.stripe.com/bJe5kCfwWdYK0sbbmZcs803";
+const SUPPORT_EMAIL = "hello@corecreativityai.com";
 
 const SAMPLE_JD = `JOB TITLE: Lead Innovation Manager
 SALARY: $185,000 - $210,000 + Equity
@@ -57,6 +58,8 @@ export default function MainBoard() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -65,15 +68,58 @@ export default function MainBoard() {
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
+  
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const finalStripeUrl = userEmail 
+    ? `${STRIPE_URL}?prefilled_email=${encodeURIComponent(userEmail)}` 
+    : STRIPE_URL;
 
+  // --- INITIALIZATION & SYNC ---
   useEffect(() => {
     const savedCount = parseInt(localStorage.getItem('recruit_iq_scans') || '0');
     setScanCount(savedCount);
   }, []);
 
+  // Sync Logic: Check for Elite upgrade on return
+  useEffect(() => {
+    const handleSync = async () => {
+      if (!isLoaded || !isSignedIn) return;
+
+      // Handle "Interrupted Upgrade" (User clicked upgrade while logged out)
+      if (sessionStorage.getItem('trigger_stripe') === 'true') {
+        sessionStorage.removeItem('trigger_stripe');
+        window.location.href = finalStripeUrl;
+        return;
+      }
+
+      // Poll for Elite status if they just paid
+      if (!isPro) {
+        await user?.reload();
+        if (user?.publicMetadata?.isPro === true) {
+          showToast("Elite Access Verified!", "success");
+        }
+      }
+    };
+    handleSync();
+  }, [isSignedIn, isLoaded, user, isPro, finalStripeUrl]);
+
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3500);
+  };
+
+  const handleSupportSubmit = () => {
+    if(!supportMessage) return;
+    showToast(`Message sent to ${SUPPORT_EMAIL}`, "success");
+    setSupportMessage("");
+    setShowSupportModal(false);
+  };
+
+  const handleCopyOutreach = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setIsCopied(true);
+    showToast("Email Copied to Clipboard!");
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const handleClear = () => {
@@ -83,14 +129,7 @@ export default function MainBoard() {
     showToast("Workspace Reset", "info");
   };
 
-  const handleCopyOutreach = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    showToast("Outreach Email Copied!");
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
-  // --- THE FIX: We use a variable for the URL to trick the Webpack compiler ---
+  // --- PARSING ENGINE (Vercel/Webpack Safe) ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -100,10 +139,10 @@ export default function MainBoard() {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
         activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
-        showToast(`${file.name} successfully parsed.`);
+        showToast("Word Document parsed!");
       } 
       else if (file.name.endsWith('.pdf')) {
-        // Hiding the URL in a string constant prevents Webpack from trying to process it during build
+        // Hiding the URL prevents Webpack build errors
         const PDF_LIB_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm";
         const WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
         
@@ -123,12 +162,12 @@ export default function MainBoard() {
           text += content.items.map((item) => item.str).join(" ") + " ";
         }
         activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-        showToast("Elite PDF Insight generated.");
+        showToast("PDF parsed successfully!");
       } 
       else {
         const text = await file.text();
         activeTab === 'jd' ? setJdText(text) : setResumeText(text);
-        showToast("Text data imported.");
+        showToast("Text file loaded!");
       }
     } catch (err) {
       console.error(err);
@@ -144,7 +183,7 @@ export default function MainBoard() {
       return;
     }
     if (!jdReady || !resumeReady) {
-      showToast("Data required for intelligence sweep.", "error");
+      showToast("Please provide both Job Description and Resume.", "error");
       return;
     }
 
@@ -153,9 +192,16 @@ export default function MainBoard() {
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       
-      const prompt = `Act as an Elite Executive Recruiter. Analyze this JD: ${jdText} vs Resume: ${resumeText}.
+      const prompt = `Act as an Elite Executive Recruiter. Analyze this Job Description: ${jdText} vs this Resume: ${resumeText}.
       Generate a deep JSON report including:
-      {"name": "", "score": 0, "summary": "", "strengths": [], "gaps": [], "questions": [], "outreach": ""}`;
+      1. Candidate Name
+      2. Score (0-100)
+      3. 1-sentence Executive Summary
+      4. 3 specific Strengths aligned to JD
+      5. 3 Critical Gaps/Risks
+      6. 5 Advanced Interview Questions
+      7. High-conversion Outreach Email
+      JSON FORMAT ONLY: {"name": "", "score": 0, "summary": "", "strengths": [], "gaps": [], "questions": [], "outreach": ""}`;
 
       const response = await fetch(url, { 
         method: "POST", 
@@ -176,7 +222,7 @@ export default function MainBoard() {
       }
       showToast("Intelligence Sweep Complete!");
     } catch (err) {
-      showToast("AI Engine Timeout.", "error");
+      showToast("AI Engine Timeout. Try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -185,11 +231,13 @@ export default function MainBoard() {
   const generateReport = () => {
     if (!analysis) return;
     const doc = new jsPDF();
-    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 297, 'F');
-    doc.setTextColor(99, 102, 241); doc.setFontSize(26); doc.text("RECRUIT-IQ ELITE", 20, 30);
+    doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 297, 'F'); // Dark Theme
+    doc.setTextColor(99, 102, 241); doc.setFontSize(26); doc.text("RECRUIT-IQ REPORT", 20, 30);
     doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.text(`CANDIDATE: ${analysis.name.toUpperCase()}`, 20, 50);
     doc.text(`SCORE: ${analysis.score}%`, 20, 60);
-    doc.save(`RecruitIQ_Report_${analysis.name}.pdf`);
+    doc.setFontSize(10); doc.setTextColor(200, 200, 200);
+    doc.text("Generated by Core Creativity AI", 20, 280);
+    doc.save(`RecruitIQ_${analysis.name}.pdf`);
   };
 
   if (!isLoaded) return <div className="min-h-screen bg-[#020617]" />;
@@ -241,16 +289,16 @@ export default function MainBoard() {
         </div>
       </header>
 
-      {/* --- WORKFLOW --- */}
+      {/* --- QUICK START WORKFLOW --- */}
       <div className="grid md:grid-cols-3 gap-8">
           {[
-            { step: 1, title: "Benchmark", desc: "Define ideal requirements via PDF, Word, or text.", ready: jdReady, color: "indigo" },
-            { step: 2, title: "Data Stream", desc: "Import candidate experience for analysis.", ready: resumeReady, color: "blue" },
-            { step: 3, title: "Intelligence", desc: "Execute screen to uncover risks and gaps.", ready: !!analysis, color: "purple" }
+            { step: 1, title: "Job Description", desc: "Paste the full JD text or upload a PDF/Word file to set the benchmark.", ready: jdReady, color: "indigo" },
+            { step: 2, title: "Resume", desc: "Upload the candidate's PDF/Word resume or paste their data here.", ready: resumeReady, color: "blue" },
+            { step: 3, title: "Intelligence", desc: "Execute the screen to generate your Elite Assessment Report.", ready: !!analysis, color: "purple" }
           ].map((item, idx) => (
             <div key={idx} className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group ${item.ready ? 'bg-indigo-500/5 border-indigo-500/40 shadow-2xl shadow-indigo-900/10' : 'bg-slate-900/20 border-slate-800 hover:border-slate-700'}`}>
                 {item.ready && <div className="absolute top-0 right-0 p-4"><CheckCircle2 className="w-5 h-5 text-emerald-500 animate-in zoom-in" /></div>}
-                <div className={`bg-indigo-600 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black mb-6 shadow-lg shadow-indigo-900/40 group-hover:scale-110 transition-transform`}>{item.step}</div>
+                <div className={`bg-${item.color}-600 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black mb-6 shadow-lg shadow-${item.color}-900/40 group-hover:scale-110 transition-transform`}>{item.step}</div>
                 <h4 className="text-sm font-black uppercase mb-3 tracking-tight group-hover:text-indigo-400 transition-colors">{item.title}</h4>
                 <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{item.desc}</p>
             </div>
@@ -259,19 +307,21 @@ export default function MainBoard() {
 
       {/* --- CONTROL CENTER --- */}
       <div className="grid lg:grid-cols-2 gap-12">
+        
+        {/* INPUT PANEL */}
         <div className="bg-slate-900/40 p-8 md:p-12 rounded-[3.5rem] border border-slate-800 shadow-3xl flex flex-col h-[800px] relative">
             <div className="flex gap-4 mb-10">
                 <button onClick={() => setActiveTab('jd')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all duration-300 ${activeTab === 'jd' ? 'bg-indigo-600 border-indigo-400 shadow-2xl shadow-indigo-900/60' : 'bg-slate-800/40 border-slate-700 text-slate-500 hover:bg-slate-800'}`}>
-                  <FileText className="w-4 h-4" /> Requirements {jdReady && <Check className="w-4 h-4 text-emerald-400" />}
+                  <FileText className="w-4 h-4" /> Job Description {jdReady && <Check className="w-4 h-4 text-emerald-400" />}
                 </button>
                 <button onClick={() => setActiveTab('resume')} className={`flex-1 py-5 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 border transition-all duration-300 ${activeTab === 'resume' ? 'bg-indigo-600 border-indigo-400 shadow-2xl shadow-indigo-900/60' : 'bg-slate-800/40 border-slate-700 text-slate-500 hover:bg-slate-800'}`}>
-                  <User className="w-4 h-4" /> Candidate {resumeReady && <Check className="w-4 h-4 text-emerald-400" />}
+                  <User className="w-4 h-4" /> Resume {resumeReady && <Check className="w-4 h-4 text-emerald-400" />}
                 </button>
             </div>
             
             <div className="flex gap-4 mb-6">
               <label className="flex-1 flex items-center justify-center gap-3 cursor-pointer bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:text-white border border-slate-800 hover:border-indigo-500/50 transition-all">
-                <FileUp className="w-4 h-4" /> Import Source
+                <FileUp className="w-4 h-4" /> Upload PDF/Word
                 <input type="file" accept=".pdf,.docx" onChange={handleFileUpload} className="hidden" />
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Alexander Sterling Profile Loaded", "info");}} className="flex-1 bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 border border-slate-800 hover:text-white transition-all">Elite Sample</button>
@@ -281,14 +331,18 @@ export default function MainBoard() {
               className="flex-1 bg-[#020617]/60 resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-[2.5rem] text-[13px] font-mono leading-[1.8] focus:border-indigo-500/50 transition-all custom-scrollbar shadow-inner placeholder:text-slate-700"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder={`Upload or paste ${activeTab === 'jd' ? 'Job Description' : 'Candidate Resume'} text to initiate sweep...`}
+              placeholder={`Paste or upload your ${activeTab === 'jd' ? 'Job Description' : 'Candidate Resume'} text here to begin...`}
             />
             
             <div className="flex gap-5 mt-10">
               <button onClick={handleClear} className="p-5.5 rounded-2xl bg-slate-800/40 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all border border-slate-800 group">
                 <Trash2 className="w-6 h-6 text-slate-500 group-hover:text-rose-500" />
               </button>
-              <button onClick={handleScreen} disabled={loading} className="flex-1 py-5.5 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 disabled:opacity-40 shadow-2xl shadow-indigo-900/40 group active:scale-[0.98]">
+              <button 
+                onClick={handleScreen} 
+                disabled={loading} 
+                className="flex-1 py-5.5 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 disabled:opacity-40 shadow-2xl shadow-indigo-900/40 group active:scale-[0.98]"
+              >
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white group-hover:animate-pulse" />}
                 {loading ? "Sweeping Data..." : "Execute Intelligence Screen"}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -300,6 +354,7 @@ export default function MainBoard() {
         <div className="h-[800px] overflow-y-auto pr-4 custom-scrollbar space-y-10">
             {analysis ? (
               <div className="animate-in fade-in slide-in-from-right duration-1000 space-y-10 pb-24">
+                {/* Score Card */}
                 <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3.5rem] text-center shadow-3xl relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-80"></div>
                   <div className="relative inline-block mb-8">
@@ -307,29 +362,36 @@ export default function MainBoard() {
                     <div className="relative w-28 h-28 mx-auto rounded-full bg-slate-950 border-4 border-indigo-600/30 flex items-center justify-center text-4xl font-black shadow-2xl">{analysis.score}%</div>
                   </div>
                   <h3 className="text-white font-black text-3xl uppercase tracking-tighter mb-3">{analysis.name}</h3>
-                  <div className="flex justify-center gap-5 mt-10">
-                    <button onClick={generateReport} className="bg-slate-800/50 hover:bg-slate-800 px-10 py-4 rounded-2xl text-[10px] font-black uppercase border border-slate-700 flex items-center gap-3 transition-all">
-                      <Download className="w-4 h-4" /> Export
-                    </button>
-                    <button onClick={() => handleCopyOutreach(analysis.outreach)} className="bg-indigo-600/10 hover:bg-indigo-600 text-indigo-400 hover:text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase border border-indigo-500/30 flex items-center gap-3 transition-all">
-                      <Mail className="w-4 h-4" /> {isCopied ? "Copied" : "Outreach"}
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-10">Match Probability</p>
+                  
+                  <div className="flex justify-center">
+                    <button onClick={generateReport} className="bg-slate-800/50 hover:bg-slate-800 px-10 py-4 rounded-2xl text-[10px] font-black uppercase border border-slate-700 flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
+                      <Download className="w-4 h-4" /> Candidate Assessment Report
                     </button>
                   </div>
                 </div>
 
+                {/* Metrics Grid */}
                 <div className="grid grid-cols-2 gap-8">
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-10 rounded-[2.5rem]">
-                    <h4 className="text-emerald-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3"><TrendingUp className="w-4 h-4"/> Key Strengths</h4>
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-10 rounded-[2.5rem] transition-all hover:bg-emerald-500/[0.08]">
+                    <h4 className="text-emerald-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
+                      <TrendingUp className="w-4 h-4"/> Key Strengths
+                    </h4>
                     {analysis.strengths.map((s:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 leading-relaxed font-medium">• {s}</p>)}
                   </div>
-                  <div className="bg-rose-500/5 border border-rose-500/20 p-10 rounded-[2.5rem]">
-                    <h4 className="text-rose-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3"><Shield className="w-4 h-4"/> Critical Gaps</h4>
+                  <div className="bg-rose-500/5 border border-rose-500/20 p-10 rounded-[2.5rem] transition-all hover:bg-rose-500/[0.08]">
+                    <h4 className="text-rose-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
+                      <Shield className="w-4 h-4"/> Critical Gaps
+                    </h4>
                     {analysis.gaps.map((g:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 leading-relaxed font-medium">• {g}</p>)}
                   </div>
                 </div>
 
+                {/* Interview Section */}
                 <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem]">
-                  <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-8 tracking-[0.3em] flex items-center gap-3"><HelpCircle className="w-5 h-5 text-indigo-500"/> Interview Guide</h4>
+                  <h4 className="text-indigo-400 font-black uppercase text-[10px] mb-8 tracking-[0.3em] flex items-center gap-3">
+                    <HelpCircle className="w-5 h-5 text-indigo-500"/> Interview Guide
+                  </h4>
                   <div className="space-y-5">
                     {analysis.questions.map((q:any, i:number) => (
                       <div key={i} className="p-7 bg-slate-950/50 rounded-[1.5rem] text-xs text-slate-300 border border-slate-800/80 leading-relaxed italic group hover:border-indigo-500/30 transition-all">
@@ -338,34 +400,106 @@ export default function MainBoard() {
                     ))}
                   </div>
                 </div>
+
+                {/* Outreach Email (Moved to Bottom) */}
+                <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] text-center">
+                    <h4 className="text-blue-400 font-black uppercase text-[10px] mb-8 tracking-[0.3em] flex items-center justify-center gap-3">
+                      <Mail className="w-5 h-5 text-blue-500"/> Outreach Blueprint
+                    </h4>
+                    <div className="bg-slate-950/50 rounded-[2rem] p-8 mb-8 text-left border border-slate-800 shadow-inner">
+                        <p className="text-[12px] text-slate-300 whitespace-pre-wrap leading-loose font-mono">{analysis.outreach}</p>
+                    </div>
+                    <button onClick={() => handleCopyOutreach(analysis.outreach)} className="w-full py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3">
+                      <Copy className="w-4 h-4" /> {isCopied ? "Copied" : "Copy to Clipboard"}
+                    </button>
+                </div>
+
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[4.5rem] flex flex-col items-center justify-center text-slate-600 text-[11px] font-black uppercase tracking-[0.4em] gap-10 p-16 text-center group">
-                <div className="p-12 bg-slate-800/20 rounded-full animate-pulse border border-slate-800/50">
-                  <Zap className="w-20 h-20 opacity-5" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-1000"></div>
+                  <div className="relative p-12 bg-slate-800/20 rounded-full animate-pulse border border-slate-800/50 group-hover:border-indigo-500/20">
+                    <Zap className="w-20 h-20 opacity-5" />
+                  </div>
                 </div>
-                <p>Awaiting IQ Signal</p>
+                <div>
+                  <p className="mb-3">Awaiting IQ Signal</p>
+                  <p className="text-[9px] text-slate-700 normal-case tracking-normal font-bold">Initiate Step 1 and 2 to generate intelligence report</p>
+                </div>
               </div>
             )}
         </div>
       </div>
 
-      {/* --- UPGRADE MODAL --- */}
+      {/* --- SALES MODAL (IMPROVED) --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-[20px] bg-slate-950/90 animate-in fade-in duration-700">
-          <div className="relative bg-[#020617] border border-slate-800 p-16 rounded-[3.5rem] shadow-3xl text-center max-w-2xl w-full">
-                 <div className="w-24 h-24 bg-indigo-600/10 rounded-3xl flex items-center justify-center mx-auto mb-10 border border-indigo-500/20 rotate-3"><Zap className="w-12 h-12 text-indigo-400 fill-indigo-400" /></div>
-                 <h2 className="text-4xl font-black text-white mb-6 tracking-tighter">Elite Limit Reached</h2>
-                 <p className="text-slate-400 text-sm mb-12 leading-[1.8] font-medium px-8">Upgrade to **Recruit-IQ Elite** for unlimited document parsing, premium AI models, and custom recruitment reports.</p>
-                 <a href={STRIPE_URL} className="block w-full py-6 bg-indigo-600 text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all text-xs shadow-2xl hover:scale-[1.02] active:scale-[0.98]">Unlock Elite Access — $49/mo</a>
-                 <button onClick={() => setShowLimitModal(false)} className="mt-10 text-[10px] text-slate-600 hover:text-slate-400 uppercase font-black tracking-widest">Continue with Limited Access</button>
+          <div className="relative w-full max-w-2xl">
+            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 rounded-[3.5rem] blur-3xl opacity-20 animate-pulse"></div>
+            <div className="relative bg-[#020617] border border-slate-800 p-16 rounded-[3.5rem] shadow-3xl text-center">
+                 <img src="/logo.png" alt="IQ" className="w-16 h-16 mx-auto mb-8 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+                 
+                 <h2 className="text-4xl font-black text-white mb-6 tracking-tighter">Unlock Your Edge.</h2>
+                 <p className="text-slate-400 text-sm mb-8 leading-[1.8] font-medium px-4">
+                   Gain unlimited access to the world's most advanced recruiting intelligence engine.
+                 </p>
+
+                 <div className="flex justify-center gap-4 mb-10 text-[10px] font-bold uppercase tracking-widest text-indigo-400">
+                    <span className="bg-indigo-500/10 px-4 py-2 rounded-lg border border-indigo-500/20">3 Days Free</span>
+                    <span className="bg-purple-500/10 px-4 py-2 rounded-lg border border-purple-500/20">$29 / Month</span>
+                 </div>
+                 
+                 {!isSignedIn ? (
+                   <SignInButton mode="modal">
+                     <button 
+                       onClick={() => sessionStorage.setItem('trigger_stripe', 'true')}
+                       className="block w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all text-xs"
+                     >
+                       Sign In to Start Trial
+                     </button>
+                   </SignInButton>
+                 ) : (
+                   <a href={finalStripeUrl} className="block w-full py-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-black rounded-2xl uppercase tracking-[0.2em] hover:shadow-[0_0_30px_rgba(79,70,229,0.5)] transition-all text-xs">
+                      Activate 3-Day Free Trial
+                   </a>
+                 )}
+
+                 <button onClick={() => setShowLimitModal(false)} className="mt-8 text-[9px] text-slate-600 hover:text-white uppercase font-black tracking-widest transition-colors flex items-center justify-center gap-2 mx-auto">
+                    <X className="w-3 h-3" /> Close Offer
+                 </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SUPPORT MODAL --- */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-[20px] bg-slate-950/90 animate-in fade-in">
+          <div className="bg-[#020617] border border-slate-800 p-12 rounded-[3.5rem] shadow-3xl text-center max-w-lg w-full">
+            <h2 className="text-2xl font-black mb-8 uppercase tracking-tighter">Contact Support</h2>
+            <textarea 
+              className="w-full h-40 bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 text-[12px] text-white outline-none resize-none mb-8 focus:border-indigo-500 transition-colors" 
+              placeholder="How can we help?" 
+              value={supportMessage} 
+              onChange={(e) => setSupportMessage(e.target.value)} 
+            />
+            <div className="flex gap-4">
+              <button onClick={handleSupportSubmit} className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Send</button>
+              <button onClick={() => setShowSupportModal(false)} className="px-8 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* --- FOOTER --- */}
       <footer className="mt-32 border-t border-slate-800/40 pt-16 pb-24 text-center">
-        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700">&copy; {new Date().getFullYear()} Recruit-IQ Elite Talent Systems.</p>
+        <div className="flex justify-center gap-12 mb-8">
+          <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Privacy</a>
+          <a href="#" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Terms</a>
+          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Contact</button>
+        </div>
+        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700">&copy; 2026 Core Creativity AI</p>
       </footer>
     </div>
   );
