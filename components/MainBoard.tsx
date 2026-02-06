@@ -122,13 +122,6 @@ export default function MainBoard() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleClear = () => {
-    setJdText('');
-    setResumeText('');
-    setAnalysis(null);
-    showToast("Workspace Reset", "info");
-  };
-
   // --- PARSING ENGINE (Vercel/Webpack Safe) ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -331,17 +324,14 @@ export default function MainBoard() {
               className="flex-1 bg-[#020617]/60 resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-[2.5rem] text-[13px] font-mono leading-[1.8] focus:border-indigo-500/50 transition-all custom-scrollbar shadow-inner placeholder:text-slate-700"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
-              placeholder={`Paste or upload your ${activeTab === 'jd' ? 'Job Description' : 'Candidate Resume'} text here to begin...`}
+              placeholder={`Paste or upload your ${activeTab === 'jd' ? 'Job Description' : 'Resume'} text here to begin...`}
             />
             
-            <div className="flex gap-5 mt-10">
-              <button onClick={handleClear} className="p-5.5 rounded-2xl bg-slate-800/40 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all border border-slate-800 group">
-                <Trash2 className="w-6 h-6 text-slate-500 group-hover:text-rose-500" />
-              </button>
+            <div className="mt-10">
               <button 
                 onClick={handleScreen} 
                 disabled={loading} 
-                className="flex-1 py-5.5 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 disabled:opacity-40 shadow-2xl shadow-indigo-900/40 group active:scale-[0.98]"
+                className="w-full py-5.5 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 disabled:opacity-40 shadow-2xl shadow-indigo-900/40 group active:scale-[0.98]"
               >
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white group-hover:animate-pulse" />}
                 {loading ? "Sweeping Data..." : "Execute Intelligence Screen"}
