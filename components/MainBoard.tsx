@@ -106,7 +106,6 @@ export default function MainBoard() {
 
   const handleSupportSubmit = () => {
     if(!supportMessage) return;
-    // In a real prod environment, you'd trigger a SendGrid/Resend API call here
     showToast(`Feedback sent to ${SUPPORT_EMAIL}`, "success");
     setSupportMessage("");
     setShowSupportModal(false);
@@ -458,8 +457,12 @@ export default function MainBoard() {
                   <h3 className="text-white font-black text-3xl uppercase tracking-tighter mb-3">{analysis.name}</h3>
                   <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-10">Match Probability</p>
                   <div className="flex justify-center">
-                    <button onClick={generateReport} className="bg-slate-800/50 hover:bg-slate-800 px-10 py-4 rounded-2xl text-[10px] font-black uppercase border border-slate-700 flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
-                      <Download className="w-4 h-4" /> Candidate Summary/ Interview Questions
+                    <button 
+                      onClick={generateReport} 
+                      className="bg-indigo-600 hover:bg-indigo-500 px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-400/30 flex items-center gap-4 transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_rgba(79,70,229,0.3)]"
+                    >
+                      <Download className="w-4 h-4 animate-pulse" /> 
+                      Generate Boardroom Report
                     </button>
                   </div>
                 </div>
@@ -555,11 +558,11 @@ export default function MainBoard() {
       {/* --- FOOTER --- */}
       <footer className="mt-32 border-t border-slate-800/40 pt-16 pb-24 text-center">
         <div className="flex justify-center gap-12 mb-8">
-          <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400">Privacy Policy</a>
-          <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400">Terms of Service</a>
-          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400">Support</button>
+          <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Privacy Policy</a>
+          <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Terms of Service</a>
+          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Support</button>
         </div>
-        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700">&copy; 2026 Core Creativity AI</p>
+        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700 hover:text-slate-500 transition-colors cursor-default">&copy; 2026 Core Creativity AI</p>
       </footer>
     </div>
   );
