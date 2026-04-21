@@ -10,7 +10,9 @@
   },
   "overrides": {
     "@clerk/nextjs": {
-      "next": "$next"
+      "next": "$next",
+      "react": "$react",
+      "react-dom": "$react-dom"
     }
   },
   "dependencies": {
