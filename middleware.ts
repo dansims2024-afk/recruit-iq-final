@@ -1,24 +1,28 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// 1. We create a list of "Safe Routes" that don't require login/protection
+// 1. Define which routes are "Public" (anyone can see them)
+// We include the Stripe webhook so Stripe can talk to your app
 const isPublicRoute = createRouteMatcher([
-  '/',                    // The Home Page
-  '/api/generate',        // <-- CRITICAL FIX: Allow the AI API to receive data
-  '/api/webhook/stripe',  // Allow Stripe to talk to your app
-  '/sign-in(.*)',         // Login Page
-  '/sign-up(.*)'          // Signup Page
+  '/', 
+  '/api/webhook/stripe',
+  '/sign-in(.*)', 
+  '/sign-up(.*)'
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  // 2. If the request is NOT on the safe list, we block it
+  // 2. If the request is NOT on the safe list, we protect it
   if (!isPublicRoute(request)) {
-    await auth().protect();
+    // FIX: We await the auth() object before calling .protect()
+    const authObject = await auth();
+    authObject.protect();
   }
 });
 
 export const config = {
   matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 };
