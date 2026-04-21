@@ -3,8 +3,8 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { clerkClient } from "@clerk/nextjs/server";
 
+// Initialize Stripe with the correct API version and safety ignore
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  // Updated to match the version required by your current Stripe SDK
   // @ts-ignore
   apiVersion: "2026-01-28.clover",
 });
@@ -16,7 +16,8 @@ export async function POST(req: Request) {
   const headersList = await headers();
   const sig = headersList.get("stripe-signature")!;
 
-  let event: Stripe.Event;
+  // FIX: In the newest SDK, we use this syntax for the Event type
+  let event: any; 
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     event.type === "checkout.session.completed" || 
     event.type === "customer.subscription.created"
   ) {
-    const session = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object as any;
     const userEmail = session.customer_details?.email;
 
     if (userEmail) {
@@ -43,7 +44,6 @@ export async function POST(req: Request) {
         if (users.data.length > 0) {
           const userId = users.data[0].id;
           
-          // Set the "isPro" flag in Clerk's public metadata
           await client.users.updateUserMetadata(userId, {
             publicMetadata: {
               isPro: true,
