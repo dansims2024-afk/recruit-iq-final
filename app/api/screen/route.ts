@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as GoogleAI from "@google/generative-ai";
+import { GoogleGenAI } from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,13 +9,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required texts" }, { status: 400 });
     }
 
+    // Pulls securely from your server environment variables, totally hidden from the browser
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
-    // Safely instance the core constructor class via modular namespace
-    const genAI = new GoogleAI.GoogleGenAI(apiKey);
+    // Instantiate using the core library class directly
+    const genAI = new GoogleGenAI({ apiKey: apiKey });
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(prompt);
     const responseText = result.response.text().trim();
     
-    // Parse the live AI response
+    // Safety check: parse the live AI response to ensure valid structural schema
     const parsedData = JSON.parse(responseText);
     return NextResponse.json(parsedData);
 
