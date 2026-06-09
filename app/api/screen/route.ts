@@ -9,12 +9,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required texts" }, { status: 400 });
     }
 
-    // Pulls securely from your Vercel Environment Variables
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
+    // Initialize the SDK using the correct GoogleGenAI instance method
     const ai = new GoogleGenAI({ apiKey });
     const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       Return a STRICT, valid JSON object matching this exact structural format. Do not wrap it in markdown block tags like \`\`\`json. Return only the raw JSON text:
       {
         "name": "Extract candidate full name",
-        "score": Integer between 0 and 100 matching criteria,
+        "score": 85,
         "summary": "A concise 2-sentence executive placement summary",
         "strengths": ["Strength 1", "Strength 2", "Strength 3"],
         "gaps": ["Gap 1", "Gap 2", "Gap 3"],
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const result = await model.generateContent(prompt);
     const responseText = result.response.text().trim();
     
-    // Parse the live AI response to ensure valid structural schema
+    // Parse the live AI response
     const parsedData = JSON.parse(responseText);
     return NextResponse.json(parsedData);
 
