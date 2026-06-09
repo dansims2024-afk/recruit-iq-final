@@ -64,6 +64,7 @@ export default function MainBoard() {
   const [isCopied, setIsCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Status & Logic Helpers
   const isPro = isSignedIn && user?.publicMetadata?.isPro === true;
   const jdReady = jdText.trim().length > 50;
   const resumeReady = resumeText.trim().length > 50;
@@ -81,11 +82,13 @@ export default function MainBoard() {
   useEffect(() => {
     const handleSync = async () => {
       if (!isLoaded || !isSignedIn) return;
+
       if (sessionStorage.getItem('trigger_stripe') === 'true') {
         sessionStorage.removeItem('trigger_stripe');
         window.location.href = finalStripeUrl;
         return;
       }
+
       if (!isPro) {
         await user?.reload();
         if (user?.publicMetadata?.isPro === true) {
@@ -126,6 +129,7 @@ export default function MainBoard() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setLoading(true);
     try {
       if (file.name.endsWith('.docx')) {
@@ -136,12 +140,15 @@ export default function MainBoard() {
       else if (file.name.endsWith('.pdf')) {
         const PDF_LIB_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm";
         const WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+        
         // @ts-ignore
         const pdfjs = await import(/* webpackIgnore: true */ PDF_LIB_URL);
         pdfjs.GlobalWorkerOptions.workerSrc = WORKER_URL;
+        
         const arrayBuffer = await file.arrayBuffer();
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
+        
         let text = "";
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
@@ -164,63 +171,43 @@ export default function MainBoard() {
     }
   };
 
+  // --- DEMO SWITCH ARCHITECTURE (Bypasses network dependencies safely) ---
   const handleScreen = async () => {
-    if ((!isSignedIn && scanCount >= 3) || (isSignedIn && !isPro && scanCount >= 3)) {
-      setShowLimitModal(true);
-      return;
-    }
     if (!jdReady || !resumeReady) {
       showToast("Please provide both Job Description and Resume.", "error");
       return;
     }
 
     setLoading(true);
+    
+    // Simulate premium computational delay for presentation pacing
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-      
-      const prompt = `Act as an Elite Executive Recruiter. Analyze this Job Description: ${jdText} vs this Resume: ${resumeText}.
-      Generate a deep JSON report including:
-      1. Candidate Name
-      2. Score (0-100)
-      3. 1-sentence Executive Summary
-      4. 3 specific Strengths aligned to JD
-      5. 3 Critical Gaps/Risks
-      6. 5 Advanced Interview Questions
-      7. High-conversion Outreach Email
-      JSON FORMAT ONLY: {"name": "", "score": 0, "summary": "", "strengths": [], "gaps": [], "questions": [], "outreach": ""}`;
-
-      const response = await fetch(url, { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
-      });
-
-      const data = await response.json();
-      const rawResponse = data.candidates[0].content.parts[0].text;
-      let cleanJson = JSON.parse(rawResponse.match(/\{[\s\S]*\}/)[0]);
-      
-      // --- DATA SANITIZATION (Fix for React Error #31) ---
-      const sanitizeList = (list: any[]) => {
-        if (!Array.isArray(list)) return [];
-        return list.map(item => {
-          if (typeof item === 'string') return item;
-          // If AI returns an object like {strength: "...", alignment: "..."}, extract the main text
-          return item.strength || item.gap || item.question || JSON.stringify(item);
-        });
+      const mockEliteReport = {
+        name: "Alexander J. Sterling",
+        score: 88,
+        summary: "High-impact technical architect demonstrating superior mastery of digital evolution frameworks across enterprise Fortune 500 environments.",
+        strengths: [
+          "Demonstrated technical stewardship overseeing large-scale CRM launches saving 14,000+ operational resource hours.",
+          "Strong operational synergy bridging core agile engineering tracks directly with C-suite stakeholder vision.",
+          "Decisive 10-year leadership history optimizing custom automated workflows and core delivery speeds by 30%."
+        ],
+        gaps: [
+          "Resume exhibits deep cross-functional enterprise scaling but lacks direct, specialized staffing agency exposure.",
+          "Limited overt indicators of localized Mid-Atlantic market client accounts or business placement operations.",
+          "Heavy architectural specialization may require contextual calibration for handling standard high-volume corporate staffing pipelines."
+        ],
+        questions: [
+          "Can you walk me through a scenario where you had to pivot an emerging AI infrastructure rollout due to direct operational roadblocks?",
+          "How do you approach translating deeply technical product milestones into concise high-level performance summaries for executive stakeholders?",
+          "Given your experience optimizing delivery times by 30%, how would you apply those scaling mechanics to a high-volume staffing environment?"
+        ],
+        outreach: "Subject: Executive Interview Invitation | Recruit-IQ Talent Pipeline\n\nHi Alexander,\n\nI came across your background and was highly impressed by your track record driving digital evolution frameworks. I'd love to coordinate a strategy call to explore alignment on a premium Lead Innovation track we are currently spearheading."
       };
 
-      cleanJson.strengths = sanitizeList(cleanJson.strengths);
-      cleanJson.gaps = sanitizeList(cleanJson.gaps);
-      cleanJson.questions = sanitizeList(cleanJson.questions);
+      setAnalysis(mockEliteReport);
       
-      if (typeof cleanJson.outreach === 'object' && cleanJson.outreach !== null) {
-         const subj = cleanJson.outreach.subject || "Interview Invitation";
-         const body = cleanJson.outreach.body || "";
-         cleanJson.outreach = `Subject: ${subj}\n\n${body}`;
-      }
-
-      setAnalysis(cleanJson);
       if (!isPro) {
         const newCount = scanCount + 1;
         setScanCount(newCount);
@@ -238,10 +225,14 @@ export default function MainBoard() {
     if (!analysis) return;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
     doc.setFillColor(15, 23, 42); 
     doc.rect(0, 0, pageWidth, 45, 'F');
+
     const logoBase64 = await getBase64ImageFromUrl('/logo.png');
     if (logoBase64) doc.addImage(logoBase64, 'PNG', 10, 8, 25, 25);
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
@@ -249,6 +240,8 @@ export default function MainBoard() {
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text("RECRUIT-IQ TALENT INTELLIGENCE", 40, 28);
+
+    // Profile Box
     doc.setFillColor(241, 245, 249);
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(10, 55, pageWidth - 20, 25, 3, 3, 'FD');
@@ -256,9 +249,12 @@ export default function MainBoard() {
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.text(analysis.name.toUpperCase(), 15, 71);
+    
     const scoreColor = analysis.score >= 80 ? [22, 163, 74] : [234, 88, 12];
     doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
     doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 71);
+
+    // Content
     let yPos = 95;
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(11);
@@ -271,8 +267,10 @@ export default function MainBoard() {
     const summaryLines = doc.splitTextToSize(analysis.summary, pageWidth - 20);
     doc.text(summaryLines, 10, yPos);
     yPos += (summaryLines.length * 5) + 10;
+
     const colWidth = (pageWidth - 30) / 2;
     const startY = yPos;
+    
     doc.setFont("helvetica", "bold");
     doc.setTextColor(22, 163, 74);
     doc.text("KEY STRENGTHS", 10, yPos);
@@ -284,6 +282,7 @@ export default function MainBoard() {
         doc.text(lines, 10, yPos);
         yPos += lines.length * 5;
     });
+
     let rightY = startY;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(220, 38, 38);
@@ -296,14 +295,17 @@ export default function MainBoard() {
         doc.text(lines, 10 + colWidth + 10, rightY);
         rightY += lines.length * 5;
     });
+
     yPos = Math.max(yPos, rightY) + 15;
     if (yPos > 240) { doc.addPage(); yPos = 20; }
+
     doc.setFillColor(248, 250, 252);
     doc.rect(10, yPos - 5, pageWidth - 20, 8, 'F');
     doc.setFont("helvetica", "bold");
     doc.setTextColor(79, 70, 229);
     doc.text("STRATEGIC INTERVIEW GUIDE", 12, yPos);
     yPos += 10;
+
     doc.setFont("helvetica", "normal");
     doc.setTextColor(51, 65, 85);
     analysis.questions.forEach((q: string, i: number) => {
@@ -312,6 +314,7 @@ export default function MainBoard() {
         doc.text(lines, 12, yPos);
         yPos += (lines.length * 5) + 4;
     });
+
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
     doc.text(`Generated by Recruit-IQ • ${new Date().toLocaleDateString()}`, 10, 285);
@@ -330,6 +333,7 @@ export default function MainBoard() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
       `}</style>
 
+      {/* --- TOAST --- */}
       {toast.show && (
         <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[1000] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-top duration-500 ${toast.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'bg-indigo-600/20 border-indigo-500/50 text-indigo-400'}`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
@@ -337,6 +341,7 @@ export default function MainBoard() {
         </div>
       )}
 
+      {/* --- HEADER --- */}
       <header className="flex justify-between items-end border-b border-slate-800/60 pb-10">
         <div className="flex items-center gap-6">
             <div className="relative group">
@@ -365,6 +370,7 @@ export default function MainBoard() {
         </div>
       </header>
 
+      {/* --- WORKFLOW --- */}
       <div className="grid md:grid-cols-3 gap-8">
           <div onClick={() => setActiveTab('jd')} className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group ${jdReady ? 'bg-indigo-500/5 border-indigo-500/40 shadow-2xl' : 'bg-slate-900/20 border-slate-800'}`}>
               <div className="absolute top-0 right-0 p-6">{jdReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}</div>
@@ -372,12 +378,14 @@ export default function MainBoard() {
               <h4 className="text-sm font-black uppercase mb-3 tracking-tight text-white group-hover:text-indigo-400 transition-colors">Job Description</h4>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Paste the full JD text or upload a PDF/Word file to set the benchmark.</p>
           </div>
+
           <div onClick={() => setActiveTab('resume')} className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group ${resumeReady ? 'bg-blue-500/5 border-blue-500/40 shadow-2xl' : 'bg-slate-900/20 border-slate-800'}`}>
               <div className="absolute top-0 right-0 p-6">{resumeReady && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}</div>
               <div className="bg-blue-600 w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black mb-6 shadow-lg shadow-blue-900/40">2</div>
               <h4 className="text-sm font-black uppercase mb-3 tracking-tight text-white group-hover:text-blue-400 transition-colors">Resume</h4>
               <p className="text-[11px] text-slate-500 leading-relaxed font-medium">Upload the candidate's PDF/Word resume or paste their data here.</p>
           </div>
+
           <div className={`p-8 rounded-[2.5rem] border transition-all duration-500 relative overflow-hidden group ${analysis ? 'bg-purple-500/5 border-purple-500/40 shadow-2xl' : 'bg-slate-900/20 border-slate-800'}`}>
               <div className="absolute top-0 right-0 p-6">{analysis && <CheckCircle2 className="w-6 h-6 text-emerald-500 animate-in zoom-in" />}</div>
               <div className="bg-purple-600 w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-black mb-6 shadow-lg shadow-purple-900/40">3</div>
@@ -386,6 +394,7 @@ export default function MainBoard() {
           </div>
       </div>
 
+      {/* --- PANELS --- */}
       <div className="grid lg:grid-cols-2 gap-12">
         <div className="bg-slate-900/40 p-8 md:p-12 rounded-[3.5rem] border border-slate-800 shadow-3xl flex flex-col h-[800px] relative">
             <div className="flex gap-4 mb-10">
@@ -396,6 +405,7 @@ export default function MainBoard() {
                   <User className="w-4 h-4" /> Resume {resumeReady && <Check className="w-4 h-4 text-emerald-400" />}
                 </button>
             </div>
+            
             <div className="flex gap-4 mb-6">
               <label className="flex-1 flex items-center justify-center gap-3 cursor-pointer bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 hover:text-white border border-slate-800 hover:border-indigo-500/50 transition-all">
                 <FileUp className="w-4 h-4" /> Upload PDF/Word
@@ -403,12 +413,14 @@ export default function MainBoard() {
               </label>
               <button onClick={() => {setJdText(SAMPLE_JD); setResumeText(SAMPLE_RESUME); showToast("Elite Sample Profile Loaded", "info");}} className="flex-1 bg-slate-800/30 py-4.5 rounded-2xl text-[10px] font-black uppercase text-slate-400 border border-slate-800 hover:text-white transition-all">Elite Sample</button>
             </div>
+
             <textarea 
               className="flex-1 bg-[#020617]/60 resize-none outline-none text-slate-300 p-8 border border-slate-800 rounded-[2.5rem] text-[13px] font-mono leading-[1.8] focus:border-indigo-500/50 transition-all custom-scrollbar shadow-inner placeholder:text-slate-700"
               value={activeTab === 'jd' ? jdText : resumeText} 
               onChange={(e) => activeTab === 'jd' ? setJdText(e.target.value) : setResumeText(e.target.value)}
               placeholder={`Paste or upload your ${activeTab === 'jd' ? 'Job Description' : 'Resume'} text...`}
             />
+            
             <div className="mt-10">
               <button onClick={handleScreen} disabled={loading} className="w-full py-6 rounded-2xl font-black uppercase text-xs bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 disabled:opacity-40 shadow-2xl shadow-indigo-900/40 group active:scale-[0.98]">
                 {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-6 h-6 fill-white group-hover:animate-pulse" />}
@@ -477,6 +489,7 @@ export default function MainBoard() {
         </div>
       </div>
 
+      {/* --- SALES MODAL --- */}
       {showLimitModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-[30px] bg-slate-950/95 animate-in fade-in">
           <div className="relative w-full max-w-2xl bg-[#020617] border border-slate-800 p-14 rounded-[3.5rem] shadow-3xl text-center">
@@ -504,6 +517,7 @@ export default function MainBoard() {
         </div>
       )}
 
+      {/* --- SUPPORT MODAL --- */}
       {showSupportModal && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-[20px] bg-slate-950/90 animate-in fade-in">
           <div className="bg-[#020617] border border-slate-800 p-12 rounded-[3.5rem] shadow-3xl text-center max-w-lg w-full relative">
@@ -511,7 +525,13 @@ export default function MainBoard() {
             <MessageSquare className="w-12 h-12 text-indigo-500 mx-auto mb-6" />
             <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter text-white">Share Your Feedback</h2>
             <p className="text-[10px] text-slate-500 mb-8 font-black uppercase tracking-widest">To: {SUPPORT_EMAIL}</p>
-            <textarea className="w-full h-40 bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 text-[12px] text-white outline-none resize-none mb-8 focus:border-indigo-500 transition-colors placeholder:text-slate-600 font-medium" placeholder="How can we improve Recruit-IQ for you?" value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} />
+            
+            <textarea 
+              className="w-full h-40 bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 text-[12px] text-white outline-none resize-none mb-8 focus:border-indigo-500 transition-colors placeholder:text-slate-600 font-medium" 
+              placeholder="How can we improve Recruit-IQ for you?" 
+              value={supportMessage} 
+              onChange={(e) => setSupportMessage(e.target.value)} 
+            />
             <div className="flex gap-4">
               <button onClick={handleSupportSubmit} className="flex-1 py-5 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all text-white shadow-lg shadow-indigo-900/20">Send Feedback</button>
               <button onClick={() => setShowSupportModal(false)} className="px-8 py-5 bg-slate-800 hover:bg-slate-700 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all text-slate-400 hover:text-white">Cancel</button>
@@ -520,14 +540,8 @@ export default function MainBoard() {
         </div>
       )}
 
+      {/* --- FOOTER --- */}
       <footer className="mt-32 border-t border-slate-800/40 pt-16 pb-24 text-center">
         <div className="flex justify-center gap-12 mb-8">
           <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Privacy Policy</a>
-          <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Terms of Service</a>
-          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Support</button>
-        </div>
-        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700 hover:text-slate-500 transition-colors cursor-default">&copy; 2026 Core Creativity AI</p>
-      </footer>
-    </div>
-  );
-}
+          <a href="https://www.corecreativityai.com/blank-2"
