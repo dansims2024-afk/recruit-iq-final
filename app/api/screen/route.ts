@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
-    // Initialize the SDK using the correct GoogleGenAI instance method
-    const ai = new GoogleGenAI({ apiKey });
+    // Use the core GoogleGenAI class directly
+    const ai = new GoogleGenAI(apiKey);
     const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
