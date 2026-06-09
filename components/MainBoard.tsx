@@ -61,7 +61,7 @@ export default function MainBoard() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
-  const [emailCopied, setEmailCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Status & Logic Helpers
@@ -134,7 +134,7 @@ export default function MainBoard() {
     try {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-        activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
+        if (activeTab === 'jd') setJdText(result.value); else setResumeText(result.value);
         showToast("Word Document parsed!");
       } 
       else if (file.name.endsWith('.pdf')) {
@@ -156,12 +156,12 @@ export default function MainBoard() {
           // @ts-ignore
           text += content.items.map((item) => item.str).join(" ") + " ";
         }
-        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+        if (activeTab === 'jd') setJdText(text); else setResumeText(text);
         showToast("PDF parsed successfully!");
       } 
       else {
         const text = await file.text();
-        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
+        if (activeTab === 'jd') setJdText(text); else setResumeText(text);
         showToast("Text file loaded!");
       }
     } catch (err) {
@@ -211,9 +211,9 @@ export default function MainBoard() {
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
-      setEmailCopied(true);
+      setCopied(true);
       showToast("Outreach Email Copied!");
-      setTimeout(() => setEmailCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       showToast("Failed to copy text.", "error");
     }
@@ -481,10 +481,10 @@ export default function MainBoard() {
                       </h4>
                       <button 
                         onClick={() => copyToClipboard(analysis.outreach)}
-                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${emailCopied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
+                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${copied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
                       >
-                        {emailCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        {emailCopied ? "Copied!" : "Copy Email"}
+                        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copied ? "Copied!" : "Copy Email"}
                       </button>
                     </div>
                     <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
