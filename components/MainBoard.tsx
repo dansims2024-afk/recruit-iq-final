@@ -171,6 +171,7 @@ export default function MainBoard() {
     }
   };
 
+  // --- CONNECTED LIVE SERVER-SIDE API ROUTE FETCH ---
   const handleScreen = async () => {
     if (!jdReady || !resumeReady) {
       showToast("Please provide both Job Description and Resume.", "error");
@@ -178,41 +179,31 @@ export default function MainBoard() {
     }
 
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
-      const mockEliteReport = {
-        name: "Alexander J. Sterling",
-        score: 88,
-        summary: "High-impact technical architect demonstrating superior mastery of digital evolution frameworks across enterprise Fortune 500 environments.",
-        strengths: [
-          "Demonstrated technical stewardship overseeing large-scale CRM launches saving 14,000+ operational resource hours.",
-          "Strong operational synergy bridging core agile engineering tracks directly with C-suite stakeholder vision.",
-          "Decisive 10-year leadership history optimizing custom automated workflows and core delivery speeds by 30%."
-        ],
-        gaps: [
-          "Resume exhibits deep cross-functional enterprise scaling but lacks direct, specialized staffing agency exposure.",
-          "Limited overt indicators of localized Mid-Atlantic market client accounts or business placement operations.",
-          "Heavy architectural specialization may require contextual calibration for handling standard high-volume corporate staffing pipelines."
-        ],
-        questions: [
-          "Can you walk me through a scenario where you had to pivot an emerging AI infrastructure rollout due to direct operational roadblocks?",
-          "How do you approach translating deeply technical product milestones into concise high-level performance summaries for executive stakeholders?",
-          "Given your experience optimizing delivery times by 30%, how would you apply those scaling mechanics to a high-volume staffing environment?"
-        ],
-        outreach: "Subject: Executive Interview Invitation | Recruit-IQ Talent Pipeline\n\nHi Alexander,\n\nI came across your background and was highly impressed by your track record driving digital evolution frameworks. I'd love to coordinate a strategy call to explore alignment on a premium Lead Innovation track we are currently spearheading."
-      };
+      const response = await fetch("/api/screen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jd: jdText, resume: resumeText }),
+      });
 
-      setAnalysis(mockEliteReport);
+      if (!response.ok) {
+        throw new Error("API Route rejected token parsing");
+      }
+
+      const liveReportData = await response.json();
+
+      setAnalysis(liveReportData);
       
       if (!isPro) {
         const newCount = scanCount + 1;
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Intelligence Sweep Complete!");
+      showToast("Live Intelligence Sweep Complete!");
     } catch (err) {
-      showToast("AI Engine Timeout.", "error");
+      console.error(err);
+      showToast("AI Engine Gateway Timeout. Please check limits.", "error");
     } finally {
       setLoading(false);
     }
@@ -331,6 +322,14 @@ export default function MainBoard() {
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#020617] min-h-screen pt-20 selection:bg-indigo-500/30">
       
+      {/* --- TOAST --- */}
+      {toast.show && (
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[1000] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-top duration-500 ${toast.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'bg-indigo-600/20 border-indigo-500/50 text-indigo-400'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          <p className="text-[10px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
+        </div>
+      )}
+
       {/* --- HEADER --- */}
       <header className="flex justify-between items-end border-b border-slate-800/60 pb-10">
         <div className="flex items-center gap-6">
@@ -447,13 +446,13 @@ export default function MainBoard() {
                     <h4 className="text-emerald-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
                       <TrendingUp className="w-4 h-4"/> Key Strengths
                     </h4>
-                    {analysis.strengths.map((s:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {s}</p>)}
+                    {analysis.strengths && analysis.strengths.map((s:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {s}</p>)}
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/20 p-10 rounded-[2.5rem]">
                     <h4 className="text-rose-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
                       <Shield className="w-4 h-4"/> Critical Gaps
                     </h4>
-                    {analysis.gaps.map((g:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {g}</p>)}
+                    {analysis.gaps && analysis.gaps.map((g:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {g}</p>)}
                   </div>
                 </div>
 
@@ -462,7 +461,7 @@ export default function MainBoard() {
                     <HelpCircle className="w-5 h-5 text-indigo-500"/> Interview Guide
                   </h4>
                   <div className="space-y-5">
-                    {analysis.questions.map((q:any, i:number) => (
+                    {analysis.questions && analysis.questions.map((q:any, i:number) => (
                       <div key={i} className="p-7 bg-slate-950/50 rounded-[1.5rem] text-xs text-slate-300 border border-slate-800/80 italic">
                         <span className="text-indigo-500 font-black not-italic mr-3">Q{i+1}</span> "{q}"
                       </div>
@@ -471,23 +470,25 @@ export default function MainBoard() {
                 </div>
 
                 {/* --- OUTREACH EMAIL CAMPAIGN GENERATOR --- */}
-                <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-indigo-500"/> Candidate Outreach
-                    </h4>
-                    <button 
-                      onClick={() => copyToClipboard(analysis.outreach)}
-                      className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${emailCopied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
-                    >
-                      {emailCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {emailCopied ? "Copied!" : "Copy Email"}
-                    </button>
+                {analysis.outreach && (
+                  <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                        <Mail className="w-5 h-5 text-indigo-500"/> Candidate Outreach
+                      </h4>
+                      <button 
+                        onClick={() => copyToClipboard(analysis.outreach)}
+                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${emailCopied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
+                      >
+                        {emailCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {emailCopied ? "Copied!" : "Copy Email"}
+                      </button>
+                    </div>
+                    <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
+                      {analysis.outreach}
+                    </div>
                   </div>
-                  <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
-                    {analysis.outreach}
-                  </div>
-                </div>
+                )}
 
               </div>
             ) : (
