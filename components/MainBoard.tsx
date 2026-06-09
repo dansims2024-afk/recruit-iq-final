@@ -7,7 +7,7 @@ import { jsPDF } from "jspdf";
 import { 
   Loader2, Copy, Check, FileText, User, Download, 
   Zap, Shield, HelpCircle, CheckCircle2, 
-  Mail, ArrowRight, Sparkles, FileUp, Star, 
+  ArrowRight, Sparkles, FileUp, Star, 
   Lock, AlertCircle, TrendingUp, X, CheckCircle, MessageSquare
 } from "lucide-react";
 
@@ -61,7 +61,6 @@ export default function MainBoard() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
-  const [isCopied, setIsCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Status & Logic Helpers
@@ -171,7 +170,6 @@ export default function MainBoard() {
     }
   };
 
-  // --- DEMO SWITCH ARCHITECTURE (Bypasses network dependencies safely) ---
   const handleScreen = async () => {
     if (!jdReady || !resumeReady) {
       showToast("Please provide both Job Description and Resume.", "error");
@@ -179,8 +177,6 @@ export default function MainBoard() {
     }
 
     setLoading(true);
-    
-    // Simulate premium computational delay for presentation pacing
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
@@ -226,7 +222,6 @@ export default function MainBoard() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Header
     doc.setFillColor(15, 23, 42); 
     doc.rect(0, 0, pageWidth, 45, 'F');
 
@@ -241,7 +236,6 @@ export default function MainBoard() {
     doc.setFont("helvetica", "normal");
     doc.text("RECRUIT-IQ TALENT INTELLIGENCE", 40, 28);
 
-    // Profile Box
     doc.setFillColor(241, 245, 249);
     doc.setDrawColor(203, 213, 225);
     doc.roundedRect(10, 55, pageWidth - 20, 25, 3, 3, 'FD');
@@ -254,7 +248,6 @@ export default function MainBoard() {
     doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
     doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 71);
 
-    // Content
     let yPos = 95;
     doc.setTextColor(15, 23, 42);
     doc.setFontSize(11);
@@ -326,21 +319,6 @@ export default function MainBoard() {
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#020617] min-h-screen pt-20 selection:bg-indigo-500/30">
       
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #334155; }
-      `}</style>
-
-      {/* --- TOAST --- */}
-      {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[1000] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-top duration-500 ${toast.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'bg-indigo-600/20 border-indigo-500/50 text-indigo-400'}`}>
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-          <p className="text-[10px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
-        </div>
-      )}
-
       {/* --- HEADER --- */}
       <header className="flex justify-between items-end border-b border-slate-800/60 pb-10">
         <div className="flex items-center gap-6">
@@ -544,4 +522,11 @@ export default function MainBoard() {
       <footer className="mt-32 border-t border-slate-800/40 pt-16 pb-24 text-center">
         <div className="flex justify-center gap-12 mb-8">
           <a href="https://www.corecreativityai.com/blank" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Privacy Policy</a>
-          <a href="https://www.corecreativityai.com/blank-2"
+          <a href="https://www.corecreativityai.com/blank-2" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Terms of Service</a>
+          <button onClick={() => setShowSupportModal(true)} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors">Support</button>
+        </div>
+        <p className="text-[9px] uppercase font-bold tracking-[0.4em] text-slate-700 hover:text-slate-500 transition-colors cursor-default">&copy; 2026 Core Creativity AI</p>
+      </footer>
+    </div>
+  );
+}
