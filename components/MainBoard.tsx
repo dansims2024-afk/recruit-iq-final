@@ -8,7 +8,7 @@ import {
   Loader2, Copy, Check, FileText, User, Download, 
   Zap, Shield, HelpCircle, CheckCircle2, 
   ArrowRight, Sparkles, FileUp, Star, 
-  Lock, AlertCircle, TrendingUp, X, CheckCircle, MessageSquare
+  Lock, AlertCircle, TrendingUp, X, CheckCircle, MessageSquare, Mail
 } from "lucide-react";
 
 // --- CONFIGURATION ---
@@ -61,6 +61,7 @@ export default function MainBoard() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
+  const [emailCopied, setEmailCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Status & Logic Helpers
@@ -214,6 +215,17 @@ export default function MainBoard() {
       showToast("AI Engine Timeout.", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setEmailCopied(true);
+      showToast("Outreach Email Copied!");
+      setTimeout(() => setEmailCopied(false), 2000);
+    } catch (err) {
+      showToast("Failed to copy text.", "error");
     }
   };
 
@@ -457,6 +469,26 @@ export default function MainBoard() {
                     ))}
                   </div>
                 </div>
+
+                {/* --- OUTREACH EMAIL CAMPAIGN GENERATOR --- */}
+                <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-indigo-500"/> Candidate Outreach
+                    </h4>
+                    <button 
+                      onClick={() => copyToClipboard(analysis.outreach)}
+                      className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${emailCopied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
+                    >
+                      {emailCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {emailCopied ? "Copied!" : "Copy Email"}
+                    </button>
+                  </div>
+                  <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
+                    {analysis.outreach}
+                  </div>
+                </div>
+
               </div>
             ) : (
               <div className="h-full border-2 border-dashed border-slate-800 rounded-[4.5rem] flex flex-col items-center justify-center text-slate-600 text-[11px] font-black uppercase tracking-[0.4em] gap-10 p-16 text-center">
