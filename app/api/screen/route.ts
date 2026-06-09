@@ -9,15 +9,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required texts" }, { status: 400 });
     }
 
-    // Pulls securely from your server environment variables, totally hidden from the browser
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
-    // Initialize the official SDK class constructor directly
-    const ai = new GoogleGenAI({ apiKey });
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Initialize using the correct GoogleGenAI class constructor
+    const genAI = new GoogleGenAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       You are an expert executive recruitment system matching a candidate's resume to a specific Job Description.
