@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/generative-ai";
+import * as GoogleAI from "@google/generative-ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,8 +14,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
-    // Initialize using the standard GoogleGenAI class constructor
-    const genAI = new GoogleGenAI(apiKey);
+    // Safely instance the core constructor class via modular namespace
+    const genAI = new GoogleAI.GoogleGenAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
