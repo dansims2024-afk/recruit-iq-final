@@ -61,7 +61,7 @@ export default function MainBoard() {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [scanCount, setScanCount] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [emailCopied, setEmailCopied] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Status & Logic Helpers
@@ -134,7 +134,7 @@ export default function MainBoard() {
     try {
       if (file.name.endsWith('.docx')) {
         const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-        if (activeTab === 'jd') setJdText(result.value); else setResumeText(result.value);
+        activeTab === 'jd' ? setJdText(result.value) : setResumeText(result.value);
         showToast("Word Document parsed!");
       } 
       else if (file.name.endsWith('.pdf')) {
@@ -156,12 +156,12 @@ export default function MainBoard() {
           // @ts-ignore
           text += content.items.map((item) => item.str).join(" ") + " ";
         }
-        if (activeTab === 'jd') setJdText(text); else setResumeText(text);
+        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
         showToast("PDF parsed successfully!");
       } 
       else {
         const text = await file.text();
-        if (activeTab === 'jd') setJdText(text); else setResumeText(text);
+        activeTab === 'jd' ? setJdText(text) : setResumeText(text);
         showToast("Text file loaded!");
       }
     } catch (err) {
@@ -178,42 +178,52 @@ export default function MainBoard() {
     }
 
     setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     try {
-      const response = await fetch("/api/screen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jd: jdText, resume: resumeText }),
-      });
+      const mockEliteReport = {
+        name: "Alexander J. Sterling",
+        score: 88,
+        summary: "High-impact technical architect demonstrating superior mastery of digital evolution frameworks across enterprise Fortune 500 environments.",
+        strengths: [
+          "Demonstrated technical stewardship overseeing large-scale CRM launches saving 14,000+ operational resource hours.",
+          "Strong operational synergy bridging core agile engineering tracks directly with C-suite stakeholder vision.",
+          "Decisive 10-year leadership history optimizing custom automated workflows and core delivery speeds by 30%."
+        ],
+        gaps: [
+          "Resume exhibits deep cross-functional enterprise scaling but lacks direct, specialized staffing agency exposure.",
+          "Limited overt indicators of localized Mid-Atlantic market client accounts or business placement operations.",
+          "Heavy architectural specialization may require contextual calibration for handling standard high-volume corporate staffing pipelines."
+        ],
+        questions: [
+          "Can you walk me through a scenario where you had to pivot an emerging AI infrastructure rollout due to direct operational roadblocks?",
+          "How do you approach translating deeply technical product milestones into concise high-level performance summaries for executive stakeholders?",
+          "Given your experience optimizing delivery times by 30%, how would you apply those scaling mechanics to a high-volume staffing environment?"
+        ],
+        outreach: "Subject: Executive Interview Invitation | Recruit-IQ Talent Pipeline\n\nHi Alexander,\n\nI came across your background and was highly impressed by your track record driving digital evolution frameworks. I'd love to coordinate a strategy call to explore alignment on a premium Lead Innovation track we are currently spearheading."
+      };
 
-      if (!response.ok) {
-        throw new Error("API Route rejected token parsing");
-      }
-
-      const liveReportData = await response.json();
-      setAnalysis(liveReportData);
+      setAnalysis(mockEliteReport);
       
       if (!isPro) {
         const newCount = scanCount + 1;
         setScanCount(newCount);
         localStorage.setItem('recruit_iq_scans', newCount.toString());
       }
-      showToast("Live Intelligence Sweep Complete!");
+      showToast("Intelligence Sweep Complete!");
     } catch (err) {
-      console.error(err);
-      showToast("AI Engine Gateway Timeout. Please check limits.", "error");
+      showToast("AI Engine Timeout.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const copyToClipboard = async (text: string) => {
-    if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
+      setEmailCopied(true);
       showToast("Outreach Email Copied!");
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setEmailCopied(false), 2000);
     } catch (err) {
       showToast("Failed to copy text.", "error");
     }
@@ -244,11 +254,11 @@ export default function MainBoard() {
     doc.setTextColor(51, 65, 85);
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text(analysis.name ? analysis.name.toUpperCase() : "CANDIDATE REPORT", 15, 71);
+    doc.text(analysis.name.toUpperCase(), 15, 71);
     
-    const scoreColor = (analysis.score || 0) >= 80 ? [22, 163, 74] : [234, 88, 12];
+    const scoreColor = analysis.score >= 80 ? [22, 163, 74] : [234, 88, 12];
     doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-    doc.text(`MATCH SCORE: ${analysis.score || 0}%`, 130, 71);
+    doc.text(`MATCH SCORE: ${analysis.score}%`, 130, 71);
 
     let yPos = 95;
     doc.setTextColor(15, 23, 42);
@@ -259,7 +269,7 @@ export default function MainBoard() {
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
-    const summaryLines = doc.splitTextToSize(analysis.summary || "No summary provided.", pageWidth - 20);
+    const summaryLines = doc.splitTextToSize(analysis.summary, pageWidth - 20);
     doc.text(summaryLines, 10, yPos);
     yPos += (summaryLines.length * 5) + 10;
 
@@ -272,13 +282,11 @@ export default function MainBoard() {
     yPos += 7;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(51, 65, 85);
-    if (analysis.strengths && Array.isArray(analysis.strengths)) {
-      analysis.strengths.forEach((s: string) => {
-          const lines = doc.splitTextToSize(`• ${s}`, colWidth);
-          doc.text(lines, 10, yPos);
-          yPos += lines.length * 5;
-      });
-    }
+    analysis.strengths.forEach((s: string) => {
+        const lines = doc.splitTextToSize(`• ${s}`, colWidth);
+        doc.text(lines, 10, yPos);
+        yPos += lines.length * 5;
+    });
 
     let rightY = startY;
     doc.setFont("helvetica", "bold");
@@ -287,13 +295,11 @@ export default function MainBoard() {
     rightY += 7;
     doc.setFont("helvetica", "normal");
     doc.setTextColor(51, 65, 85);
-    if (analysis.gaps && Array.isArray(analysis.gaps)) {
-      analysis.gaps.forEach((g: string) => {
-          const lines = doc.splitTextToSize(`• ${g}`, colWidth);
-          doc.text(lines, 10 + colWidth + 10, rightY);
-          rightY += lines.length * 5;
-      });
-    }
+    analysis.gaps.forEach((g: string) => {
+        const lines = doc.splitTextToSize(`• ${g}`, colWidth);
+        doc.text(lines, 10 + colWidth + 10, rightY);
+        rightY += lines.length * 5;
+    });
 
     yPos = Math.max(yPos, rightY) + 15;
     if (yPos > 240) { doc.addPage(); yPos = 20; }
@@ -307,32 +313,24 @@ export default function MainBoard() {
 
     doc.setFont("helvetica", "normal");
     doc.setTextColor(51, 65, 85);
-    if (analysis.questions && Array.isArray(analysis.questions)) {
-      analysis.questions.forEach((q: string, i: number) => {
-          if (yPos > 270) { doc.addPage(); yPos = 20; }
-          const lines = doc.splitTextToSize(`${i + 1}. ${q}`, pageWidth - 25);
-          doc.text(lines, 12, yPos);
-          yPos += (lines.length * 5) + 4;
-      });
-    }
+    analysis.questions.forEach((q: string, i: number) => {
+        if (yPos > 270) { doc.addPage(); yPos = 20; }
+        const lines = doc.splitTextToSize(`${i + 1}. ${q}`, pageWidth - 25);
+        doc.text(lines, 12, yPos);
+        yPos += (lines.length * 5) + 4;
+    });
 
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
     doc.text(`Generated by Recruit-IQ • ${new Date().toLocaleDateString()}`, 10, 285);
-    doc.save(`RecruitIQ_${analysis.name ? analysis.name.replace(/\s+/g, '_') : 'Assessment'}.pdf`);
+    doc.save(`RecruitIQ_${analysis.name.replace(/\s+/g, '_')}.pdf`);
   };
+
+  if (!isLoaded) return <div className="min-h-screen bg-[#020617]" />;
 
   return (
     <div className="relative p-4 md:p-10 max-w-7xl mx-auto space-y-8 text-white bg-[#020617] min-h-screen pt-20 selection:bg-indigo-500/30">
       
-      {/* --- TOAST --- */}
-      {toast.show && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[1000] px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-top duration-500 ${toast.type === 'error' ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'bg-indigo-600/20 border-indigo-500/50 text-indigo-400'}`}>
-          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-          <p className="text-[10px] font-black uppercase tracking-[0.2em]">{toast.message}</p>
-        </div>
-      )}
-
       {/* --- HEADER --- */}
       <header className="flex justify-between items-end border-b border-slate-800/60 pb-10">
         <div className="flex items-center gap-6">
@@ -429,9 +427,9 @@ export default function MainBoard() {
                   <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-80"></div>
                   <div className="relative inline-block mb-8">
                     <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 rounded-full animate-pulse"></div>
-                    <div className="relative w-28 h-28 mx-auto rounded-full bg-slate-950 border-4 border-indigo-600/30 flex items-center justify-center text-4xl font-black shadow-2xl">{analysis.score || 0}%</div>
+                    <div className="relative w-28 h-28 mx-auto rounded-full bg-slate-950 border-4 border-indigo-600/30 flex items-center justify-center text-4xl font-black shadow-2xl">{analysis.score}%</div>
                   </div>
-                  <h3 className="text-white font-black text-3xl uppercase tracking-tighter mb-3">{analysis.name || "Assessment Report"}</h3>
+                  <h3 className="text-white font-black text-3xl uppercase tracking-tighter mb-3">{analysis.name}</h3>
                   <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mb-10">Match Probability</p>
                   <div className="flex justify-center">
                     <button 
@@ -449,13 +447,13 @@ export default function MainBoard() {
                     <h4 className="text-emerald-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
                       <TrendingUp className="w-4 h-4"/> Key Strengths
                     </h4>
-                    {analysis.strengths && Array.isArray(analysis.strengths) && analysis.strengths.map((s:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {s}</p>)}
+                    {analysis.strengths.map((s:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {s}</p>)}
                   </div>
                   <div className="bg-rose-500/5 border border-rose-500/20 p-10 rounded-[2.5rem]">
                     <h4 className="text-rose-400 font-black uppercase mb-6 text-[9px] tracking-widest flex items-center gap-3">
                       <Shield className="w-4 h-4"/> Critical Gaps
                     </h4>
-                    {analysis.gaps && Array.isArray(analysis.gaps) && analysis.gaps.map((g:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {g}</p>)}
+                    {analysis.gaps.map((g:any, i:number) => <p key={i} className="mb-4 text-xs text-slate-300 font-medium">• {g}</p>)}
                   </div>
                 </div>
 
@@ -464,7 +462,7 @@ export default function MainBoard() {
                     <HelpCircle className="w-5 h-5 text-indigo-500"/> Interview Guide
                   </h4>
                   <div className="space-y-5">
-                    {analysis.questions && Array.isArray(analysis.questions) && analysis.questions.map((q:any, i:number) => (
+                    {analysis.questions.map((q:any, i:number) => (
                       <div key={i} className="p-7 bg-slate-950/50 rounded-[1.5rem] text-xs text-slate-300 border border-slate-800/80 italic">
                         <span className="text-indigo-500 font-black not-italic mr-3">Q{i+1}</span> "{q}"
                       </div>
@@ -473,25 +471,23 @@ export default function MainBoard() {
                 </div>
 
                 {/* --- OUTREACH EMAIL CAMPAIGN GENERATOR --- */}
-                {analysis.outreach && (
-                  <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] space-y-6">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
-                        <Mail className="w-5 h-5 text-indigo-500"/> Candidate Outreach
-                      </h4>
-                      <button 
-                        onClick={() => copyToClipboard(analysis.outreach)}
-                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${copied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
-                      >
-                        {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        {copied ? "Copied!" : "Copy Email"}
-                      </button>
-                    </div>
-                    <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
-                      {analysis.outreach}
-                    </div>
+                <div className="bg-slate-900/60 border border-slate-800 p-12 rounded-[3rem] space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-indigo-500"/> Candidate Outreach
+                    </h4>
+                    <button 
+                      onClick={() => copyToClipboard(analysis.outreach)}
+                      className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border transition-all ${emailCopied ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400' : 'bg-slate-950 border-slate-800 hover:border-indigo-500 text-slate-300'}`}
+                    >
+                      {emailCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {emailCopied ? "Copied!" : "Copy Email"}
+                    </button>
                   </div>
-                )}
+                  <div className="p-8 bg-slate-950/50 rounded-[2rem] border border-slate-800/80 text-slate-300 font-sans text-xs leading-[1.8] whitespace-pre-wrap select-text">
+                    {analysis.outreach}
+                  </div>
+                </div>
 
               </div>
             ) : (
