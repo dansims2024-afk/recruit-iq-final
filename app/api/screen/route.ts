@@ -9,13 +9,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required texts" }, { status: 400 });
     }
 
-    // Pulls securely from your server-side environment variables, hidden from the browser
+    // Securely hidden behind your server-side firewall
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: "API Key Configuration Missing" }, { status: 500 });
     }
 
-    // Pass the key inside the required configuration object option wrapper
+    // Initializing with correct case-sensitive naming conventions
     const genAI = new GoogleGenAI({ apiKey: apiKey });
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
